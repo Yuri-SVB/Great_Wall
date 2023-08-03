@@ -105,8 +105,8 @@ In one sentence:
     c. Because TLP solver can't obtain SA0 and SA3 is a hash of the concatenation of the latter with SA2, TLP solver cannot obtain SA3;
     d. Because owner hires TLP solver remotely and anonymously, TLP solver cannot collude with coercive adversary;
     e. Alternatively to the anonymity defense described in previous item, it could be possible to develop an homomorphic scheme that allows TLP solver to compute an encryption of SA2 without seeing it SA2 proper, improving from anonymity to actual confidentiality;
-2. **Non-Obscurity** --- Understanding how the protocol works doesn't chance how tacit knowledge from second phase of protocol is. By design, owner is still impeded from transmitting it to adversary; who...
-3. **Coercion-Resistance** --- unless able to keep their victim under coercion for the entire duration of the protocol, can, at most, obtain SA3 but not KA. Target number of loop iterations is set so that brute-force guessing derivation path is unfeasible;
+2. **Non-Obscurity** --- Understanding how the protocol works doesn't change how tacit knowledge from second phase of protocol is. By design, owner is still impeded from transmitting it to adversary; who, ...
+3. **Coercion-Resistance** --- ... unless able to keep their victim under coercion for the entire duration of the protocol, can, at most, obtain SA3 but not KA. Target number of loop iterations is set so that brute-force guessing derivation path is unfeasible;
 4. **Devicelessness** --- All user has to keep is the **brain memory** of SA0 and Tacit Authenticating Knowledge;
 6. **No Unintended Negative Incentives** --- By design, there is no critical external device the adversary can threaten to destroy. Killing victim at any point offers adversary no advantage.
 7. **Monetization** --- Covered in previous section;
