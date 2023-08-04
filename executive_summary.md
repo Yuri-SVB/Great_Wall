@@ -56,7 +56,7 @@ At this point, the clever reader would be right to have grown greatly intrigued 
 5. **Coercion-Resistance** --- Then, we want that this KBA-only, trustless but possible to be aided by third parties, protocol to be *non-transferable even to an adversary that has the owner's full cooperation through coercion*, even if said adversary understands the said protocol perfectly;
 6. **No Unintended Negative Incentives** --- Last but not least, on top of all properties above, protocol has to give adversary no material incentive to assassinate victim as a way to commit the stealing itself. And being KBA-only, the protocol provides no critical device adversary can remotely (therefore more easily) threaten to destroy as a leverage to coerce victim into doing lengthier processes of formal property transfer. All in all, we present a...
 
-> *Kerckhoffian, KBA-only, trustless, monetizable access protocol not transferable even to a complete-knowledge coercive adversary, and that yields no rational strategic advantage to killing of user.*
+> *Kerckhoffian, KBA-only, trustless, monetizable access protocol not transferable even to a complete-knowledge coercive adversary, and that does not, in any possible state, offer to adversaries a rational strategic advantage to assassination of the user.*
 
 Without further ado, let's dive into this protocol:
 
