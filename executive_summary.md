@@ -113,3 +113,5 @@ In one sentence:
 
 
 ## Business
+
+Check out [valuation spreadsheet](https://github.com/Yuri-SVB/Great_Wall/blob/main/celestial_peace_valuation.ods) and [development cost estimation spreadsheet](https://github.com/Yuri-SVB/Great_Wall/blob/main/dev_cost_estimation.ods).
