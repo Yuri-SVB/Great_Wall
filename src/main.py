@@ -8,8 +8,11 @@ from src.mnemonic.mnemonic import Mnemonic
 class GreatWall:
     def __init__(self, mnemo, sa0):
         self.mnemo = mnemo
-        sa0_entropy = bytes(self.mnemo.to_entropy(sa0))
-        self.level_hash = sa0_entropy
+        self.sa0 = bytes(self.mnemo.to_entropy(sa0))
+        self.sa1 = bytes(self.mnemo.to_entropy(sa0))    //dummy initialization
+        self.sa2 = bytes(self.mnemo.to_entropy(sa0))    //dummy initialization
+        self.sa3 = bytes(self.mnemo.to_entropy(sa0))    //dummy initialization
+        self.state = self.sa0
         self.input_chosen = self.index_input = self.level = 0
         self.iterations = 64
         self.states = [bytes.fromhex("00")]*self.iterations
@@ -21,13 +24,12 @@ class GreatWall:
     def time_intensive_derivation(self, sa0_entropy):
         # Calculating SA1 from SA0
         self.update_with_quick_hash()
-        # sa1 = self.level_hash
-        # Calculating SA2 from SA1
+        self.sa1 = self.state
         self.update_with_long_hash()
-        # sa2 = self.level_hash
-        self.level_hash = sa0_entropy + self.level_hash
-        # sa0_sa2 = self.level_hash
+        self.sa2 = self.state
+        self.state = self.sa0 + self.state
         self.update_with_quick_hash()
+        self.sa3 = self.state
 
     def update_with_long_hash(self):
         """ Update self.level_hash with the hash of the previous self.level_hash taking presumably a long time"""
@@ -35,7 +37,7 @@ class GreatWall:
         salt = "00000000000000000000000000000000"
         t = 32
         m = 16
-        self.level_hash = argon2.argon2_hash(self.level_hash, salt, t=t, m=m)
+        self.state = argon2.argon2_hash(self.state, salt, t=t, m=m)
         # self.level_hash += bytes.fromhex("0a")
 
     def update_with_quick_hash(self):
@@ -43,14 +45,14 @@ class GreatWall:
         # This salt should be a counter
         salt = "00000000000000000000000000000000"
         m = 16
-        self.level_hash = argon2.argon2_hash(self.level_hash, salt, m=m)
+        self.state = argon2.argon2_hash(self.state, salt, m=m)
         # self.level_hash += bytes.fromhex("0a")
 
     def shuffle_bytes(self) -> list[bytes]:
         """ Shuffles a section of level_hash bytes"""
         # Remove magic number
         a = self.number_sentences
-        shuffled_bytes = [self.level_hash[a*i:a*(i+1)] for i in range(a)]
+        shuffled_bytes = [self.state[a * i:a * (i + 1)] for i in range(a)]
         random.shuffle(shuffled_bytes)
         return shuffled_bytes
 
@@ -72,7 +74,7 @@ class GreatWall:
         self.input_chosen = shuffled_bytes[self.index_input - 1]
 
     def confirm_output(self):
-        sentences = self.mnemo.to_mnemonic(self.level_hash[0:16])
+        sentences = self.mnemo.to_mnemonic(self.state[0:16])
         # Split and remove the password line getting the following sentences
         sentences = " ".join(self.mnemo.format_mnemonic(sentences).split("\n", 1)[1:])
         confirm_message = "\nChoose 1 to confirm the sentences, choose 0 to go back\n" + sentences
@@ -80,8 +82,8 @@ class GreatWall:
         self.index_input = int(sys.stdin.readline().strip())
 
     def finish_output(self):
-        print(self.level_hash.hex())
-        return self.level_hash
+        print(self.state.hex())
+        return self.state
 
     def user_dependent_derivation(self):
         self.level = 0
@@ -90,13 +92,13 @@ class GreatWall:
         while not finish:
             self.user_choose()
             if self.index_input:
-                self.states[self.level] = self.level_hash
-                self.level_hash += self.input_chosen
+                self.states[self.level] = self.state
+                self.state += self.input_chosen
                 self.update_with_quick_hash()
                 self.level += 1
             else:
                 self.level -= 1
-                self.level_hash = self.states[self.level]
+                self.state = self.states[self.level]
             if self.level >= self.iterations:
                 self.confirm_output()
                 if self.index_input:
