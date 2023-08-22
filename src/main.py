@@ -9,9 +9,9 @@ class GreatWall:
     def __init__(self, mnemo, sa0):
         self.mnemo = mnemo
         self.sa0 = bytes(self.mnemo.to_entropy(sa0))
-        self.sa1 = bytes(self.mnemo.to_entropy(sa0))    //dummy initialization
-        self.sa2 = bytes(self.mnemo.to_entropy(sa0))    //dummy initialization
-        self.sa3 = bytes(self.mnemo.to_entropy(sa0))    //dummy initialization
+        self.sa1 = bytes(self.mnemo.to_entropy(sa0))    # dummy initialization
+        self.sa2 = bytes(self.mnemo.to_entropy(sa0))    # dummy initialization
+        self.sa3 = bytes(self.mnemo.to_entropy(sa0))    # dummy initialization
         self.state = self.sa0
         self.input_chosen = self.index_input = self.level = 0
         self.iterations = 64
