@@ -7,22 +7,29 @@ from src.mnemonic.mnemonic import Mnemonic
 
 class GreatWall:
     def __init__(self, mnemo, sa0):
+        #topology of iterative derivation
+        self.tree_depth = 64
+        self.tree_arity = 4
+        self.argon2salt = "00000000000000000000000000000000"
+        #diagram variables
         self.mnemo = mnemo
         self.sa0 = bytes(self.mnemo.to_entropy(sa0))
         self.sa1 = bytes(self.mnemo.to_entropy(sa0))    # dummy initialization
         self.sa2 = bytes(self.mnemo.to_entropy(sa0))    # dummy initialization
         self.sa3 = bytes(self.mnemo.to_entropy(sa0))    # dummy initialization
+        self.states = [bytes.fromhex("00")]*self.tree_depth
+        #state
         self.state = self.sa0
-        self.input_chosen = self.index_input = self.level = 0
-        self.iterations = 64
-        self.states = [bytes.fromhex("00")]*self.iterations
-        self.number_sentences = 4
+        self.level = 0
+        self.index_input = 0
+        self.user_chosen_input = 0
 
-        self.time_intensive_derivation(sa0_entropy)
+        self.time_intensive_derivation()
         self.user_dependent_derivation()
 
-    def time_intensive_derivation(self, sa0_entropy):
+    def time_intensive_derivation(self):
         # Calculating SA1 from SA0
+        self.state = self.sa0
         self.update_with_quick_hash()
         self.sa1 = self.state
         self.update_with_long_hash()
@@ -33,11 +40,15 @@ class GreatWall:
 
     def update_with_long_hash(self):
         """ Update self.level_hash with the hash of the previous self.level_hash taking presumably a long time"""
-        # This salt should be a counter
-        salt = "00000000000000000000000000000000"
-        t = 32
-        m = 16
-        self.state = argon2.argon2_hash(self.state, salt, t=t, m=m)
+        self.state = argon2.argon2_hash(
+            password=self.state,
+            salt=self.argon2salt,
+            t=32,
+            m=16,
+            p=1,
+            buflen=128,
+            argon_type=argon2.Argon2Type.Argon2_i
+        )
         # self.level_hash += bytes.fromhex("0a")
 
     def update_with_quick_hash(self):
@@ -51,7 +62,7 @@ class GreatWall:
     def shuffle_bytes(self) -> list[bytes]:
         """ Shuffles a section of level_hash bytes"""
         # Remove magic number
-        a = self.number_sentences
+        a = self.tree_arity
         shuffled_bytes = [self.state[a * i:a * (i + 1)] for i in range(a)]
         random.shuffle(shuffled_bytes)
         return shuffled_bytes
@@ -71,7 +82,7 @@ class GreatWall:
         while self.index_input not in possible_inputs:
             self.index_input = sys.stdin.readline().strip()
         self.index_input = int(self.index_input)
-        self.input_chosen = shuffled_bytes[self.index_input - 1]
+        self.user_chosen_input = shuffled_bytes[self.index_input - 1]
 
     def confirm_output(self):
         sentences = self.mnemo.to_mnemonic(self.state[0:16])
@@ -93,13 +104,13 @@ class GreatWall:
             self.user_choose()
             if self.index_input:
                 self.states[self.level] = self.state
-                self.state += self.input_chosen
+                self.state += self.user_chosen_input
                 self.update_with_quick_hash()
                 self.level += 1
             else:
                 self.level -= 1
                 self.state = self.states[self.level]
-            if self.level >= self.iterations:
+            if self.level >= self.tree_depth:
                 self.confirm_output()
                 if self.index_input:
                     finish = True
