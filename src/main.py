@@ -9,7 +9,8 @@ class GreatWall:
     def __init__(self, mnemo, sa0):
         #topology of iterative derivation
         self.tree_depth = 64
-        self.tree_arity = 4
+        self.tree_arity = 8
+        self.nbytesform = 4 #number of bytes in formosa sentence
         self.argon2salt = "00000000000000000000000000000000"
         #diagram variables
         self.mnemo = mnemo
@@ -21,7 +22,10 @@ class GreatWall:
         #state
         self.state = self.sa0
         self.level = 0
-        self.index_input = 0
+        #user interface
+        self.index_input_str = ""
+        self.index_input_int = 0
+        self.index_input_is_valid = False
         self.user_chosen_input = 0
 
         self.time_intensive_derivation()
@@ -53,36 +57,54 @@ class GreatWall:
 
     def update_with_quick_hash(self):
         """ Update self.level_hash with the hash of the previous self.level_hash taking presumably a quick time"""
-        # This salt should be a counter
-        salt = "00000000000000000000000000000000"
-        m = 16
-        self.state = argon2.argon2_hash(self.state, salt, m=m)
+        self.state = argon2.argon2_hash(self.state, self.argon2salt, m=16)
+        # self.state = argon2.argon2_hash(
+        #     password=self.state,
+        #     salt=self.argon2salt,
+        #     t=32,
+        #     m=16,
+        #     p=1,
+        #     buflen=128,
+        #     argon_type=argon2.Argon2Type.Argon2_i
+        # )
         # self.level_hash += bytes.fromhex("0a")
 
     def shuffle_bytes(self) -> list[bytes]:
         """ Shuffles a section of level_hash bytes"""
-        # Remove magic number
-        a = self.tree_arity
-        shuffled_bytes = [self.state[a * i:a * (i + 1)] for i in range(a)]
+        a = self.nbytesform
+        shuffled_bytes = [self.state[a * i:a * (i + 1)] for i in range(self.tree_arity)]
         random.shuffle(shuffled_bytes)
         return shuffled_bytes
 
     def user_choose(self):
         """ Ask user to choose between a set of sentences generated from the shuffled level_hash bytes"""
         shuffled_bytes = self.shuffle_bytes()
-        choose_message = "\nChoose 1, 2, 3, 4 for level %d"
+        choose_message = "\nChoose 1, ..., %d for level %d"
         choose_message += "" if self.level < 1 else ", choose 0 to go back"
-        print(choose_message % self.level)
+        print(choose_message % (self.tree_arity,  self.level))
         [print(self.mnemo.to_mnemonic(bytes_sentence)) for bytes_sentence in shuffled_bytes]
 
-        possible_inputs = ["1", "2", "3", "4"]
-        self.index_input = ""
-        if self.level > 0:
-            possible_inputs.append("0")
-        while self.index_input not in possible_inputs:
-            self.index_input = sys.stdin.readline().strip()
-        self.index_input = int(self.index_input)
-        self.user_chosen_input = shuffled_bytes[self.index_input - 1]
+        self.index_input_is_valid = False
+        while not self.index_input_is_valid:
+            self.index_input_str = sys.stdin.readline().strip()
+            try:
+                self.index_input_int = int(self.index_input_str)
+                if self.index_input_int == 0:
+                    if self.level < 1:
+                        print('You cannot go back at this point. This is level 0.')
+                        # self.index_input_is_valid = False # it was already False
+                    else:
+                        self.index_input_is_valid = True
+                else:
+                    if 1 <= self.index_input_int and self.index_input_int <= self.tree_arity:
+                        self.index_input_is_valid = True
+                    else:
+                        print('Index must be within valid range.')
+                        # self.index_input_is_valid = False # it was already False
+            except ValueError:
+                # Handle the exception
+                print('Please enter an integer')
+        self.user_chosen_input = shuffled_bytes[self.index_input_int - 1]
 
     def confirm_output(self):
         sentences = self.mnemo.to_mnemonic(self.state[0:16])
@@ -90,7 +112,7 @@ class GreatWall:
         sentences = " ".join(self.mnemo.format_mnemonic(sentences).split("\n", 1)[1:])
         confirm_message = "\nChoose 1 to confirm the sentences, choose 0 to go back\n" + sentences
         print(confirm_message)
-        self.index_input = int(sys.stdin.readline().strip())
+        self.index_input_str = int(sys.stdin.readline().strip())
 
     def finish_output(self):
         print(self.state.hex())
@@ -102,7 +124,7 @@ class GreatWall:
 
         while not finish:
             self.user_choose()
-            if self.index_input:
+            if self.index_input_int:
                 self.states[self.level] = self.state
                 self.state += self.user_chosen_input
                 self.update_with_quick_hash()
@@ -112,12 +134,11 @@ class GreatWall:
                 self.state = self.states[self.level]
             if self.level >= self.tree_depth:
                 self.confirm_output()
-                if self.index_input:
+                if self.index_input_int:
                     finish = True
                 else:
                     self.level -= 1
         self.finish_output()
-
 
 def main():
     # sa = "e41feeeee282bc5411ce97df78b3660e"
@@ -136,7 +157,7 @@ def main():
 
     mnemo = Mnemonic("medieval_fantasy")
     # Get the first line, which is the line password, from the inserted input
-    secret_input = getpass.getpass(prompt="Enter hidden input: ").split("\n", 1)[0]
+    secret_input = getpass.getpass(prompt="Enter Time-Lock Puzzle password:").split("\n", 1)[0]
     sa = mnemo.expand_password(secret_input)
     GreatWall(mnemo, sa)
 
