@@ -1,38 +1,43 @@
 import random
 import sys
 import argon2
-import getpass
 from src.mnemonic.mnemonic import Mnemonic
 from user_interface import UserInterface
 
 
 class GreatWall:
-    def __init__(self, mnemo, sa0):
+    def __init__(self):
+        self.mnemo = Mnemonic("medieval_fantasy")
+        #user interface
+        self.user_interface = UserInterface(self.mnemo)
+
+        #topology of TLP derivation
+        self.user_interface.get_TLP_param()
+        self.TLP_param = self.user_interface.index_input_int
+
         #topology of iterative derivation
-        self.tree_depth = 64
-        self.tree_arity = 8
+        self.user_interface.get_tree_depth()
+        self.tree_depth = self.user_interface.index_input_int
+        self.user_interface.get_tree_arity()
+        self.tree_arity = self.user_interface.index_input_int
         self.nbytesform = 4 #number of bytes in formosa sentence
         self.argon2salt = "00000000000000000000000000000000"
-        #diagram variables
-        self.mnemo = mnemo
-        self.sa0 = bytes(self.mnemo.to_entropy(sa0))
-        self.sa1 = bytes(self.mnemo.to_entropy(sa0))         # dummy initialization
-        self.sa2 = bytes(self.mnemo.to_entropy(sa0))         # dummy initialization
-        self.sa3 = bytes(self.mnemo.to_entropy(sa0))         # dummy initialization
+            #diagram variables
+        # self.user_interface.get_theme() TODO
+        # self.mnemo = self.user_interface.user_chosen_input TODO
+        self.user_interface.get_sa0()
+        print(self.user_interface.user_chosen_input)
+        self.sa0 = bytes(self.mnemo.to_entropy(self.user_interface.user_chosen_input))
+        self.sa1 = self.sa0         # dummy initialization
+        self.sa2 = self.sa0         # dummy initialization
+        self.sa3 = self.sa0         # dummy initialization
         self.states = [bytes.fromhex("00")]*self.tree_depth  # dummy initialization
         #state
         self.state = self.sa0
         self.level = 0
-        #user interface
-        self.user_interface = UserInterface()
         #actuall work
         self.time_intensive_derivation()
         self.user_dependent_derivation()
-
-    def __init__(self):
-        self.user_interface.get_TLP_param()
-
-        pass
 
     def time_intensive_derivation(self):
         # Calculating SA1 from SA0
@@ -55,7 +60,7 @@ class GreatWall:
             password=self.state,
             salt=self.argon2salt,
             t=8,
-            m=1024,
+            m=1048576,
             p=1,
             buflen=128,
             argon_type=argon2.Argon2Type.Argon2_i
@@ -76,11 +81,8 @@ class GreatWall:
     def shuffle_bytes(self) -> list[bytes]:
         """ Shuffles a section of level_hash bytes"""
         a = self.nbytesform
-        print("a = ", a)
         shuffled_bytes = [self.state[a * i:a * (i + 1)] for i in range(self.tree_arity)]
-        print(shuffled_bytes)
         random.shuffle(shuffled_bytes)
-        print(shuffled_bytes)
         return shuffled_bytes
 
     def user_choose(self):
@@ -117,18 +119,14 @@ class GreatWall:
                 self.state = self.states[self.level]
             if self.level >= self.tree_depth:
                 self.confirm_output()
-                if self.index_input_int:
+                if self.user_interface.index_input_int == 1:
                     finish = True
                 else:
                     self.level -= 1
         self.finish_output()
 
 def main():
-    mnemo = Mnemonic("medieval_fantasy")
-    # Get the first line, which is the line password, from the inserted input
-    secret_input = getpass.getpass(prompt="Enter Time-Lock Puzzle password:").split("\n", 1)[0]
-    sa = mnemo.expand_password(secret_input)
-    GreatWall(mnemo, sa)
+    GreatWall()
 
 
 if __name__ == "__main__":
