@@ -3,18 +3,17 @@ import argon2
 from src.mnemonic.mnemonic import Mnemonic
 from user_interface import UserInterface
 
-
 class GreatWall:
     def __init__(self):
-        # self.user_interface.get_theme() TODO
-        # self.mnemo = self.user_interface.user_chosen_input TODO
-        self.mnemo = Mnemonic("medieval_fantasy")
+        #user interface
+        self.user_interface = UserInterface()
+
+        #Formosa
+        self.mnemo = Mnemonic(self.user_interface.user_mnemo_name)
         self.nbytesform = 4 #number of bytes in formosa sentence TODO soft code me
+
         #constants
         self.argon2salt = "00000000000000000000000000000000"
-
-        #user interface
-        self.user_interface = UserInterface(self.mnemo)
 
         #topology of TLP derivation
         self.user_interface.prompt_integer("Choose TLP parameter --- # of iterations of memory-hard hash", 1, 24*7*4*3)
