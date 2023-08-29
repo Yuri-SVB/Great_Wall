@@ -9,7 +9,7 @@ class GreatWall:
         self.user_interface = UserInterface()
 
         #Formosa
-        self.mnemo = Mnemonic(self.user_interface.user_mnemo_name)
+        self.mnemo = self.user_interface.mnemo
         self.nbytesform = 4 #number of bytes in formosa sentence TODO soft code me
 
         #constants

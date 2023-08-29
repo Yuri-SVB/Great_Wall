@@ -8,9 +8,9 @@ class UserInterface:
         self.index_input_int = 0
         self.index_input_is_valid = False
         self.user_chosen_input = ""
-        self.user_mnemo_name = "" #dummy initialization TODO this is a temporary solution to bypass a bug solve it
         self.get_theme()
-        self.mnemo = Mnemonic(self.user_mnemo_name)
+        self.mnemo = Mnemonic(self.user_chosen_input)
+        self.user_chosen_input = "" #clearing variable
 
     def get_integer(self, min, max) :
         self.index_input_is_valid = False
@@ -49,8 +49,7 @@ class UserInterface:
             holderstr += str(i) + ") " + theme_list[i] + "\n"
         self.prompt_integer(holderstr, 0, len(theme_list)-1)
 
-        holder = sys.stdin.readline().strip() if self.index_input_int == 0 else theme_list[self.index_input_int]
-        self.user_mnemo_name = holder #TODO related code solve me done because asginment GreatWall.mnemo = UserInterface.mnemo didn't work
+        self.user_chosen_input = sys.stdin.readline().strip() if self.index_input_int == 0 else theme_list[self.index_input_int]
 
     def get_sa0(self) :
         secret_input = getpass.getpass(prompt="Enter Time-Lock Puzzle password:").split("\n", 1)[0]
