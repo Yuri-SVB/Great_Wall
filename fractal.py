@@ -6,18 +6,18 @@ from watchdog.events import FileSystemEventHandler
 # Directory to monitor
 directory = "./"
 
-# Function to format the zoom coordinate
+# Função para formatar a coordenada de zoom
 def format_zoom_coordinate(zoom_coordinate, zoom):
-    zoom = zoom_coordinate.split('E')
-    integer = zoom[0].split('.')[0]
+    zoom_coordinate = zoom_coordinate.split('E')
+    exponent = 0
     if zoom == "in":
         exponent = "-5"
-        return f"{integer}E{exponent}", f"{integer}E{exponent}"
     if zoom == "out":
         exponent = "3"
-        return f"{integer}E{exponent}", f"{integer}E{exponent}"
+    integer = zoom_coordinate[0].split('.')[0]
+    return f"{integer}E{exponent}", f"{integer}E{exponent}"
 
-# Function to generate the fractal coordinates
+# Função para gerar as coordenadas do fractal
 def generate_fractal(*coordinates):
     center_x, center_y, real_axis, imaginary_axis = coordinates
     
@@ -40,7 +40,7 @@ def generate_fractal(*coordinates):
     new_imaginary_axis = f"{imaginary_axis_integer}.{integer_y}{decimal_y}E{imaginary_axis_exponent}"
     return new_real_axis, new_imaginary_axis
     
-# Function to format coordinates
+# Função para formatar as coordenadas
 def format_center_coordinates(*coordinates, truncation=5):
     x, y = coordinates
     x_parts = x.split('E')
@@ -68,7 +68,6 @@ def prepare_next_fractal(file):
     if os.path.exists(config_file_path):
         with open(config_file_path, "r") as config_file:
             lines = config_file.readlines()
-
         center_zoom_line = lines[3].split()
         center_x = center_zoom_line[0]
         center_y = center_zoom_line[1]
@@ -101,52 +100,44 @@ def perform_generation_fractal(file):
         center_zoom_line[2], center_zoom_line[3] = format_zoom_coordinate(zoom, "out")
         center_zoom_line[0], center_zoom_line[1] = format_center_coordinates(center_x, center_y)
         center_zoom_line = ' '.join(center_zoom_line) + "\n"
+        fractal_coordinates = " ".join(fractal_coordinates) + "\n"
         lines[3] = center_zoom_line
         lines[2] = fractal_coordinates
-
         with open(config_file_path, "w") as config_file:
             config_file.writelines(lines)
 
+config_file_to_monitor = None
+config_file_modification_time = 0  
+
 # Event handler class for Watchdog
 class MyHandler(FileSystemEventHandler):
-    def on_created(self, event):
-        if event.src_path.endswith(".config"):
-            print(f"File {event.src_path} found")
-            file_name = os.path.basename(event.src_path)
-            if next_iteration:
-                prepare_next_fractal(file_name)
-            else:
-                perform_generation_fractal(file_name)
-            print("Modified!")
-
     def on_modified(self, event):
-        if event.src_path.endswith(".config"):
-            print("Modified!")
-            global next_iteration
-            next_iteration = not next_iteration
-            print("Próxima iteração..." if next_iteration else "Novo fractal gerado...")
+        global config_file_modification_time
+        if event.src_path == config_file_to_monitor:
+            current_modification_time = os.path.getmtime(event.src_path)
+            if current_modification_time != config_file_modification_time:
+                config_file_modification_time = current_modification_time
+                prepare_next_fractal(config_file_to_monitor)
+                perform_generation_fractal(config_file_to_monitor)
+                time.sleep(1)
 
-# Initialize the observer
 observer = Observer()
 event_handler = MyHandler()
 observer.schedule(event_handler, path=directory, recursive=False)
 observer.start()
 
 try:
-    next_iteration = True
-    print("Waiting for files...")
-    user_choice = input("Have an existing file to monitor? (Y/N): ").strip().lower()
-    
-    if user_choice == 'y':
-        existing_file_name = input("Enter the name of the existing file: ").strip()
-        if existing_file_name.endswith(".config") and os.path.exists(os.path.join(directory, existing_file_name)):
-            prepare_next_fractal(existing_file_name)
-            next_iteration = False
-        else:
-            print("Invalid existing file name. Will wait for a new .config file.")
+    config_file_name = input("Enter the name of the .config file (e.g., 'arquivo.config'): ").strip()
+    existing_file_path = os.path.join(directory, config_file_name)
+    if config_file_name.endswith(".config") and os.path.exists(existing_file_path):
+        config_file_to_monitor = existing_file_path
+        config_file_modification_time = os.path.getmtime(config_file_to_monitor)
+        prepare_next_fractal(config_file_to_monitor)
+        perform_generation_fractal(config_file_to_monitor)
 
     while True:
         time.sleep(1)
+
 except KeyboardInterrupt:
     observer.stop()
 
