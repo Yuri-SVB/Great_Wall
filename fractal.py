@@ -9,13 +9,13 @@ directory = "./"
 # Função para formatar a coordenada de zoom
 def format_zoom_coordinate(zoom_coordinate, zoom):
     zoom_coordinate = zoom_coordinate.split('E')
-    exponent = 0
+    exponent = "00"
     if zoom == "in":
-        exponent = "-5"
+        exponent = "-05"
     if zoom == "out":
-        exponent = "3"
-    integer = zoom_coordinate[0].split('.')[0]
-    return f"{integer}E{exponent}", f"{integer}E{exponent}"
+        exponent = "+03"
+    #integer = zoom_coordinate[0].split('.')[0]
+    return f"1E{exponent}", f"1E{exponent}"
 
 # Função para gerar as coordenadas do fractal
 def generate_fractal(*coordinates):
