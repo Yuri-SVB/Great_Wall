@@ -793,10 +793,11 @@ class Mnemonic(object):
         if len(data) % least_multiple != 0:
             error_message = "Number of bytes should be multiple of %s, but it is %s."
             raise ValueError(error_message % (least_multiple, len(data)))
+        data_bytes = data.encode('utf-8')
 
-        hash_digest = hashlib.sha256(data).hexdigest()
-        entropy_bits = bin(int.from_bytes(data, byteorder="big"))[2:].zfill(len(data) * 8)
-        checksum_bits = bin(int(hash_digest, 16))[2:].zfill(256)[: len(data) * 8 // 32]
+        hash_digest = hashlib.sha256(data_bytes).hexdigest()
+        entropy_bits = bin(int.from_bytes(data_bytes, byteorder="big"))[2:].zfill(len(data) * 8)
+        checksum_bits = bin(int(hash_digest, 16))[2:].zfill(256)[: len(data_bytes) * 8 // 32]
         data_bits = entropy_bits + checksum_bits
 
         sentences = self.words_dictionary.get_sentences_from_bits(data_bits)
