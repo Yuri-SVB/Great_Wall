@@ -190,9 +190,6 @@ class GreatWallGUI:
         self.nbytesform.grid(row=4, column=1)
 
 
-        self.output_label = tk.Label(master, text="", wraplength=400)
-        self.output_label.grid(row=6, column=0, columnspan=3, padx=10, pady=10)
-
 
         # Create buttons
         tk.Button(master, text="OK", command=self.ok_button).grid(row=5, column=0)
@@ -223,7 +220,6 @@ class GreatWallGUI:
         # Create an instance of GreatWall and perform operations
         great_wall_instance = GreatWall(sa0=sa0_value, TLP_param=TLP_param_value, tree_depth=tree_depth_value, tree_arity=tree_arity_value, nbytesform=nbytesform)
 
-        sys.stdout = RedirectText(self.output_label)
 
         # Perform other operations based on your CLI logic
         great_wall_instance.time_intensive_derivation()
@@ -231,7 +227,6 @@ class GreatWallGUI:
 
         # Optionally, display the result or perform additional actions
         result = great_wall_instance.finish_output()
-        sys.stdout = sys.__stdout__
         messagebox.showinfo("Result", f"Final Output: {result.hex()}")
 
     def cancel_button(self):
