@@ -5,21 +5,16 @@ import random
 import argon2
 from argon2 import PasswordHasher
 from src.mnemonic.mnemonic import Mnemonic
-from user_interface import UserInterface
+from interface_user import UserInterface
 import sys
 
-class RedirectText:
-    def __init__(self, label):
-        self.label = label
-
-    def write(self, str):
-        self.label.config(text=str)
 
 class GreatWall:
     def __init__(self, sa0, TLP_param, tree_depth, tree_arity, nbytesform):
         # Your existing initialization logic
-        self.user_interface = UserInterface()
-        self.mnemo = self.user_interface.mnemo
+        self.interface_user = UserInterface()
+        self.interface_user.run_gui()
+        self.mnemo = self.interface_user.mnemo
         self.sa0 = sa0
         self.TLP_param = TLP_param
         self.tree_depth = tree_depth
@@ -27,8 +22,20 @@ class GreatWall:
         self.argon2salt = "00000000000000000000000000000000"
         self.nbytesform = nbytesform
         self.state = []
+        self.current_level = 0
 
         # ... other initialization
+
+        self.interface_user.get_sa0()
+        self.sa0 = bytes(self.mnemo.to_entropy(self.interface_user.user_chosen_input))
+
+# more
+        self.state = self.sa0
+        self.shuffled_bytes = self.sa0 #dummy initialization
+        self.current_level = 0
+
+        self.time_intensive_derivation()
+        self.user_dependent_derivation()
 
     # Your existing CLI methods
     def time_intensive_derivation(self):
@@ -101,7 +108,7 @@ class GreatWall:
     def shuffle_bytes(self):
         # Existing code
         """ Shuffles a section of level_hash bytes"""
-        a = self.nbytesform
+        a = 4 * ((self.nbytesform * self.tree_arity) // 4)
         self.shuffled_bytes = [self.state[a * i:a * (i + 1)] for i in range(self.tree_arity)]
         random.shuffle(self.shuffled_bytes)
 
@@ -134,32 +141,123 @@ class GreatWall:
         while not finish:
         # Ask user to choose between a set of sentences generated from the shuffled level_hash bytes
             listr = self.get_li_str_query()
-            self.user_interface.prompt_integer(listr, 0 if self.current_level != 0 else 1, self.tree_arity)
+            self.interface_user.prompt_integer(listr, 0 if self.current_level != 0 else 1, self.tree_arity)
 
-            if self.user_interface.index_input_int != 0:
-                self.user_interface.user_chosen_input = self.shuffled_bytes[self.user_interface.index_input_int - 1]
+            if self.interface_user.index_input_int != 0:
+                self.interface_user.user_chosen_input = self.shuffled_bytes[self.interface_user.index_input_int - 1]
                 # Update the state with user-chosen input
-                self.state = self.state[:self.current_level] + self.user_interface.user_chosen_input
+                self.state = self.state[:self.current_level] + self.interface_user.user_chosen_input
+            #    self.state[self.current_level] = self.state
+            #    self.state += self.interface_user.user_chosen_input
+
                 self.update_with_quick_hash()
                 self.current_level += 1
             else:
-            # Go back to the previous level
                 self.current_level -= 1
+            # Go back to the previous level
+
                 self.state = self.state[self.current_level]
 
             if self.current_level >= self.tree_depth:
             # Finish and prompt for termination
-                self.finish_output()
-                self.user_interface.prompt_integer("Enter 1 to terminate derivation and 0 to go back:", 0, 1)
 
-                if self.user_interface.index_input_int == 1:
+                self.interface_user.prompt_integer("Enter 1 to terminate derivation and 0 to go back:", 0, 1)
+
+                if self.interface_user.index_input_int == 1:
                     finish = True
                 else:
                 # Go back to the previous level
                     self.current_level -= 1
                     self.state = self.state[self.current_level]
 
+# from here
+
+    def core_functionality(self):
+        """The core functionality without CLI-specific parts."""
+        self.state = self.sa0
+        if isinstance(self.sa0, str):
+            self.sa0 = self.sa0.encode('utf-8')
+
+        if isinstance(self.state, str):
+            self.state = self.state.encode('utf-8')
+
+        self.state = self.sa0 + self.state
+
+        # Update the GUI with information (replace with actual GUI update code)
+        self.interface_user.update_text("Initializing SA0")
+
+        self.update_with_quick_hash()
+        self.sa1 = self.state
+
+        # Update the GUI with information (replace with actual GUI update code)
+        self.interface_user.update_text("Deriving SA0 -> SA1")
+
+        self.update_with_long_hash()
+        self.sa2 = self.state
+
+        # Update the GUI with information (replace with actual GUI update code)
+        self.interface_user.update_text("Deriving SA1 -> SA2")
+
+        self.update_with_quick_hash()
+        self.sa3 = self.state
+
+        # Update the GUI with information (replace with actual GUI update code)
+        self.interface_user.update_text("Deriving SA2 -> SA3")
+
+    def gui_mode(self, user_chosen_input):
+        """GUI-specific logic."""
+        self.current_level = 0
+        finish = False
+
+        while not finish:
+            listr = self.get_li_str_query()
+
+            # Display the list in the GUI (replace with actual GUI update code)
+            self.interface_user.display_list(listr)
+
+            # Get user input from the GUI (replace with actual GUI input code)
+            user_chosen_input = self.interface_user.get_user_input(min_value=0, max_value=self.tree_arity)
+
+            if user_chosen_input != 0:
+                self.user_chosen_input = self.shuffled_bytes[user_chosen_input - 1]
+                self.state = self.state[:self.current_level] + self.user_chosen_input
+                self.update_with_quick_hash()
+                self.current_level += 1
+            else:
+                self.current_level -= 1
+                self.state = self.state[self.current_level]
+
+            if self.current_level >= self.tree_depth:
+                self.finish_output()
+
+                # Display the termination prompt in the GUI (replace with actual GUI update code)
+                user_choice = self.interface_user.get_user_input("Enter 1 to terminate derivation and 0 to go back:", 0, 1)
+
+                if user_choice == 1:
+                    finish = True
+                else:
+                    self.current_level -= 1
+                    self.state = self.state[self.current_level]
+
+
+
+
+#up to here
         self.finish_output()
+
+
+class RedirectText:
+    def __init__(self, text_widget):
+        self.text_widget = text_widget
+
+    def write(self, message):
+        if isinstance(message, list):
+            # If the message is a list, display each element on a new line
+            for item in message:
+                self.text_widget.insert(tk.END, str(item) + '\n')
+        else:
+            self.text_widget.insert(tk.END, str(message))
+
 
 class GreatWallGUI:
     def __init__(self, master):
@@ -196,6 +294,7 @@ class GreatWallGUI:
         tk.Button(master, text="Cancel", command=self.cancel_button).grid(row=5, column=1)
         tk.Button(master, text="Go Back", command=self.go_back_button).grid(row=5, column=2)
 
+
     def ok_button(self):
         # Retrieve values from entry fields
         sa0_input = self.sa0_entry.get()
@@ -212,6 +311,7 @@ class GreatWallGUI:
             return
         self.sa0 = sa0_value
 
+
         TLP_param_value = int(self.TLP_param_entry.get())
         tree_depth_value = int(self.tree_depth_entry.get())
         tree_arity_value = int(self.tree_arity_entry.get())
@@ -225,8 +325,10 @@ class GreatWallGUI:
         great_wall_instance.time_intensive_derivation()
         great_wall_instance.user_dependent_derivation()
 
+
         # Optionally, display the result or perform additional actions
         result = great_wall_instance.finish_output()
+
         messagebox.showinfo("Result", f"Final Output: {result.hex()}")
 
     def cancel_button(self):
