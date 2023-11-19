@@ -576,13 +576,24 @@ class Mnemonic(object):
         return is_bip39
 
     def __init__(self, theme: str):
+        script_directory = Path(__file__).resolve().parent
         self.base_theme = theme
         theme_file = Path(__file__).parent.absolute() / Path("themes") / Path("%s.json" % theme)
+        theme_file = script_directory / "themes" / f"{theme}.json"
+
         if Path.exists(theme_file) and Path.is_file(theme_file):
             with open(theme_file) as json_file:
                 self.words_dictionary = ThemeDict(json.load(json_file))
         else:
             raise FileNotFoundError("Theme file not found")
+
+        if theme_file.exists() and theme_file.is_file():
+            with open(theme_file) as json_file:
+                self.words_dictionary = ThemeDict(json.load(json_file))
+        else:
+            raise FileNotFoundError(f"Theme file not found at {theme_file}")
+
+
         self.wordlist = self.words_dictionary.wordlist
         # Japanese must be joined by ideographic space
         self.delimiter = "\u3000" if theme == "BIP39_japanese" else " "
