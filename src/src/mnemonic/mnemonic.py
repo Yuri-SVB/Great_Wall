@@ -575,8 +575,7 @@ class Mnemonic(object):
         is_bip39 = self.base_theme.startswith(self.DEFAULT_THEME)
         return is_bip39
 
-
-    def __init__(self, theme="BIP39"):
+    def __init__(self, theme: str):
         self.base_theme = theme
         theme_file = Path(__file__).parent.absolute() / Path("themes") / Path("%s.json" % theme)
         if Path.exists(theme_file) and Path.is_file(theme_file):
@@ -587,7 +586,6 @@ class Mnemonic(object):
         self.wordlist = self.words_dictionary.wordlist
         # Japanese must be joined by ideographic space
         self.delimiter = "\u3000" if theme == "BIP39_japanese" else " "
-
 
     @classmethod
     def find_themes(cls) -> list[str]:
@@ -792,14 +790,29 @@ class Mnemonic(object):
             Return the built mnemonic in Formosa standard
         """
         least_multiple = 4
+
+        if not isinstance(data, (bytes, str)):
+            raise TypeError("Input data must be bytes or str.")
+
+        if isinstance(data, str):
+            data = data.encode('utf-8')
+
+            padding_length = (least_multiple - (len(data) % least_multiple)) % least_multiple
+            padding = b'\0' * padding_length
+            data = data + padding
+
+
         if len(data) % least_multiple != 0:
+
+
             error_message = "Number of bytes should be multiple of %s, but it is %s."
             raise ValueError(error_message % (least_multiple, len(data)))
-        data_bytes = data.encode('utf-8')
 
-        hash_digest = hashlib.sha256(data_bytes).hexdigest()
-        entropy_bits = bin(int.from_bytes(data_bytes, byteorder="big"))[2:].zfill(len(data) * 8)
-        checksum_bits = bin(int(hash_digest, 16))[2:].zfill(256)[: len(data_bytes) * 8 // 32]
+
+        hash_object = hashlib.sha256(data)
+        hash_digest = hash_object.digest()
+        entropy_bits = bin(int.from_bytes(data, byteorder="big"))[2:].zfill(len(data) * 8)
+        checksum_bits = bin(int.from_bytes(hash_digest, byteorder="big"))[2:].zfill(256)[: len(data) * 8 // 32]
         data_bits = entropy_bits + checksum_bits
 
         sentences = self.words_dictionary.get_sentences_from_bits(data_bits)
