@@ -12,47 +12,65 @@ import sys
 class GreatWall:
     def __init__(self, sa0, TLP_param, tree_depth, tree_arity, nbytesform):
         # Your existing initialization logic
+
+        #user interface
         self.interface_user = UserInterface()
         self.interface_user.run_gui()
-        self.mnemo = self.interface_user.mnemo
-        self.sa0 = sa0
+
+        # formosa
+
+        self.mnemo = Mnemonic()
+        self.nbytesform = nbytesform
+
+    # topology
         self.TLP_param = TLP_param
         self.tree_depth = tree_depth
         self.tree_arity = tree_arity
+
+        self.sa0 = self.interface_user.get_sa0()
+        self.sa0 = bytes(self.mnemo.to_entropy(self.interface_user.user_chosen_input))
+
         self.argon2salt = "00000000000000000000000000000000"
-        self.nbytesform = nbytesform
-        self.state = []
+
+        self.states = [bytes.fromhex("00")]*self.tree_depth  # dummy initialization
         self.current_level = 0
 
         # ... other initialization
 
-        self.interface_user.get_sa0()
-        self.sa0 = bytes(self.mnemo.to_entropy(self.interface_user.user_chosen_input))
+
+#        self.sa0 = bytes(self.mnemo.to_entropy(self.interface_user.user_chosen_input))
 
 # more
         self.state = self.sa0
         self.shuffled_bytes = self.sa0 #dummy initialization
         self.current_level = 0
 
-        self.time_intensive_derivation()
-        self.user_dependent_derivation()
 
+        self.time_intensive_derivation()
+#        self.update_with_long_hash()
+#        self.shuffle_bytes()
+#        self.get_li_str_query()
+#        self.finish_output()
+        self.user_dependent_derivation()
     # Your existing CLI methods
+
+
     def time_intensive_derivation(self):
         # Existing code
         print('Initializing SA0')
-        self.state = self.sa0
+        initial_state = self.sa0
         if isinstance(self.sa0, str):
             self.sa0 = self.sa0.encode('utf-8')
 
-        if isinstance(self.state, str):
+        if isinstance(initial_state, str):
             self.state = self.state.encode('utf-8')
 
-        self.state = self.sa0 + self.state
+        self.state = self.sa0 + initial_state
 
         print('Deriving SA0 -> SA1')
         self.update_with_quick_hash()
         self.sa1 = self.state
+        self.state = initial_state
         print('Deriving SA1 -> SA2')
         self.update_with_long_hash()
         self.sa2 = self.state
@@ -146,9 +164,9 @@ class GreatWall:
             if self.interface_user.index_input_int != 0:
                 self.interface_user.user_chosen_input = self.shuffled_bytes[self.interface_user.index_input_int - 1]
                 # Update the state with user-chosen input
-                self.state = self.state[:self.current_level] + self.interface_user.user_chosen_input
-            #    self.state[self.current_level] = self.state
-            #    self.state += self.interface_user.user_chosen_input
+
+                self.states[self.current_level] = self.state
+                self.state += self.interface_user.user_chosen_input
 
                 self.update_with_quick_hash()
                 self.current_level += 1
@@ -156,11 +174,11 @@ class GreatWall:
                 self.current_level -= 1
             # Go back to the previous level
 
-                self.state = self.state[self.current_level]
+                self.state = self.states[self.current_level]
 
             if self.current_level >= self.tree_depth:
             # Finish and prompt for termination
-
+                self.finish_output()
                 self.interface_user.prompt_integer("Enter 1 to terminate derivation and 0 to go back:", 0, 1)
 
                 if self.interface_user.index_input_int == 1:
@@ -168,78 +186,9 @@ class GreatWall:
                 else:
                 # Go back to the previous level
                     self.current_level -= 1
-                    self.state = self.state[self.current_level]
+                    self.state = self.states[self.current_level]
 
 # from here
-
-    def core_functionality(self):
-        """The core functionality without CLI-specific parts."""
-        self.state = self.sa0
-        if isinstance(self.sa0, str):
-            self.sa0 = self.sa0.encode('utf-8')
-
-        if isinstance(self.state, str):
-            self.state = self.state.encode('utf-8')
-
-        self.state = self.sa0 + self.state
-
-        # Update the GUI with information (replace with actual GUI update code)
-        self.interface_user.update_text("Initializing SA0")
-
-        self.update_with_quick_hash()
-        self.sa1 = self.state
-
-        # Update the GUI with information (replace with actual GUI update code)
-        self.interface_user.update_text("Deriving SA0 -> SA1")
-
-        self.update_with_long_hash()
-        self.sa2 = self.state
-
-        # Update the GUI with information (replace with actual GUI update code)
-        self.interface_user.update_text("Deriving SA1 -> SA2")
-
-        self.update_with_quick_hash()
-        self.sa3 = self.state
-
-        # Update the GUI with information (replace with actual GUI update code)
-        self.interface_user.update_text("Deriving SA2 -> SA3")
-
-    def gui_mode(self, user_chosen_input):
-        """GUI-specific logic."""
-        self.current_level = 0
-        finish = False
-
-        while not finish:
-            listr = self.get_li_str_query()
-
-            # Display the list in the GUI (replace with actual GUI update code)
-            self.interface_user.display_list(listr)
-
-            # Get user input from the GUI (replace with actual GUI input code)
-            user_chosen_input = self.interface_user.get_user_input(min_value=0, max_value=self.tree_arity)
-
-            if user_chosen_input != 0:
-                self.user_chosen_input = self.shuffled_bytes[user_chosen_input - 1]
-                self.state = self.state[:self.current_level] + self.user_chosen_input
-                self.update_with_quick_hash()
-                self.current_level += 1
-            else:
-                self.current_level -= 1
-                self.state = self.state[self.current_level]
-
-            if self.current_level >= self.tree_depth:
-                self.finish_output()
-
-                # Display the termination prompt in the GUI (replace with actual GUI update code)
-                user_choice = self.interface_user.get_user_input("Enter 1 to terminate derivation and 0 to go back:", 0, 1)
-
-                if user_choice == 1:
-                    finish = True
-                else:
-                    self.current_level -= 1
-                    self.state = self.state[self.current_level]
-
-
 
 
 #up to here
@@ -309,9 +258,8 @@ class GreatWallGUI:
             # Handle the case where the input is not a valid string
             messagebox.showerror("Error", "SA0 must be a valid string.")
             return
+
         self.sa0 = sa0_value
-
-
         TLP_param_value = int(self.TLP_param_entry.get())
         tree_depth_value = int(self.tree_depth_entry.get())
         tree_arity_value = int(self.tree_arity_entry.get())
@@ -323,8 +271,12 @@ class GreatWallGUI:
 
         # Perform other operations based on your CLI logic
         great_wall_instance.time_intensive_derivation()
+        great_wall_instance.update_with_long_hash()
+        great_wall_instance.update_with_quick_hash()
+        great_wall_instance.shuffle_bytes()
+        great_wall_instance.get_li_str_query()
+        great_wall_instance.finish_output()
         great_wall_instance.user_dependent_derivation()
-
 
         # Optionally, display the result or perform additional actions
         result = great_wall_instance.finish_output()
