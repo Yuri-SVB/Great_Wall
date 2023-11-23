@@ -1,12 +1,83 @@
 import random
 import argon2
+import tkinter as tk
+from tkinter import simpledialog
 from argon2 import PasswordHasher
 from src.mnemonic.mnemonic import Mnemonic
 from user_interface import UserInterface
 
+class GreatWallUI:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Great Wall UI")
+        self.create_widgets()
+
+
+
+    def create_widgets(self):
+        self.label = tk.Label(self.root, text="Welcome to Great Wall UI!")
+        self.label.pack(pady=10)
+
+        self.derivation_button = tk.Button(self.root, text="Start Derivation", command=self.start_derivation)
+        self.derivation_button.pack(pady=10)
+
+        self.info_label = tk.Label(self.root, text="")
+        self.info_label.pack(pady=10)
+
+
+
+
+    def start_derivation(self):
+        self.info_label.config(text="Derivation in progress...")
+        self.root.after(100, self.execute_derivation)
+
+    def execute_derivation(self):
+        great_wall = GreatWall(self)
+        great_wall.user_dependent_derivation()
+        result = great_wall.finish_output()
+        messagebox.showinfo("Derivation Result", f"KA = {result.hex()}")
+        self.root.quit()
+
+    def get_user_input(self, prompt, minvalue, maxvalue):
+        return simpledialog.askinteger("User Input", prompt, minvalue=minvalue, maxvalue=maxvalue)
+
+
+
+    def get_li_str_query(self):
+        self.info_label.config(text="Choosing from shuffled options...")
+        self.shuffle_window = tk.Toplevel(self.root)
+        self.shuffle_window.title("Shuffled Options")
+
+        listr = GreatWall(self).get_li_str_query()
+        label = tk.Label(self.shuffle_window, text=listr)
+        label.pack(pady=10)
+
+        user_choice = self.get_user_input("Enter a choice:", 0, GreatWall(self).tree_arity)
+        self.shuffle_window.destroy()
+        return user_choice
+
+    def choose_formosa_theme(self):
+        self.info_label.config(text="Choosing Formosa Theme...")
+        self.choose_formosa_theme()
+
+        selected_theme = self.user_interface.user_chosen_input
+        self.info_label.config(text=f"Selected Formosa Theme: {selected_theme}")
+
+
+        user_interface = UserInterface()
+        user_interface.get_theme()  # Call the get_theme method
+        selected_theme = user_interface.user_chosen_input
+        self.info_label.config(text=f"Selected Formosa Theme: {selected_theme}")
+
+
+
+
+
+
 class GreatWall:
-    def __init__(self):
+    def __init__(self, ui):
         #user interface
+        self.ui = ui
         self.user_interface = UserInterface()
 
         #Formosa
@@ -129,6 +200,9 @@ class GreatWall:
         return listr
 
     def finish_output(self):
+        result = self.state.hex()
+        self.ui.info_label.config(text=f"KA = \n{result}")
+        return self.state
         print("KA = \n", self.state.hex())
         return self.state
 
@@ -139,14 +213,17 @@ class GreatWall:
         while not finish:
         # Ask user to choose between a set of sentences generated from the shuffled level_hash bytes
             listr = self.get_li_str_query()
-            print(listr)
-            user_input = input(f"Enter a choice (1 to {self.tree_arity}, 0 to go back): ")
-            self.user_interface.prompt_integer(listr, 0 if self.current_level != 0 else 1, self.tree_arity)
-            try:
-                user_choice = int(user_input)
-            except ValueError:
-                print("Invalid input. Please enter a number.")
-                continue
+            self.ui.info_label.config(text=listr)
+
+            user_choice = simpledialog.askinteger(
+                "User Input",
+                f"Enter a choice (1 to {self.tree_arity}, 0 to go back):",
+                initialvalue=0 if self.current_level != 0 else 1,
+                minvalue=0 if self.current_level != 0 else 1,
+                maxvalue=self.tree_arity
+            )
+
+
             if 0 < user_choice <= self.tree_arity:
                 self.user_interface.user_chosen_input = self.shuffled_bytes[user_choice - 1]
                 self.states[self.current_level] = self.state
@@ -160,14 +237,14 @@ class GreatWall:
                 print("Invalid choice. Please enter a valid option.")
 
             if self.current_level >= self.tree_depth:
-                # Finish and prompt for termination
-#                self.finish_output()
-                termination_input = input("Enter 1 to terminate derivation and 0 to go back: ")
-                try:
-                    termination_choice = int(termination_input)
-                except ValueError:
-                    print("Invalid input. Please enter a number.")
-                    continue
+
+                termination_choice = simpledialog.askinteger(
+                    "User Input",
+                    "Enter 1 to terminate derivation and 0 to go back:",
+                    initialvalue=0,
+                    minvalue=0,
+                    maxvalue=1
+                )
                 if termination_choice == 1:
                     finish = True
                 elif termination_choice == 0:
@@ -177,10 +254,16 @@ class GreatWall:
                 else:
                     print("Invalid choice. Please enter a valid option.")
 
+    def run_derivation(self):
+        self.time_intensive_derivation()
+        self.user_dependent_derivation()
+        return self.finish_output()
+
 
 def main():
-    GreatWall()
-
+    root = tk.Tk()
+    app = GreatWallUI(root)
+    root.mainloop()
 
 if __name__ == "__main__":
     main()
