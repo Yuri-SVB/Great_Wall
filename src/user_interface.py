@@ -1,3 +1,6 @@
+import tkinter as tk
+from tkinter import simpledialog
+from tkinter import messagebox
 import sys
 import getpass
 from src.mnemonic.mnemonic import Mnemonic
@@ -29,8 +32,11 @@ class UserInterface:
                 print('Please enter an integer')
 
     def prompt_integer(self, text, min, max):
-        print(text)
-        self.get_integer(min, max)
+        root = tk.Tk() #edits
+        root.withdraw()
+        self.index_input_int = simpledialog.askinteger("Input", text, minvalue=min, maxvalue=max)
+        # No need to set self.index_input_is_valid since askinteger ensures a valid input
+        root.destroy()
 
     def get_theme(self) : #TODO user-safety me, sof-code me
         holderstr = "Choose your Formosa theme:\n"
@@ -52,5 +58,8 @@ class UserInterface:
         self.user_chosen_input = sys.stdin.readline().strip() if self.index_input_int == 0 else theme_list[self.index_input_int]
 
     def get_sa0(self) :
-        secret_input = getpass.getpass(prompt="Enter Time-Lock Puzzle password:").split("\n", 1)[0]
+        root = tk.Tk()
+        root.withdraw()
+        secret_input = simpledialog.askstring("Input", "Enter Time-Lock Puzzle password:", show='*')
+        root.destroy()
         self.user_chosen_input = self.mnemo.expand_password(secret_input)

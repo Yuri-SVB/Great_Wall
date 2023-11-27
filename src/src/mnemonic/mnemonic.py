@@ -790,13 +790,29 @@ class Mnemonic(object):
             Return the built mnemonic in Formosa standard
         """
         least_multiple = 4
+
+        if not isinstance(data, (bytes, str)):
+            raise TypeError("Input data must be bytes or str.")
+
+        if isinstance(data, str):
+            data = data.encode('utf-8')
+
+            padding_length = (least_multiple - (len(data) % least_multiple)) % least_multiple
+            padding = b'\0' * padding_length
+            data = data + padding
+
+
         if len(data) % least_multiple != 0:
+
+
             error_message = "Number of bytes should be multiple of %s, but it is %s."
             raise ValueError(error_message % (least_multiple, len(data)))
 
-        hash_digest = hashlib.sha256(data).hexdigest()
+
+        hash_object = hashlib.sha256(data)
+        hash_digest = hash_object.digest()
         entropy_bits = bin(int.from_bytes(data, byteorder="big"))[2:].zfill(len(data) * 8)
-        checksum_bits = bin(int(hash_digest, 16))[2:].zfill(256)[: len(data) * 8 // 32]
+        checksum_bits = bin(int.from_bytes(hash_digest, byteorder="big"))[2:].zfill(256)[: len(data) * 8 // 32]
         data_bits = entropy_bits + checksum_bits
 
         sentences = self.words_dictionary.get_sentences_from_bits(data_bits)
