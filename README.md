@@ -1,5 +1,5 @@
 # Great_Wall
-Protocol and application for providing Kerckhoffian, 0-trust, deviceless coercion-resistance in self-custody.
+Protocol and application for providing Kerckhoffian, 0-trust, deviceless coercion-resistance in self-custody. To understand the protocol, refer to the [executive summary.](./executive_summary.md)
 References: [linktr.ee/greatwallt3](https://linktr.ee/greatwallt3)
 
 ## Reproducing Demo 1 Experiment:
