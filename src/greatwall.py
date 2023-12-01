@@ -8,7 +8,9 @@ from user_interface import UserInterface
 class GreatWall:
     def __init__(self):
         # user interface
-        self.user_interface = UserInterface()
+        # self.user_interface = UserInterface()
+
+        self.is_finished = False
 
         # Formosa
         self.mnemo: Optional[Mnemonic] = None
@@ -55,18 +57,18 @@ class GreatWall:
         self.tree_arity = tree_arity
 
     def set_sa0(self, mnemonic: str):
-        # diagram values
         sa0 = mnemonic.split("\n", 1)[0]
         self.sa0 = bytes(self.mnemo.to_entropy(sa0))
+        self.init_diagram_values()
 
     def init_diagram_values(self):
+        # Diagram values
         self.sa1 = self.sa0         # dummy initialization
         self.sa2 = self.sa0         # dummy initialization
         self.sa3 = self.sa0         # dummy initialization
         self.states = [bytes.fromhex("00")]*self.tree_depth  # dummy initialization
 
     def execute_greatwall(self):
-        # state
         self.state = self.sa0
         self.shuffled_bytes = self.sa0  # dummy initialization
         self.current_level = 0
@@ -127,7 +129,7 @@ class GreatWall:
         self.shuffle_bytes()
         shuffled_sentences = [self.mnemo.to_mnemonic(bytes_sentence) for bytes_sentence in self.shuffled_bytes]
         listr = "Choose 1, ..., %d for level %d".format(self.tree_arity, self.current_level)
-        listr += "\n" if self.current_level == 0 else ", choose 0 to go back\n"
+        listr += "%s\n".format("" if not self.current_level else ", choose 0 to go back")
         for i in range(len(shuffled_sentences)):
             listr += str(i + 1) + ") " + shuffled_sentences[i] + "\n"
         return listr
@@ -137,9 +139,23 @@ class GreatWall:
         return self.state
 
     def user_dependent_derivation(self):
-        self.current_level = 0
-        finish = False
-        while not finish:
+        # Ask user to choose between a set of sentences generated from the shuffled level_hash bytes
+        listr = self.get_li_str_query()
+        self.user_interface.prompt_integer(listr, 0 if self.current_level != 0 else 1, self.tree_arity)
+        if self.user_interface.index_input_int != 0:
+            self.user_interface.user_chosen_input = self.shuffled_bytes[self.user_interface.index_input_int - 1]
+            self.states[self.current_level] = self.state
+            self.state += self.user_interface.user_chosen_input
+            self.update_with_quick_hash()
+            self.current_level += 1
+
+    def return_level(self):
+        self.current_level -= 1
+        self.state = self.states[self.current_level]
+
+
+    def _user_dependent_derivation(self):
+        while not self.is_finished:
             # Ask user to choose between a set of sentences generated from the shuffled level_hash bytes
             listr = self.get_li_str_query()
             self.user_interface.prompt_integer(listr, 0 if self.current_level != 0 else 1, self.tree_arity)
@@ -156,7 +172,7 @@ class GreatWall:
                 self.finish_output()
                 self.user_interface.prompt_integer("Enter 1 to terminate derivation and 0 to go back:", 0, 1)
                 if self.user_interface.index_input_int == 1:
-                    finish = True
+                    self.is_finished = True
                 else:
                     self.current_level -= 1
                     self.state = self.states[self.current_level]
