@@ -1,11 +1,13 @@
 from PyQt5.QtCore import QStateMachine, QState
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QWidget, QTabWidget, QLabel, QPushButton, QComboBox,
                              QSpinBox, QLineEdit, QTextEdit, QHBoxLayout, QVBoxLayout, QGridLayout, QCheckBox)
+from greatwall import GreatWall
 
 
 class GreatWallQt(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.greatwall = None
 
         # General Widgets
         self.back_button = QPushButton(self)
@@ -191,6 +193,15 @@ class GreatWallQt(QMainWindow):
         [state_widget.hide() for state_widget in self.input_state_widgets]
         [state_widget.hide() for state_widget in self.confirmation_widgets]
         self.back_button.setText("Back")
+
+        self.greatwall = GreatWall()
+        self.greatwall.set_themed_mnemo(self.theme_combobox.currentText())
+        self.greatwall.set_tlp(self.tlp_spinbox.value())
+        self.greatwall.set_depth(self.depth_spinbox.value())
+        self.greatwall.set_arity(self.arity_spinbox.value())
+        self.greatwall.set_sa0(self.password_text.toPlainText())
+
+        self.greatwall.execute_greatwall()
 
     def close_application(self):
         """ Close the parent which exit the application. Bye, come again!"""
