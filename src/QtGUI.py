@@ -144,22 +144,22 @@ class GreatWallQt(QMainWindow):
         confirm_state = QState()
         confirm_state.setObjectName('State 2')
 
-        user_dependent_derivation_state = QState()
-        user_dependent_derivation_state.setObjectName('State 3')
+        dependent_derivation_state = QState()
+        dependent_derivation_state.setObjectName('State 3')
 
         # Define transitions
         user_input_state.addTransition(self.next_button.clicked, confirm_state)
         user_input_state.addTransition(self.back_button.clicked, quit_state)
-        confirm_state.addTransition(self.next_button.clicked, user_dependent_derivation_state)
+        confirm_state.addTransition(self.next_button.clicked, dependent_derivation_state)
         confirm_state.addTransition(self.back_button.clicked, user_input_state)
-        # user_dependent_derivation_state.addTransition(self.next_button.clicked, user_dependent_derivation_state)
-        user_dependent_derivation_state.addTransition(self.back_button.clicked, user_input_state)
+        # dependent_derivation_state.addTransition(self.next_button.clicked, dependent_derivation_state)
+        dependent_derivation_state.addTransition(self.back_button.clicked, user_input_state)
 
         # Add states to the state machine
         self.state_machine.addState(quit_state)
         self.state_machine.addState(user_input_state)
         self.state_machine.addState(confirm_state)
-        self.state_machine.addState(user_dependent_derivation_state)
+        self.state_machine.addState(dependent_derivation_state)
 
         # Set initial state
         self.state_machine.setInitialState(user_input_state)
@@ -171,7 +171,7 @@ class GreatWallQt(QMainWindow):
         quit_state.entered.connect(self.close_application)
         user_input_state.entered.connect(self.state1_entered)
         confirm_state.entered.connect(self.state2_entered)
-        user_dependent_derivation_state.entered.connect(self.state3_entered)
+        dependent_derivation_state.entered.connect(self.state3_entered)
 
     def state1_entered(self):
         print('State 1 Entered')
