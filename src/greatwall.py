@@ -58,7 +58,8 @@ class GreatWall:
 
     def set_sa0(self, mnemonic: str):
         sa0 = mnemonic.split("\n", 1)[0]
-        self.sa0 = bytes(self.mnemo.to_entropy(sa0))
+        self.sa0 = bytes(self.mnemo.to_entropy(self.mnemo.expand_password(sa0)))
+        # self.sa0 = bytes(self.mnemo.to_entropy(sa0))
         self.init_diagram_values()
 
     def init_diagram_values(self):
@@ -75,7 +76,7 @@ class GreatWall:
 
         # Actual work
         self.time_intensive_derivation()
-        self.user_dependent_derivation()
+        # self.user_dependent_derivation()
 
     def time_intensive_derivation(self):
         # Calculating SA1 from SA0
@@ -138,7 +139,7 @@ class GreatWall:
         print("KA = \n", self.state.hex())
         return self.state
 
-    def user_dependent_derivation(self):
+    def user_dependent_derivation(self, chosen_input: int):
         # Ask user to choose between a set of sentences generated from the shuffled level_hash bytes
         listr = self.get_li_str_query()
         self.user_interface.prompt_integer(listr, 0 if self.current_level != 0 else 1, self.tree_arity)
@@ -148,10 +149,23 @@ class GreatWall:
             self.state += self.user_interface.user_chosen_input
             self.update_with_quick_hash()
             self.current_level += 1
+        else:
+            self.return_level()
 
     def return_level(self):
         self.current_level -= 1
         self.state = self.states[self.current_level]
+
+    def finish_derivation(self):
+        if self.current_level >= self.tree_depth:
+            self.finish_output()
+            self.user_interface.prompt_integer("Enter 1 to terminate derivation and 0 to go back:", 0, 1)
+            if self.user_interface.index_input_int == 1:
+                self.is_finished = True
+            else:
+                self.current_level -= 1
+                self.state = self.states[self.current_level]
+
 
 
     def _user_dependent_derivation(self):

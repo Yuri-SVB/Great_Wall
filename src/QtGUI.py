@@ -2,6 +2,7 @@ from PyQt5.QtCore import QStateMachine, QState
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QWidget, QTabWidget, QLabel, QPushButton, QComboBox,
                              QSpinBox, QLineEdit, QTextEdit, QHBoxLayout, QVBoxLayout, QGridLayout, QCheckBox)
 from greatwall import GreatWall
+from src.mnemonic.mnemonic import Mnemonic
 
 
 class GreatWallQt(QMainWindow):
@@ -34,6 +35,7 @@ class GreatWallQt(QMainWindow):
         self.password_confirm = QLabel(self)
 
         # Dependent Derivation Widgets
+        self.confirmation_layout = QHBoxLayout()
         self.selection_buttons = []
         self.confirm_labels = []
 
@@ -80,7 +82,7 @@ class GreatWallQt(QMainWindow):
         # Confirmation Widgets
         self.configure_confirmation_widgets()
 
-        themes = ["Theme0", "Theme1", "Theme2"]
+        themes = Mnemonic.find_themes()
         self.theme_combobox.addItems(themes)
         self.theme_combobox.setCurrentText(themes[0])
 
@@ -114,6 +116,14 @@ class GreatWallQt(QMainWindow):
         self.arity_confirm.setText(arity_chosen + str(self.arity_spinbox.value()))
         self.password_confirm.setText(password_chosen + self.password_text.toPlainText())
 
+    def configure_derivation_widgets(self):
+        self.dependent_derivation_widgets = [
+            QLabel(each_label, self) for each_label in self.greatwall.get_li_str_query().split("\n")
+        ]
+        # self.dependent_derivation_widgets = [
+        #     QPushButton(number, self) for number in range(len(self.dependent_derivation_widgets))
+        # ] + self.dependent_derivation_widgets
+
     def configure_layout(self):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -124,6 +134,7 @@ class GreatWallQt(QMainWindow):
         # Adding widgets to the main layout
         [main_layout.addWidget(widget) for widget in self.input_state_widgets]
         [main_layout.addWidget(widget) for widget in self.confirmation_widgets]
+        main_layout.addLayout(self.confirmation_layout)
         main_layout.addStretch(1)  # Add stretchable space to the end
 
         # Horizontal layout for buttons
@@ -134,6 +145,9 @@ class GreatWallQt(QMainWindow):
 
         # Add the buttons layout to the main layout
         main_layout.addLayout(buttons_layout)
+
+    def configure_derivation_layout(self):
+        [self.confirmation_layout.addWidget(widget) for widget in self.dependent_derivation_widgets]
 
     def init_state_machine(self):
 
@@ -201,7 +215,15 @@ class GreatWallQt(QMainWindow):
         self.greatwall.set_arity(self.arity_spinbox.value())
         self.greatwall.set_sa0(self.password_text.toPlainText())
 
+        self.configure_derivation_widgets()
+        self.configure_derivation_layout()
+        [state_widget.show() for state_widget in self.dependent_derivation_widgets]
         self.greatwall.execute_greatwall()
+        self.loop_derivation()
+
+    def loop_derivation(self):
+        if not self.greatwall.is_finished:
+            self.configure_derivation_widgets()
 
     def close_application(self):
         """ Close the parent which exit the application. Bye, come again!"""
