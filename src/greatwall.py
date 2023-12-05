@@ -2,7 +2,7 @@ import random
 import argon2
 from typing import Optional
 from src.mnemonic.mnemonic import Mnemonic
-from user_interface import UserInterface
+# from user_interface import UserInterface
 
 
 class GreatWall:
@@ -151,44 +151,46 @@ class GreatWall:
             self.return_level()
 
     def return_level(self):
+        if not self.current_level:
+            return
         self.current_level -= 1
         self.state = self.states[self.current_level]
 
-    def finish_derivation(self):
-        if self.current_level >= self.tree_depth:
-            self.finish_output()
-            self.user_interface.prompt_integer("Enter 1 to terminate derivation and 0 to go back:", 0, 1)
-            if self.user_interface.index_input_int == 1:
-                self.is_finished = True
-            else:
-                self.current_level -= 1
-                self.state = self.states[self.current_level]
-
-
-
-    def _user_dependent_derivation(self):
-        while not self.is_finished:
-            # Ask user to choose between a set of sentences generated from the shuffled level_hash bytes
-            listr = self.get_li_str_query()
-            self.user_interface.prompt_integer(listr, 0 if self.current_level != 0 else 1, self.tree_arity)
-            if self.user_interface.index_input_int != 0:
-                self.user_interface.user_chosen_input = self.shuffled_bytes[self.user_interface.index_input_int - 1]
-                self.states[self.current_level] = self.state
-                self.state += self.user_interface.user_chosen_input
-                self.update_with_quick_hash()
-                self.current_level += 1
-            else:
-                self.current_level -= 1
-                self.state = self.states[self.current_level]
-            if self.current_level >= self.tree_depth:
-                self.finish_output()
-                self.user_interface.prompt_integer("Enter 1 to terminate derivation and 0 to go back:", 0, 1)
-                if self.user_interface.index_input_int == 1:
-                    self.is_finished = True
-                else:
-                    self.current_level -= 1
-                    self.state = self.states[self.current_level]
-        # self.finish_output()
+    # def finish_derivation(self):
+    #     if self.current_level >= self.tree_depth:
+    #         self.finish_output()
+    #         self.user_interface.prompt_integer("Enter 1 to terminate derivation and 0 to go back:", 0, 1)
+    #         if self.user_interface.index_input_int == 1:
+    #             self.is_finished = True
+    #         else:
+    #             self.current_level -= 1
+    #             self.state = self.states[self.current_level]
+    #
+    #
+    #
+    # def _user_dependent_derivation(self):
+    #     while not self.is_finished:
+    #         # Ask user to choose between a set of sentences generated from the shuffled level_hash bytes
+    #         listr = self.get_li_str_query()
+    #         self.user_interface.prompt_integer(listr, 0 if self.current_level != 0 else 1, self.tree_arity)
+    #         if self.user_interface.index_input_int != 0:
+    #             self.user_interface.user_chosen_input = self.shuffled_bytes[self.user_interface.index_input_int - 1]
+    #             self.states[self.current_level] = self.state
+    #             self.state += self.user_interface.user_chosen_input
+    #             self.update_with_quick_hash()
+    #             self.current_level += 1
+    #         else:
+    #             self.current_level -= 1
+    #             self.state = self.states[self.current_level]
+    #         if self.current_level >= self.tree_depth:
+    #             self.finish_output()
+    #             self.user_interface.prompt_integer("Enter 1 to terminate derivation and 0 to go back:", 0, 1)
+    #             if self.user_interface.index_input_int == 1:
+    #                 self.is_finished = True
+    #             else:
+    #                 self.current_level -= 1
+    #                 self.state = self.states[self.current_level]
+    #     # self.finish_output()
 
 
 def main():
