@@ -23,6 +23,7 @@ The follow steps will allow easy memorization of the path demonstrated in the [d
 ```
 
 **NOTE:** This is an **improper** [BIP39](https://github.com/bitcoin/bips/tree/master/bip-0039) seed, i.e., a seed that should **not** be used because it's trivially obtainable --- or ways to obtain it are published.
+
 9. Just like the seed, all the addresses derived from it are **improper** and, therefore should not be used. One of them, obtained upon loading wallet with the seed in previous item, will be ```bc1q3qjatkwlrxvkah0uphr2vj3lqqd73l22n7djl9```.
 
 10. In your favorite blockchain explorer, you can confirm that its first two transactions were, respectively, receiving 198964 Sats, and then having them removed back (before publication). One such example is [here](https://blockstream.info/address/bc1q3qjatkwlrxvkah0uphr2vj3lqqd73l22n7djl9).
