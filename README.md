@@ -19,13 +19,12 @@ The follow steps will allow easy memorization of the path demonstrated in the [d
 8. By confirming with input 1 to the correct leave, you should get the following output:
 
 ```console
-   53ffb290aa668cd5050e94aeecbb7046ce349d8ff775e409fcba45f6164a22d00e8cfb91e6836da62e7f7362cca30539b7f57f55e5c4a1c
-   df27a86997b99b2c6ee7760838ac0454e3e2f87714d303550b49063ff89934ecdb48e6c328f1c4561a9b7374232cdd8a71077653ca8091f
-   c2b43b89f615ddac37aedfacd28bb605ba
+53ffb290aa668cd5050e94aeecbb7046ce349d8ff775e409fcba45f6164a22d00e8cfb91e6836da62e7f7362cca30539b7f57f55e5c4a1cdf27a86997b99b2c6ee7760838ac0454e3e2f87714d303550b49063ff89934ecdb48e6c328f1c4561a9b7374232cdd8a71077653ca8091fc2b43b89f615ddac37aedfacd28bb605ba
 ```
 
 **NOTE:** This is an **improper** [BIP39](https://github.com/bitcoin/bips/tree/master/bip-0039) seed, i.e., a seed that should **not** be used because it's trivially obtainable --- or ways to obtain it are published.
 9. Just like the seed, all the addresses derived from it are **improper** and, therefore should not be used. One of them, obtained upon loading wallet with the seed in previous item, will be ```bc1q3qjatkwlrxvkah0uphr2vj3lqqd73l22n7djl9```.
+
 10. In your favorite blockchain explorer, you can confirm that its first two transactions were, respectively, receiving 198964 Sats, and then having them removed back (before publication). One such example is [here](https://blockstream.info/address/bc1q3qjatkwlrxvkah0uphr2vj3lqqd73l22n7djl9).
 Obs.: In cases like this, it's advisable to utilize a coinjoin service to preserve privacy.
 
