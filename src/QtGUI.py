@@ -40,12 +40,18 @@ class GreatWallQt(QMainWindow):
         self.selection_buttons = []
         self.confirm_labels = []
 
+        # Result Widgets
+        self.result_confirm_layout = QVBoxLayout()
+        self.confirm_result_label = QLabel(self)
+        self.result_hash = QLabel(self)
+
         self.input_state_widgets = [self.theme_label, self.theme_combobox, self.tlp_label, self.tlp_spinbox,
                                     self.depth_label, self.depth_spinbox, self.arity_label, self.arity_spinbox,
                                     self.password_label, self.password_text]
         self.confirmation_widgets = [self.confirm_label, self.theme_confirm, self.tlp_confirm, self.depth_confirm,
                                      self.arity_confirm, self.password_confirm]
         self.dependent_derivation_widgets = [self.derivation_spinbox]
+        self.final_result_widgets = [self.confirm_result_label, self.result_hash]
 
         # Launch UI
         self.state_machine = QStateMachine()
@@ -56,6 +62,7 @@ class GreatWallQt(QMainWindow):
         self.setGeometry(100, 100, 100, 100)
 
         self.password_text.setGeometry(0, 0, 100, 50)
+        self.password_text.setText("viboniboasmofiasbrchsprorirerugugucavehistmiinciwibowifltuor\nviscount borrow nickel boots astronomer monastery\nfisherman ask_for bronze chains spy roof\nrider reach rusty gun guard cave\nventriloquist hide stimulating milk inventor circus\nwizard borrow wild flask tutor oracle")
 
         self.configure_ui_widgets()
         self.configure_layout()
@@ -68,6 +75,7 @@ class GreatWallQt(QMainWindow):
         choose_depth = "Choose tree depth from 1 to 256"
         choose_arity = "Choose tree arity from 2 to 256"
         password = "Enter Time-Lock Puzzle password:"
+        result_confirm = "Do you confirm this result?"
 
         # General Widgets
         self.back_button.setText("Back")
@@ -83,9 +91,13 @@ class GreatWallQt(QMainWindow):
         # Confirmation Widgets
         self.configure_confirmation_widgets()
 
+        # Result Widget
+        self.confirm_result_label.setText(result_confirm)
+
         themes = Mnemonic.find_themes()
         self.theme_combobox.addItems(themes)
         self.theme_combobox.setCurrentText(themes[0])
+        self.theme_combobox.setCurrentText("medieval_fantasy")  # TODO remove hardcode
 
         self.config_spinbox(self.tlp_spinbox, 1, 24*7*4*3, 1, 1)
         self.config_spinbox(self.depth_spinbox, 1, 256, 1, 1)
@@ -120,6 +132,7 @@ class GreatWallQt(QMainWindow):
     def configure_derivation_widgets(self):
         # Clear widgets from list and layout
         self.dependent_derivation_widgets = []
+        self.selection_buttons = []
         [self.derivation_layout.itemAt(i).widget().setParent(None)
          for i in reversed(range(self.derivation_layout.count()))]
 
@@ -132,12 +145,15 @@ class GreatWallQt(QMainWindow):
             button.clicked.connect(lambda state, x=i: self.button_clicked(x))
             self.derivation_layout.addWidget(button)
             self.dependent_derivation_widgets.append(button)
+            self.selection_buttons.append(button)
 
     def button_clicked(self, button_number):
+        self.greatwall.derive_from_user_choice(button_number)
         if button_number == 0:
             print("Cancel button clicked")
         else:
             print(f"Button {button_number} clicked")
+        self.loop_derivation()
 
     def configure_layout(self):
         central_widget = QWidget()
@@ -150,6 +166,7 @@ class GreatWallQt(QMainWindow):
         [main_layout.addWidget(widget) for widget in self.input_state_widgets]
         [main_layout.addWidget(widget) for widget in self.confirmation_widgets]
         main_layout.addLayout(self.derivation_layout)
+        [main_layout.addWidget(widget) for widget in self.final_result_widgets]
         main_layout.addStretch(1)  # Add stretchable space to the end
 
         # Horizontal layout for buttons
@@ -161,8 +178,9 @@ class GreatWallQt(QMainWindow):
         # Add the buttons layout to the main layout
         main_layout.addLayout(general_buttons_layout)
 
-    # def configure_derivation_layout(self):
-    #     [self.derivation_layout.addWidget(widget) for widget in self.dependent_derivation_widgets]
+    def configure_selection_buttons(self, valid_options: list[str]):
+        # TODO test sizes
+        [self.selection_buttons[i].setText(valid_options[i]) for i in range(1, len(self.selection_buttons))]
 
     def init_state_machine(self):
 
@@ -188,6 +206,8 @@ class GreatWallQt(QMainWindow):
         confirm_state.addTransition(self.back_button.clicked, user_input_state)
         dependent_derivation_state.addTransition(self.next_button.clicked, result_state)
         dependent_derivation_state.addTransition(self.back_button.clicked, user_input_state)
+        result_state.addTransition(self.next_button.clicked, quit_state)
+        result_state.addTransition(self.back_button.clicked, user_input_state)
 
         # Add states to the state machine
         self.state_machine.addState(quit_state)
@@ -215,6 +235,7 @@ class GreatWallQt(QMainWindow):
         self.back_button.setEnabled(True)
         [state_widget.hide() for state_widget in self.confirmation_widgets]
         [state_widget.hide() for state_widget in self.dependent_derivation_widgets]
+        [state_widget.hide() for state_widget in self.final_result_widgets]
         [state_widget.show() for state_widget in self.input_state_widgets]
         self.back_button.setText("Exit")
 
@@ -223,6 +244,7 @@ class GreatWallQt(QMainWindow):
         self.configure_confirmation_widgets()
         [state_widget.hide() for state_widget in self.input_state_widgets]
         [state_widget.hide() for state_widget in self.dependent_derivation_widgets]
+        [state_widget.hide() for state_widget in self.final_result_widgets]
         [state_widget.show() for state_widget in self.confirmation_widgets]
         self.back_button.setText("Back")
 
@@ -230,6 +252,7 @@ class GreatWallQt(QMainWindow):
         print('State 3 Entered')
         [state_widget.hide() for state_widget in self.input_state_widgets]
         [state_widget.hide() for state_widget in self.confirmation_widgets]
+        [state_widget.hide() for state_widget in self.final_result_widgets]
         [state_widget.show() for state_widget in self.dependent_derivation_widgets]
         self.back_button.setText("Reset")
 
@@ -246,14 +269,41 @@ class GreatWallQt(QMainWindow):
         self.loop_derivation()
 
     def state4_entered(self):
-        pass
+        print('State 4 Entered')
+        [state_widget.hide() for state_widget in self.input_state_widgets]
+        [state_widget.hide() for state_widget in self.confirmation_widgets]
+        [state_widget.hide() for state_widget in self.dependent_derivation_widgets]
+        [state_widget.hide() for state_widget in self.final_result_widgets]
+
+    def split_string(self, string: str) -> str:
+        print("string", string)
+        splited_return = ""
+        quarter = len(string) // 4
+        for i in [0, 1, 2, 3]:
+            splited_return += string[i * quarter:(i + 1) * quarter] + "\n"
+        print(splited_return)
+        return splited_return[:-2]
 
     def loop_derivation(self):
-        if self.greatwall.is_finished:
+        if self.greatwall.current_level >= self.greatwall.tree_depth:
+            finish_output = self.split_string(self.greatwall.finish_output().hex())
+            self.result_hash.setText(finish_output)
+            [state_widget.hide() for state_widget in self.input_state_widgets]
+            [state_widget.hide() for state_widget in self.confirmation_widgets]
+            [state_widget.hide() for state_widget in self.dependent_derivation_widgets]
+            [state_widget.show() for state_widget in self.final_result_widgets]
             self.next_button.setEnabled(True)
-
         else:
+            user_options = self.greatwall.get_li_str_query().split("\n")
+            self.configure_selection_buttons(user_options)
             self.next_button.setEnabled(False)
+
+        # if self.greatwall.is_finished:
+        #     self.next_button.setEnabled(True)
+        # else:
+        #     user_options = self.greatwall.get_li_str_query().split("\n")
+        #     self.configure_selection_buttons(user_options)
+        #     self.next_button.setEnabled(False)
 
     def close_application(self):
         """ Close the parent which exit the application. Bye, come again!"""
