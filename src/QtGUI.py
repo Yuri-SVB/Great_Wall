@@ -35,7 +35,8 @@ class GreatWallQt(QMainWindow):
         self.password_confirm = QLabel(self)
 
         # Dependent Derivation Widgets
-        self.confirmation_layout = QHBoxLayout()
+        self.derivation_spinbox = QSpinBox(self)
+        self.derivation_layout = QVBoxLayout()
         self.selection_buttons = []
         self.confirm_labels = []
 
@@ -44,7 +45,7 @@ class GreatWallQt(QMainWindow):
                                     self.password_label, self.password_text]
         self.confirmation_widgets = [self.confirm_label, self.theme_confirm, self.tlp_confirm, self.depth_confirm,
                                      self.arity_confirm, self.password_confirm]
-        self.dependent_derivation_widgets = self.selection_buttons + self.confirm_labels
+        self.dependent_derivation_widgets = [self.derivation_spinbox]
 
         # Launch UI
         self.state_machine = QStateMachine()
@@ -117,12 +118,26 @@ class GreatWallQt(QMainWindow):
         self.password_confirm.setText(password_chosen + self.password_text.toPlainText())
 
     def configure_derivation_widgets(self):
-        self.dependent_derivation_widgets = [
-            QLabel(each_label, self) for each_label in self.greatwall.get_li_str_query().split("\n")
-        ]
-        # self.dependent_derivation_widgets = [
-        #     QPushButton(number, self) for number in range(len(self.dependent_derivation_widgets))
-        # ] + self.dependent_derivation_widgets
+        # Clear widgets from list and layout
+        self.dependent_derivation_widgets = []
+        [self.derivation_layout.itemAt(i).widget().setParent(None)
+         for i in reversed(range(self.derivation_layout.count()))]
+
+        self.config_spinbox(self.derivation_spinbox, 0, self.greatwall.tree_arity, 1, 0)
+        self.derivation_layout.addWidget(self.derivation_spinbox)
+        self.dependent_derivation_widgets.append(self.derivation_spinbox)
+        for i in range(self.greatwall.tree_arity + 1):
+            button_text = f"Button {i}" if i > 0 else "Cancel"
+            button = QPushButton(button_text, self)
+            button.clicked.connect(lambda state, x=i: self.button_clicked(x))
+            self.derivation_layout.addWidget(button)
+            self.dependent_derivation_widgets.append(button)
+
+    def button_clicked(self, button_number):
+        if button_number == 0:
+            print("Cancel button clicked")
+        else:
+            print(f"Button {button_number} clicked")
 
     def configure_layout(self):
         central_widget = QWidget()
@@ -134,20 +149,20 @@ class GreatWallQt(QMainWindow):
         # Adding widgets to the main layout
         [main_layout.addWidget(widget) for widget in self.input_state_widgets]
         [main_layout.addWidget(widget) for widget in self.confirmation_widgets]
-        main_layout.addLayout(self.confirmation_layout)
+        main_layout.addLayout(self.derivation_layout)
         main_layout.addStretch(1)  # Add stretchable space to the end
 
         # Horizontal layout for buttons
-        buttons_layout = QHBoxLayout()
-        buttons_layout.addWidget(self.back_button)
-        buttons_layout.addStretch(1)  # Add stretchable space between buttons
-        buttons_layout.addWidget(self.next_button)
+        general_buttons_layout = QHBoxLayout()
+        general_buttons_layout.addWidget(self.back_button)
+        general_buttons_layout.addStretch(1)  # Add stretchable space between buttons
+        general_buttons_layout.addWidget(self.next_button)
 
         # Add the buttons layout to the main layout
-        main_layout.addLayout(buttons_layout)
+        main_layout.addLayout(general_buttons_layout)
 
-    def configure_derivation_layout(self):
-        [self.confirmation_layout.addWidget(widget) for widget in self.dependent_derivation_widgets]
+    # def configure_derivation_layout(self):
+    #     [self.derivation_layout.addWidget(widget) for widget in self.dependent_derivation_widgets]
 
     def init_state_machine(self):
 
@@ -155,20 +170,23 @@ class GreatWallQt(QMainWindow):
         quit_state.setObjectName("State 0")
 
         user_input_state = QState()
-        user_input_state.setObjectName('State 1')
+        user_input_state.setObjectName("State 1")
 
         confirm_state = QState()
-        confirm_state.setObjectName('State 2')
+        confirm_state.setObjectName("State 2")
 
         dependent_derivation_state = QState()
-        dependent_derivation_state.setObjectName('State 3')
+        dependent_derivation_state.setObjectName("State 3")
+
+        result_state = QState()
+        result_state.setObjectName("State 4")
 
         # Define transitions
         user_input_state.addTransition(self.next_button.clicked, confirm_state)
         user_input_state.addTransition(self.back_button.clicked, quit_state)
         confirm_state.addTransition(self.next_button.clicked, dependent_derivation_state)
         confirm_state.addTransition(self.back_button.clicked, user_input_state)
-        # dependent_derivation_state.addTransition(self.next_button.clicked, dependent_derivation_state)
+        dependent_derivation_state.addTransition(self.next_button.clicked, result_state)
         dependent_derivation_state.addTransition(self.back_button.clicked, user_input_state)
 
         # Add states to the state machine
@@ -176,6 +194,7 @@ class GreatWallQt(QMainWindow):
         self.state_machine.addState(user_input_state)
         self.state_machine.addState(confirm_state)
         self.state_machine.addState(dependent_derivation_state)
+        self.state_machine.addState(result_state)
 
         # Set initial state
         self.state_machine.setInitialState(user_input_state)
@@ -188,10 +207,14 @@ class GreatWallQt(QMainWindow):
         user_input_state.entered.connect(self.state1_entered)
         confirm_state.entered.connect(self.state2_entered)
         dependent_derivation_state.entered.connect(self.state3_entered)
+        result_state.entered.connect(self.state4_entered)
 
     def state1_entered(self):
         print('State 1 Entered')
+        self.next_button.setEnabled(True)
+        self.back_button.setEnabled(True)
         [state_widget.hide() for state_widget in self.confirmation_widgets]
+        [state_widget.hide() for state_widget in self.dependent_derivation_widgets]
         [state_widget.show() for state_widget in self.input_state_widgets]
         self.back_button.setText("Exit")
 
@@ -199,6 +222,7 @@ class GreatWallQt(QMainWindow):
         print('State 2 Entered')
         self.configure_confirmation_widgets()
         [state_widget.hide() for state_widget in self.input_state_widgets]
+        [state_widget.hide() for state_widget in self.dependent_derivation_widgets]
         [state_widget.show() for state_widget in self.confirmation_widgets]
         self.back_button.setText("Back")
 
@@ -206,7 +230,8 @@ class GreatWallQt(QMainWindow):
         print('State 3 Entered')
         [state_widget.hide() for state_widget in self.input_state_widgets]
         [state_widget.hide() for state_widget in self.confirmation_widgets]
-        self.back_button.setText("Back")
+        [state_widget.show() for state_widget in self.dependent_derivation_widgets]
+        self.back_button.setText("Reset")
 
         self.greatwall = GreatWall()
         self.greatwall.set_themed_mnemo(self.theme_combobox.currentText())
@@ -216,14 +241,19 @@ class GreatWallQt(QMainWindow):
         self.greatwall.set_sa0(self.password_text.toPlainText())
 
         self.configure_derivation_widgets()
-        self.configure_derivation_layout()
         [state_widget.show() for state_widget in self.dependent_derivation_widgets]
         self.greatwall.execute_greatwall()
         self.loop_derivation()
 
+    def state4_entered(self):
+        pass
+
     def loop_derivation(self):
-        if not self.greatwall.is_finished:
-            self.configure_derivation_widgets()
+        if self.greatwall.is_finished:
+            self.next_button.setEnabled(True)
+
+        else:
+            self.next_button.setEnabled(False)
 
     def close_application(self):
         """ Close the parent which exit the application. Bye, come again!"""
