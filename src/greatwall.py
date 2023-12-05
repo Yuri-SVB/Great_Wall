@@ -9,6 +9,7 @@ class GreatWall:
     def __init__(self):
         # user interface
         # self.user_interface = UserInterface()
+        self.user_chosen_input: int = 0
 
         self.is_finished = False
 
@@ -27,6 +28,7 @@ class GreatWall:
         self.tree_arity: int = 0
 
         # diagram values
+        # self.sa0 = bytes(bytearray(32 // 8))
         self.sa0: bytes = bytes(00)
         self.sa1: bytes = self.sa0         # dummy initialization
         self.sa2: bytes = self.sa0         # dummy initialization
@@ -40,7 +42,7 @@ class GreatWall:
 
     def set_themed_mnemo(self, theme: str):
         self.mnemo = Mnemonic(theme)
-        self.nbytesform = 4 if self.mnemo.is_bip39_theme else 2
+        self.nbytesform = 4 #if self.mnemo.is_bip39_theme else 2 #number of bytes in formosa sentence TODO soft code me
 
     def set_tlp(self, tlp: int):
         # topology of TLP derivation,
@@ -59,7 +61,6 @@ class GreatWall:
     def set_sa0(self, mnemonic: str):
         sa0 = mnemonic.split("\n", 1)[0]
         self.sa0 = bytes(self.mnemo.to_entropy(self.mnemo.expand_password(sa0)))
-        # self.sa0 = bytes(self.mnemo.to_entropy(sa0))
         self.init_diagram_values()
 
     def init_diagram_values(self):
@@ -139,16 +140,13 @@ class GreatWall:
         print("KA = \n", self.state.hex())
         return self.state
 
-    def user_dependent_derivation(self, chosen_input: int):
-        # Ask user to choose between a set of sentences generated from the shuffled level_hash bytes
-        listr = self.get_li_str_query()
-        self.user_interface.prompt_integer(listr, 0 if self.current_level != 0 else 1, self.tree_arity)
-        if self.user_interface.index_input_int != 0:
-            self.user_interface.user_chosen_input = self.shuffled_bytes[self.user_interface.index_input_int - 1]
+    def derive_from_user_choice(self, chosen_input: int):
+        if chosen_input:
             self.states[self.current_level] = self.state
-            self.state += self.user_interface.user_chosen_input
+            self.state += bytes(self.shuffled_bytes[chosen_input - 1])
             self.update_with_quick_hash()
             self.current_level += 1
+            self.user_chosen_input = chosen_input
         else:
             self.return_level()
 
