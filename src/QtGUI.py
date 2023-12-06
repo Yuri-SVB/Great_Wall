@@ -157,6 +157,8 @@ class GreatWallQt(QMainWindow):
         self.password_confirm.setText(password_chosen + self.password_text.toPlainText())
 
     def configure_derivation_widgets(self):
+        if not self.greatwall:
+            return
 
         cancel_text = "Cancel"
 
@@ -178,6 +180,8 @@ class GreatWallQt(QMainWindow):
             self.selection_buttons.append(button)
 
     def button_clicked(self, button_number):
+        if not self.greatwall:
+            return
         self.greatwall.derive_from_user_choice(button_number)
         self.loop_derivation()
 
@@ -215,8 +219,8 @@ class GreatWallQt(QMainWindow):
         main_layout.addLayout(general_buttons_layout)
 
     def configure_selection_buttons(self, valid_options: list[str]):
-        # TODO test sizes
-        [self.selection_buttons[i].setText(valid_options[i]) for i in range(1, len(self.selection_buttons))]
+        if len(valid_options) == len(self.selection_buttons)+1:
+            [self.selection_buttons[i].setText(valid_options[i]) for i in range(1, len(self.selection_buttons))]
 
     def init_state_machine(self):
 
@@ -335,6 +339,8 @@ class GreatWallQt(QMainWindow):
         return ret[:-2]
 
     def loop_derivation(self):
+        if not self.greatwall:
+            return
         if self.greatwall.current_level >= self.greatwall.tree_depth:
             self.finish_output = self.greatwall.finish_output()
             formatted_mnemonic = self.greatwall.mnemo.format_mnemonic(
