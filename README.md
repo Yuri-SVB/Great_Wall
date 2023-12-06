@@ -1,6 +1,4 @@
-[![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/) [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://lbesson.mit-license.org/) ![Maintainer](https://img.shields.io/badge/maintainer-Yuri_S_Villas_Boas-blue)
-
-# Great Wall
+# Great Wall [![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/) [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://lbesson.mit-license.org/) ![Maintainer](https://img.shields.io/badge/maintainer-Yuri_S_Villas_Boas-red)
 
 Protocol and application for providing Kerckhoffian, 0-trust, deviceless coercion-resistance in self-custody. To understand the protocol, refer to the [executive summary.](./executive_summary.md)
 References: [GreatWallT3](https://linktr.ee/greatwallt3)
@@ -25,9 +23,8 @@ The follow steps will allow easy memorization of the path demonstrated in the [d
 **NOTE:** This is an **improper** [BIP39](https://github.com/bitcoin/bips/tree/master/bip-0039) seed, i.e., a seed that should **not** be used because it's trivially obtainable --- or ways to obtain it are published.
 
 9. Just like the seed, all the addresses derived from it are **improper** and, therefore should not be used. One of them, obtained upon loading wallet with the seed in previous item, will be ```bc1q3qjatkwlrxvkah0uphr2vj3lqqd73l22n7djl9```.
-
 10. In your favorite blockchain explorer, you can confirm that its first two transactions were, respectively, receiving 198964 Sats, and then having them removed back (before publication). One such example is [here](https://blockstream.info/address/bc1q3qjatkwlrxvkah0uphr2vj3lqqd73l22n7djl9).
-Obs.: In cases like this, it's advisable to utilize a coinjoin service to preserve privacy.
+    Obs.: In cases like this, it's advisable to utilize a coinjoin service to preserve privacy.
 
 ## Using Great Wall in Beta:
 
