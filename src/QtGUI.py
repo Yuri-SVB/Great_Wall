@@ -43,13 +43,16 @@ class GreatWallQt(QMainWindow):
         self.confirm_labels = []
 
         # Result Widgets
-        self.result_confirm_layout = QVBoxLayout()
+        # self.result_confirm_layout = QVBoxLayout()
         self.confirm_result_label = QLabel(self)
         self.result_hash = QLabel(self)
 
         # Finish Widgets
         self.finish_output_label = QLabel(self)
         self.finish_text = QTextEdit(self)
+
+        # List of general Widgets
+        self.general_widgets = [self.next_button, self.back_button]
 
         # Lists of widgets per step
         self.input_state_widgets = [self.theme_label, self.theme_combobox, self.tlp_label, self.tlp_spinbox,
@@ -58,7 +61,7 @@ class GreatWallQt(QMainWindow):
         self.confirmation_widgets = [self.confirm_label, self.theme_confirm, self.tlp_confirm, self.depth_confirm,
                                      self.arity_confirm, self.password_confirm]
         self.dependent_derivation_widgets = [self.derivation_spinbox]
-        self.final_result_widgets = [self.confirm_result_label, self.result_hash]
+        self.confirm_result_widgets = [self.confirm_result_label, self.result_hash]
         self.finish_widgets = [self.finish_output_label, self.finish_text]
 
         # List of widgets lists
@@ -74,7 +77,7 @@ class GreatWallQt(QMainWindow):
 
         self.password_text.setGeometry(0, 0, 100, 50)
         # Hardcode to fast tests
-        # self.password_text.setText("viboniboasmofiasbrchsprorirerugugucavehistmiinciwibowifltuor\nviscount borrow nickel boots astronomer monastery\nfisherman ask_for bronze chains spy roof\nrider reach rusty gun guard cave\nventriloquist hide stimulating milk inventor circus\nwizard borrow wild flask tutor oracle")
+        self.password_text.setText("viboniboasmofiasbrchsprorirerugugucavehistmiinciwibowifltuor")
 
         self.configure_ui_widgets()
         self.configure_layout()
@@ -82,8 +85,9 @@ class GreatWallQt(QMainWindow):
 
     def configure_ui_widgets(self):
 
+        # Strings variables to easily translate in the future versions
         next_text = "Next"
-        back_text = "Next"
+        back_text = "Back"
 
         choose_theme = "Choose Theme"
         choose_tlp = "Choose TLP parameter from 1 to 2016"
@@ -132,6 +136,7 @@ class GreatWallQt(QMainWindow):
                        step_value: int = 1,
                        default_value: int = 0,
                        set_wrapping: bool = True):
+        """Easy configure any spinbox with one line call"""
         spinbox.setRange(min_value, max_value)
         spinbox.setSingleStep(step_value)
         spinbox.setValue(default_value)
@@ -177,6 +182,9 @@ class GreatWallQt(QMainWindow):
         self.loop_derivation()
 
     def keyPressEvent(self, event):
+        """When enter key is pressed the derivation_spinbox will act as one selection button pressed"""
+        if not self.greatwall:
+            return
         if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
             value = self.derivation_spinbox.value()
             if value <= len(self.selection_buttons) and self.greatwall.current_level < self.greatwall.tree_depth:
@@ -193,7 +201,7 @@ class GreatWallQt(QMainWindow):
         [main_layout.addWidget(widget) for widget in self.input_state_widgets]
         [main_layout.addWidget(widget) for widget in self.confirmation_widgets]
         main_layout.addLayout(self.derivation_layout)
-        [main_layout.addWidget(widget) for widget in self.final_result_widgets]
+        [main_layout.addWidget(widget) for widget in self.confirm_result_widgets]
         [main_layout.addWidget(widget) for widget in self.finish_widgets]
         main_layout.addStretch(1)  # Add stretchable space to the end
 
@@ -258,12 +266,13 @@ class GreatWallQt(QMainWindow):
         result_state.entered.connect(self.state4_entered)
 
     def show_layout_hide_others(self, widgets: list):
+        """Hide all widgets and show the given widgets list, also show the general widgets"""
         self.state_widgets = [self.input_state_widgets, self.confirmation_widgets,
-                              self.dependent_derivation_widgets, self.final_result_widgets,
+                              self.dependent_derivation_widgets, self.confirm_result_widgets,
                               self.finish_widgets]
         for widgets_list in self.state_widgets:
             [widget.hide() for widget in widgets_list]
-
+        [widget.show() for widget in self.general_widgets]
         [state_widget.show() for state_widget in widgets]
 
     def state1_entered(self):
@@ -271,17 +280,26 @@ class GreatWallQt(QMainWindow):
         self.next_button.setEnabled(True)
         self.back_button.setEnabled(True)
         self.show_layout_hide_others(self.input_state_widgets)
-        self.back_button.setText("Exit")
+        next_text = "Next"
+        exit_text = "Exit"
+        self.next_button.setText(next_text)
+        self.back_button.setText(exit_text)
 
     def state2_entered(self):
         print('State 2 Entered')
         self.configure_confirmation_widgets()
         self.show_layout_hide_others(self.confirmation_widgets)
-        self.back_button.setText("Back")
+        next_text = "Next"
+        back_text = "Reset"
+        self.next_button.setText(next_text)
+        self.back_button.setText(back_text)
 
     def state3_entered(self):
         print('State 3 Entered')
-        self.back_button.setText("Reset")
+        next_text = "Next"
+        reset_text = "Reset"
+        self.next_button.setText(next_text)
+        self.back_button.setText(reset_text)
 
         self.greatwall = GreatWall()
         self.greatwall.set_themed_mnemo(self.theme_combobox.currentText())
@@ -297,11 +315,19 @@ class GreatWallQt(QMainWindow):
 
     def state4_entered(self):
         print('State 4 Entered')
+        next_text = "Next"
+        reset_text = "Reset"
+
         self.show_layout_hide_others(self.finish_widgets)
         self.finish_text.setText(self.finish_output.hex())
-        self.next_button.setText("Exit")
+        self.finish_text.setReadOnly(True)
+        self.next_button.setText(next_text)
+        self.next_button.setEnabled(False)
+        self.next_button.hide()
+        self.back_button.setText(reset_text)
 
     def split_string(self, string: str) -> str:
+        """Split the given string into four lines"""
         ret = ""
         quarter = len(string) // 4
         for i in [0, 1, 2, 3]:
@@ -317,7 +343,7 @@ class GreatWallQt(QMainWindow):
             formatted_mnemonic = "\n".join(formatted_mnemonic.split("\n")[1:])
             local_finish_output = self.split_string(self.finish_output.hex()) + "\n" + formatted_mnemonic
             self.result_hash.setText(local_finish_output)
-            self.show_layout_hide_others(self.final_result_widgets)
+            self.show_layout_hide_others(self.confirm_result_widgets)
             self.dependent_derivation_widgets[1].show()
             self.next_button.setEnabled(True)
         else:
