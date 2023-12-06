@@ -333,10 +333,11 @@ class GreatWallQt(QMainWindow):
     def split_string(self, string: str) -> str:
         """Split the given string into four lines"""
         ret = ""
-        quarter = len(string) // 4
+        quarter = len(string) // 4 + len(string) % 4
         for i in [0, 1, 2, 3]:
-            ret += string[i * quarter:(i + 1) * quarter] + "\n"
-        return ret[:-2]
+            # Split string in equal parts, last part is unequal if it isn't divisible by four
+            ret += string[i * quarter: (i + 1) * quarter if i != 3 else len(string)] + "\n"
+        return ret[:-1]
 
     def loop_derivation(self):
         if not self.greatwall:
@@ -347,7 +348,8 @@ class GreatWallQt(QMainWindow):
                 self.greatwall.mnemo.to_mnemonic(self.finish_output)
             )
             formatted_mnemonic = "\n".join(formatted_mnemonic.split("\n")[1:])
-            local_finish_output = self.split_string(self.finish_output.hex()) + "\n" + formatted_mnemonic
+            # local_finish_output = self.split_string(self.finish_output.hex()) + "\n" + formatted_mnemonic
+            local_finish_output = formatted_mnemonic
             self.result_hash.setText(local_finish_output)
             self.show_layout_hide_others(self.confirm_result_widgets)
             self.dependent_derivation_widgets[1].show()
@@ -373,3 +375,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
