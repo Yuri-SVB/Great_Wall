@@ -1,9 +1,22 @@
-from PyQt5.QtCore import QStateMachine, QState
+from PyQt5.QtCore import QStateMachine, QState, QThread, pyqtSignal
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QWidget, QLabel, QPushButton,
                              QComboBox, QSpinBox, QTextEdit, QHBoxLayout, QVBoxLayout)
 from PyQt5.QtCore import Qt
 from greatwall import GreatWall
 from src.mnemonic.mnemonic import Mnemonic
+
+
+# Custom Worker class to perform the time-consuming task
+class GreatWallWorker(QThread):
+    finished = pyqtSignal()
+
+    def __init__(self, greatwall: GreatWall):
+        super().__init__()
+        self.greatwall = greatwall
+
+    def run(self):
+        self.greatwall.execute_greatwall()
+        self.finished.emit()
 
 
 class GreatWallQt(QMainWindow):
@@ -66,6 +79,9 @@ class GreatWallQt(QMainWindow):
 
         # List of widgets lists
         self.state_widgets = []
+
+        # Threaded execution objects
+        self.worker_thread = QThread
 
         # Launch UI
         self.state_machine = QStateMachine()
@@ -156,11 +172,11 @@ class GreatWallQt(QMainWindow):
         self.arity_confirm.setText(arity_chosen + str(self.arity_spinbox.value()))
         self.password_confirm.setText(password_chosen + self.password_text.toPlainText())
 
-    def configure_derivation_widgets(self):
+    def configure_choose_derivation_widgets(self):
         if not self.greatwall:
             return
 
-        cancel_text = "Cancel"
+        cancel_text = "0) Previous Step"
 
         # Clear widgets from list and layout
         self.dependent_derivation_widgets = []
@@ -172,7 +188,7 @@ class GreatWallQt(QMainWindow):
         self.derivation_layout.addWidget(self.derivation_spinbox)
         self.dependent_derivation_widgets.append(self.derivation_spinbox)
         for i in range(self.greatwall.tree_arity + 1):
-            button_text = f"Idle {i}" if i > 0 else cancel_text
+            button_text = f"{i}) Idle" if i > 0 else cancel_text
             button = QPushButton(button_text, self)
             button.clicked.connect(lambda state, x=i: self.button_clicked(x))
             self.derivation_layout.addWidget(button)
@@ -312,9 +328,15 @@ class GreatWallQt(QMainWindow):
         self.greatwall.set_arity(self.arity_spinbox.value())
         self.greatwall.set_sa0(self.password_text.toPlainText())
 
-        self.configure_derivation_widgets()
+        self.configure_choose_derivation_widgets()
         self.show_layout_hide_others(self.dependent_derivation_widgets)
-        self.greatwall.execute_greatwall()
+        # Start the execution in a separate thread
+        self.worker_thread = GreatWallWorker(self.greatwall)
+        self.worker_thread.finished.connect(self.handle_execution_finished)
+        self.worker_thread.start()
+
+    def handle_execution_finished(self):
+        # Perform actions when the execution is finished
         self.loop_derivation()
 
     def state4_entered(self):
@@ -375,4 +397,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
