@@ -9,21 +9,28 @@ from src.mnemonic.mnemonic import Mnemonic
 # Custom Worker class to perform the time-consuming task
 class GreatWallWorker(QThread):
     finished = pyqtSignal()
+    canceled = pyqtSignal()
 
     def __init__(self, greatwall: GreatWall):
         super().__init__()
         self.greatwall = greatwall
+        self._is_canceled = False
 
     def run(self):
         self.greatwall.execute_greatwall()
-        self.finished.emit()
+        if not self._is_canceled:
+            self.finished.emit()
+
+    def cancel(self):
+        self._is_canceled = True
+        self.canceled.emit()
 
 
 class GreatWallQt(QMainWindow):
     def __init__(self):
         super().__init__()
         self.finish_output: bytes = bytes(0000)
-        self.greatwall = None
+        self.greatwall = GreatWall()
 
         # General Widgets
         self.back_button = QPushButton(self)
@@ -49,6 +56,9 @@ class GreatWallQt(QMainWindow):
         self.arity_confirm = QLabel(self)
         self.password_confirm = QLabel(self)
 
+        # Waiting Derivation Widgets
+        self.wait_derive_label = QLabel(self)
+
         # Dependent Derivation Widgets
         self.derivation_spinbox = QSpinBox(self)
         self.derivation_layout = QVBoxLayout()
@@ -56,7 +66,6 @@ class GreatWallQt(QMainWindow):
         self.confirm_labels = []
 
         # Result Widgets
-        # self.result_confirm_layout = QVBoxLayout()
         self.confirm_result_label = QLabel(self)
         self.result_hash = QLabel(self)
 
@@ -73,6 +82,7 @@ class GreatWallQt(QMainWindow):
                                     self.password_label, self.password_text]
         self.confirmation_widgets = [self.confirm_label, self.theme_confirm, self.tlp_confirm, self.depth_confirm,
                                      self.arity_confirm, self.password_confirm]
+        self.wait_derivation_widgets = [self.wait_derive_label]
         self.dependent_derivation_widgets = [self.derivation_spinbox]
         self.confirm_result_widgets = [self.confirm_result_label, self.result_hash]
         self.finish_widgets = [self.finish_output_label, self.finish_text]
@@ -81,7 +91,7 @@ class GreatWallQt(QMainWindow):
         self.state_widgets = []
 
         # Threaded execution objects
-        self.worker_thread = QThread
+        self.worker_thread = GreatWallWorker(self.greatwall)
 
         # Launch UI
         self.state_machine = QStateMachine()
@@ -112,6 +122,7 @@ class GreatWallQt(QMainWindow):
         password = "Enter Time-Lock Puzzle password:"
         result_confirm = "Do you confirm this result?"
         finish_output_message = "This is the result output:"
+        wait_derive = "Wait the derivation to finish\nThis will take some time"
 
         # General Widgets
         self.back_button.setText(next_text)
@@ -123,6 +134,9 @@ class GreatWallQt(QMainWindow):
         self.depth_label.setText(choose_depth)
         self.arity_label.setText(choose_arity)
         self.password_label.setText(password)
+
+        # Wait Derive Widget
+        self.wait_derive_label.setText(wait_derive)
 
         # Confirmation Widgets
         self.configure_confirmation_widgets()
@@ -172,6 +186,10 @@ class GreatWallQt(QMainWindow):
         self.arity_confirm.setText(arity_chosen + str(self.arity_spinbox.value()))
         self.password_confirm.setText(password_chosen + self.password_text.toPlainText())
 
+    def configure_waiting_derivation_widgets(self):
+        """Configure any message or effect to be shown while derive"""
+        pass
+
     def configure_choose_derivation_widgets(self):
         if not self.greatwall:
             return
@@ -181,8 +199,12 @@ class GreatWallQt(QMainWindow):
         # Clear widgets from list and layout
         self.dependent_derivation_widgets = []
         self.selection_buttons = []
-        [self.derivation_layout.itemAt(i).widget().setParent(None)
-         for i in reversed(range(self.derivation_layout.count()))]
+        # Destroy widgets by setting the parents as None
+        for i in reversed(range(self.derivation_layout.count())):
+            self.derivation_layout.itemAt(i).widget().setParent(None)
+            self.derivation_layout.itemAt(i).widget().deleteLater()
+        # [self.derivation_layout.itemAt(i).widget().setParent(None)
+        #  for i in reversed(range(self.derivation_layout.count()))]
 
         self.config_spinbox(self.derivation_spinbox, 0, self.greatwall.tree_arity, 1, 0)
         self.derivation_layout.addWidget(self.derivation_spinbox)
@@ -220,6 +242,7 @@ class GreatWallQt(QMainWindow):
         # Adding widgets to the main layout
         [main_layout.addWidget(widget) for widget in self.input_state_widgets]
         [main_layout.addWidget(widget) for widget in self.confirmation_widgets]
+        [main_layout.addWidget(widget) for widget in self.wait_derivation_widgets]
         main_layout.addLayout(self.derivation_layout)
         [main_layout.addWidget(widget) for widget in self.confirm_result_widgets]
         [main_layout.addWidget(widget) for widget in self.finish_widgets]
@@ -288,8 +311,8 @@ class GreatWallQt(QMainWindow):
     def show_layout_hide_others(self, widgets: list):
         """Hide all widgets and show the given widgets list, also show the general widgets"""
         self.state_widgets = [self.input_state_widgets, self.confirmation_widgets,
-                              self.dependent_derivation_widgets, self.confirm_result_widgets,
-                              self.finish_widgets]
+                              self.dependent_derivation_widgets, self.wait_derivation_widgets,
+                              self.confirm_result_widgets, self.finish_widgets]
         for widgets_list in self.state_widgets:
             [widget.hide() for widget in widgets_list]
         [widget.show() for widget in self.general_widgets]
@@ -304,6 +327,7 @@ class GreatWallQt(QMainWindow):
         exit_text = "Exit"
         self.next_button.setText(next_text)
         self.back_button.setText(exit_text)
+        self.cancel_task()
 
     def state2_entered(self):
         print('State 2 Entered')
@@ -321,23 +345,34 @@ class GreatWallQt(QMainWindow):
         self.next_button.setText(next_text)
         self.back_button.setText(reset_text)
 
-        self.greatwall = GreatWall()
         self.greatwall.set_themed_mnemo(self.theme_combobox.currentText())
         self.greatwall.set_tlp(self.tlp_spinbox.value())
         self.greatwall.set_depth(self.depth_spinbox.value())
         self.greatwall.set_arity(self.arity_spinbox.value())
         self.greatwall.set_sa0(self.password_text.toPlainText())
 
+        self.configure_waiting_derivation_widgets()
         self.configure_choose_derivation_widgets()
-        self.show_layout_hide_others(self.dependent_derivation_widgets)
+        self.show_layout_hide_others(self.wait_derivation_widgets)
+        self.next_button.setEnabled(False)
+
         # Start the execution in a separate thread
         self.worker_thread = GreatWallWorker(self.greatwall)
         self.worker_thread.finished.connect(self.handle_execution_finished)
+        self.worker_thread.canceled.connect(self.handle_execution_canceled)
         self.worker_thread.start()
 
     def handle_execution_finished(self):
         # Perform actions when the execution is finished
         self.loop_derivation()
+
+    def handle_execution_canceled(self):
+        print("Task canceled")
+
+    def cancel_task(self):
+        if self.worker_thread.isRunning():
+            self.greatwall.cancel_execution()  # Set the cancellation flag in GreatWall
+            self.worker_thread.cancel()
 
     def state4_entered(self):
         print('State 4 Entered')
