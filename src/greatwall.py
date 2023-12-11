@@ -12,6 +12,7 @@ class GreatWall:
         self.user_chosen_input: int = 0
 
         self.is_finished = False
+        self.is_canceled = False
 
         # Formosa
         self.mnemo: Optional[Mnemonic] = None
@@ -40,9 +41,17 @@ class GreatWall:
         self.shuffled_bytes: bytes = self.sa0  # dummy initialization
         self.current_level: int = 0
 
-    def set_themed_mnemo(self, theme: str):
-        self.mnemo = Mnemonic(theme)
-        self.nbytesform = 4 #if self.mnemo.is_bip39_theme else 2 #number of bytes in formosa sentence TODO soft code me
+    def cancel_execution(self):
+        self.is_canceled = True
+
+    def set_themed_mnemo(self, theme: str) -> bool:
+        try:
+            self.mnemo = Mnemonic(theme)
+            self.nbytesform = 4 #if self.mnemo.is_bip39_theme else 2 #number of bytes in formosa sentence TODO soft code me
+            return True
+        except ValueError:
+            # TODO treat error
+            return False
 
     def set_tlp(self, tlp: int):
         # topology of TLP derivation,
@@ -58,10 +67,16 @@ class GreatWall:
         # topology of iterative derivation, tree arity is the number of options at each iteration, from 2 to 256
         self.tree_arity = tree_arity
 
-    def set_sa0(self, mnemonic: str):
-        sa0 = mnemonic.split("\n", 1)[0]
-        self.sa0 = bytes(self.mnemo.to_entropy(self.mnemo.expand_password(sa0)))
-        self.init_diagram_values()
+    def set_sa0(self, mnemonic: str) -> bool:
+        self.is_canceled = False
+        try:
+            sa0 = mnemonic.split("\n", 1)[0]
+            self.sa0 = bytes(self.mnemo.to_entropy(self.mnemo.expand_password(sa0)))
+            self.init_diagram_values()
+            return True
+        except ValueError:
+            # TODO treat error
+            return False
 
     def init_diagram_values(self):
         # Diagram values
@@ -83,13 +98,22 @@ class GreatWall:
         # Calculating SA1 from SA0
         print('Initializing SA0')
         self.state = self.sa0
+        if self.is_canceled:
+            print("Task canceled")
+            return  # Exit the task if canceled
         print('Deriving SA0 -> SA1')
         self.update_with_quick_hash()
         self.sa1 = self.state
+        if self.is_canceled:
+            print("Task canceled")
+            return  # Exit the task if canceled
         print('Deriving SA1 -> SA2')
         self.update_with_long_hash()
         self.sa2 = self.state
         self.state = self.sa0 + self.state
+        if self.is_canceled:
+            print("Task canceled")
+            return  # Exit the task if canceled
         print('Deriving SA2 -> SA3')
         self.update_with_quick_hash()
         self.sa3 = self.state
@@ -138,6 +162,7 @@ class GreatWall:
 
     def finish_output(self):
         print("KA = \n", self.state.hex())
+        self.is_finished = True
         return self.state
 
     def derive_from_user_choice(self, chosen_input: int):
