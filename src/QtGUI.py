@@ -76,6 +76,9 @@ class GreatWallQt(QMainWindow):
         # List of general Widgets
         self.general_widgets = [self.next_button, self.back_button]
 
+        # Error widgets
+        self.error_label = QLabel(self)
+
         # Lists of widgets per step
         self.input_state_widgets = [self.theme_label, self.theme_combobox, self.tlp_label, self.tlp_spinbox,
                                     self.depth_label, self.depth_spinbox, self.arity_label, self.arity_spinbox,
@@ -86,6 +89,7 @@ class GreatWallQt(QMainWindow):
         self.dependent_derivation_widgets = [self.derivation_spinbox]
         self.confirm_result_widgets = [self.confirm_result_label, self.result_hash]
         self.finish_widgets = [self.finish_output_label, self.finish_text]
+        self.error_widgets = [self.error_label]
 
         # List of widgets lists
         self.state_widgets = []
@@ -123,6 +127,7 @@ class GreatWallQt(QMainWindow):
         result_confirm = "Do you confirm this result?"
         finish_output_message = "This is the result output:"
         wait_derive = "Wait the derivation to finish\nThis will take some time"
+        error_message = "Some configuration went wrong\nDouble check the theme chosen and your password"
 
         # General Widgets
         self.back_button.setText(next_text)
@@ -146,6 +151,9 @@ class GreatWallQt(QMainWindow):
 
         # Finish Widget
         self.finish_output_label.setText(finish_output_message)
+
+        # Error widget
+        self.error_label.setText(error_message)
 
         themes = Mnemonic.find_themes()
         self.theme_combobox.addItems(themes)
@@ -246,6 +254,7 @@ class GreatWallQt(QMainWindow):
         main_layout.addLayout(self.derivation_layout)
         [main_layout.addWidget(widget) for widget in self.confirm_result_widgets]
         [main_layout.addWidget(widget) for widget in self.finish_widgets]
+        [main_layout.addWidget(widget) for widget in self.error_widgets]
         main_layout.addStretch(1)  # Add stretchable space to the end
 
         # Horizontal layout for buttons
@@ -312,7 +321,7 @@ class GreatWallQt(QMainWindow):
         """Hide all widgets and show the given widgets list, also show the general widgets"""
         self.state_widgets = [self.input_state_widgets, self.confirmation_widgets,
                               self.dependent_derivation_widgets, self.wait_derivation_widgets,
-                              self.confirm_result_widgets, self.finish_widgets]
+                              self.confirm_result_widgets, self.finish_widgets, self.error_widgets]
         for widgets_list in self.state_widgets:
             [widget.hide() for widget in widgets_list]
         [widget.show() for widget in self.general_widgets]
@@ -345,11 +354,17 @@ class GreatWallQt(QMainWindow):
         self.next_button.setText(next_text)
         self.back_button.setText(reset_text)
 
-        self.greatwall.set_themed_mnemo(self.theme_combobox.currentText())
+        themed_success = self.greatwall.set_themed_mnemo(self.theme_combobox.currentText())
         self.greatwall.set_tlp(self.tlp_spinbox.value())
         self.greatwall.set_depth(self.depth_spinbox.value())
         self.greatwall.set_arity(self.arity_spinbox.value())
-        self.greatwall.set_sa0(self.password_text.toPlainText())
+        password_success = self.greatwall.set_sa0(self.password_text.toPlainText())
+
+        if not themed_success or not password_success:
+            self.show_layout_hide_others(self.error_widgets)
+            self.next_button.setEnabled(False)
+            self.back_button.setEnabled(True)
+            return
 
         self.configure_waiting_derivation_widgets()
         self.configure_choose_derivation_widgets()
