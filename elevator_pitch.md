@@ -9,7 +9,7 @@ are, however, by definition transparent.
 
 By logic, therefore, the **centuries old, ubiquitously accepted [doctrine of non-obscurity](https://en.wikipedia.org/wiki/Kerckhoffs%27s_principle) will prevale** 
 and non-obscure security measures eventually **will be the norm**. Great Wall is the first such non-obscure protocol for 
-coercion-resistance in self-custody. It happens to be **monetizable** through the advanced cryptographic techniques like **Fully 
+coercion-resistance in self-custody. It happens to be **monetizable** through the employment of cutting-edge cryptographic techniques like **Fully 
 Homomorphic Encryption**.
 
 As of the time of writing, we already have the public, formal backing of the protocol by respected names of Bitcoin community 
