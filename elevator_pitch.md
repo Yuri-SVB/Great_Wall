@@ -15,5 +15,5 @@ Homomorphic Encryption](https://www.ibm.com/topics/homomorphic-encryption).
 As of the time of writing, we already have the public, formal backing of the protocol by respected names of Bitcoin community 
 and ongoing communication with potential investors.
 
-For further information, check out our [demo](https://mega.nz/file/vfwhRTwZ#sP3hSRthQNssWRdcmD8XRNIeJX7Eq174ImY4eva_Pwo), [official site](https://linktr.ee/greatwallt3) and 
+For further information, check out our [demo](https://mega.nz/file/vfwhRTwZ#sP3hSRthQNssWRdcmD8XRNIeJX7Eq174ImY4eva_Pwo), our [official site](https://linktr.ee/greatwallt3) and 
 our [executive summary / white paper](./executive_summary.md).
