@@ -31,5 +31,5 @@ Monetization is possible through the *secure* outsourcing of TLP by user to the 
 of freeing up their devices from the burden of having an intensive, memory hard, hours-, days- or weeks-long computation by *anonymously* paying a web-service 
 to perform it to them.
 
-For further information, check out [our official site](https://linktr.ee/greatwallt3) and 
+For further information, check out [our demo](https://mega.nz/file/vfwhRTwZ#sP3hSRthQNssWRdcmD8XRNIeJX7Eq174ImY4eva_Pwo), [our official site](https://linktr.ee/greatwallt3) and 
 our [executive summary / white paper](./executive_summary.md).
