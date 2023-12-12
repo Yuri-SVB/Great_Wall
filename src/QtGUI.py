@@ -72,6 +72,8 @@ class GreatWallQt(QMainWindow):
         # Finish Widgets
         self.finish_output_label = QLabel(self)
         self.finish_text = QTextEdit(self)
+        self.hide_show_button = QPushButton(self)
+        self.copy_clipboard_button = QPushButton(self)
 
         # List of general Widgets
         self.general_widgets = [self.next_button, self.back_button]
@@ -88,7 +90,8 @@ class GreatWallQt(QMainWindow):
         self.wait_derivation_widgets = [self.wait_derive_label]
         self.dependent_derivation_widgets = [self.derivation_spinbox]
         self.confirm_result_widgets = [self.confirm_result_label, self.result_hash]
-        self.finish_widgets = [self.finish_output_label, self.finish_text]
+        self.finish_widgets = [self.finish_output_label, self.finish_text, self.hide_show_button,
+                               self.copy_clipboard_button]
         self.error_widgets = [self.error_label]
 
         # List of widgets lists
@@ -128,6 +131,8 @@ class GreatWallQt(QMainWindow):
         finish_output_message = "This is the result output:"
         wait_derive = "Wait the derivation to finish\nThis will take some time"
         error_message = "Some configuration went wrong\nDouble check the theme chosen and your password"
+        hide_show = "Show output"
+        copy_clipboard = "Copy output to clipboard"
 
         # General Widgets
         self.back_button.setText(next_text)
@@ -151,6 +156,10 @@ class GreatWallQt(QMainWindow):
 
         # Finish Widget
         self.finish_output_label.setText(finish_output_message)
+        self.hide_show_button.setText(hide_show)
+        self.hide_show_button.clicked.connect(self.hide_show_output)
+        self.copy_clipboard_button.setText(copy_clipboard)
+        self.copy_clipboard_button.clicked.connect(self.copy_to_clipboard)
 
         # Error widget
         self.error_label.setText(error_message)
@@ -167,6 +176,17 @@ class GreatWallQt(QMainWindow):
         # self.config_spinbox(self.depth_spinbox, 1, 256, 1, 2)
         self.config_spinbox(self.arity_spinbox, 2, 256, 1, 2)
 
+    def hide_show_output(self):
+        self.finish_text.setVisible(not self.finish_text.isVisible())
+        button_text = "Hide" if self.finish_text.isVisible() else "Show"
+        self.hide_show_button.setText(f"{button_text} output")
+
+    def copy_to_clipboard(self):
+        if not self.greatwall.is_finished:
+            return
+        clipboard = QApplication.clipboard()
+        clipboard.setText(self.finish_output.hex())
+
     @staticmethod
     def config_spinbox(spinbox: QSpinBox,
                        min_value: int,
@@ -181,13 +201,14 @@ class GreatWallQt(QMainWindow):
         spinbox.setWrapping(set_wrapping)
 
     def configure_confirmation_widgets(self):
+        confirm_values = "Confirm your values"
         theme_chosen = "Theme\n"
         tlp_chosen = "TLP parameter\n"
         depth_chosen = "Tree depth\n"
         arity_chosen = "Tree arity\n"
         password_chosen = "Time-Lock Puzzle password\n"
 
-        self.confirm_label.setText("Confirm your values")
+        self.confirm_label.setText(confirm_values)
         self.theme_confirm.setText(theme_chosen + str(self.theme_combobox.currentText()))
         self.tlp_confirm.setText(tlp_chosen + str(self.tlp_spinbox.value()))
         self.depth_confirm.setText(depth_chosen + str(self.depth_spinbox.value()))
@@ -211,8 +232,6 @@ class GreatWallQt(QMainWindow):
         for i in reversed(range(self.derivation_layout.count())):
             self.derivation_layout.itemAt(i).widget().setParent(None)
             self.derivation_layout.itemAt(i).widget().deleteLater()
-        # [self.derivation_layout.itemAt(i).widget().setParent(None)
-        #  for i in reversed(range(self.derivation_layout.count()))]
 
         self.config_spinbox(self.derivation_spinbox, 0, self.greatwall.tree_arity, 1, 0)
         self.derivation_layout.addWidget(self.derivation_spinbox)
@@ -395,21 +414,13 @@ class GreatWallQt(QMainWindow):
         reset_text = "Reset"
 
         self.show_layout_hide_others(self.finish_widgets)
+        self.finish_text.hide()
         self.finish_text.setText(self.finish_output.hex())
         self.finish_text.setReadOnly(True)
         self.next_button.setText(next_text)
         self.next_button.setEnabled(False)
         self.next_button.hide()
         self.back_button.setText(reset_text)
-
-    # def split_string(self, string: str) -> str:
-    #     """Split the given string into four lines"""
-    #     ret = ""
-    #     quarter = len(string) // 4 + len(string) % 4
-    #     for i in [0, 1, 2, 3]:
-    #         # Split string in equal parts, last part is unequal if it isn't divisible by four
-    #         ret += string[i * quarter: (i + 1) * quarter if i != 3 else len(string)] + "\n"
-    #     return ret[:-1]
 
     def loop_derivation(self):
         if not self.greatwall:
@@ -419,8 +430,7 @@ class GreatWallQt(QMainWindow):
             formatted_mnemonic = self.greatwall.mnemo.format_mnemonic(
                 self.greatwall.mnemo.to_mnemonic(self.finish_output)
             )
-            formatted_mnemonic = "\n".join(formatted_mnemonic.split("\n")[1:])
-            # local_finish_output = self.split_string(self.finish_output.hex()) + "\n" + formatted_mnemonic
+            formatted_mnemonic = "\n".join(formatted_mnemonic.split("\n")[1:self.greatwall.tree_arity+1])
             local_finish_output = formatted_mnemonic
             self.result_hash.setText(local_finish_output)
             self.show_layout_hide_others(self.confirm_result_widgets)
