@@ -402,14 +402,14 @@ class GreatWallQt(QMainWindow):
         self.next_button.hide()
         self.back_button.setText(reset_text)
 
-    def split_string(self, string: str) -> str:
-        """Split the given string into four lines"""
-        ret = ""
-        quarter = len(string) // 4 + len(string) % 4
-        for i in [0, 1, 2, 3]:
-            # Split string in equal parts, last part is unequal if it isn't divisible by four
-            ret += string[i * quarter: (i + 1) * quarter if i != 3 else len(string)] + "\n"
-        return ret[:-1]
+    # def split_string(self, string: str) -> str:
+    #     """Split the given string into four lines"""
+    #     ret = ""
+    #     quarter = len(string) // 4 + len(string) % 4
+    #     for i in [0, 1, 2, 3]:
+    #         # Split string in equal parts, last part is unequal if it isn't divisible by four
+    #         ret += string[i * quarter: (i + 1) * quarter if i != 3 else len(string)] + "\n"
+    #     return ret[:-1]
 
     def loop_derivation(self):
         if not self.greatwall:
