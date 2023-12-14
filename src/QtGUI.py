@@ -1,5 +1,5 @@
 from PyQt5.QtCore import QStateMachine, QState, QThread, pyqtSignal
-from PyQt5.QtWidgets import (QMainWindow, QApplication, QWidget, QLabel, QPushButton,
+from PyQt5.QtWidgets import (QMainWindow, QApplication, QWidget, QLabel, QPushButton, QMessageBox,
                              QComboBox, QSpinBox, QTextEdit, QHBoxLayout, QVBoxLayout)
 from PyQt5.QtCore import Qt
 from greatwall import GreatWall
@@ -10,6 +10,7 @@ from src.mnemonic.mnemonic import Mnemonic
 class GreatWallWorker(QThread):
     finished = pyqtSignal()
     canceled = pyqtSignal()
+    error_occurred = pyqtSignal(str)  # Signal for passing error messages
 
     def __init__(self, greatwall: GreatWall):
         super().__init__()
@@ -17,9 +18,12 @@ class GreatWallWorker(QThread):
         self._is_canceled = False
 
     def run(self):
-        self.greatwall.execute_greatwall()
-        if not self._is_canceled:
-            self.finished.emit()
+        try:
+            self.greatwall.execute_greatwall()
+            if not self._is_canceled:
+                self.finished.emit()
+        except Exception as e:
+            self.error_occurred.emit(str(e))
 
     def cancel(self):
         self._is_canceled = True
@@ -27,10 +31,13 @@ class GreatWallWorker(QThread):
 
 
 class GreatWallQt(QMainWindow):
+    gui_error_signal = pyqtSignal()
+
     def __init__(self):
         super().__init__()
         self.finish_output: bytes = bytes(0000)
         self.greatwall = GreatWall()
+        self.error_occurred = Exception
 
         # General Widgets
         self.back_button = QPushButton(self)
@@ -79,7 +86,10 @@ class GreatWallQt(QMainWindow):
         self.general_widgets = [self.next_button, self.back_button]
 
         # Error widgets
-        self.error_label = QLabel(self)
+        self.config_error_label = QLabel(self)
+        self.execution_error_label = QLabel(self)
+        self.unknown_error_label = QLabel(self)
+        self.exception_label = QLabel(self)
 
         # Lists of widgets per step
         self.input_state_widgets = [self.theme_label, self.theme_combobox, self.tlp_label, self.tlp_spinbox,
@@ -92,7 +102,8 @@ class GreatWallQt(QMainWindow):
         self.confirm_result_widgets = [self.confirm_result_label, self.result_hash]
         self.finish_widgets = [self.finish_output_label, self.finish_text, self.hide_show_button,
                                self.copy_clipboard_button]
-        self.error_widgets = [self.error_label]
+        self.error_widgets = [self.config_error_label, self.execution_error_label,
+                              self.unknown_error_label, self.exception_label]
 
         # List of widgets lists
         self.state_widgets = []
@@ -101,6 +112,8 @@ class GreatWallQt(QMainWindow):
         self.worker_thread = GreatWallWorker(self.greatwall)
 
         # Launch UI
+        self.all_states = []
+        self.error_states = []
         self.state_machine = QStateMachine()
         self.init_ui()
 
@@ -130,7 +143,10 @@ class GreatWallQt(QMainWindow):
         result_confirm = "Do you confirm this result?"
         finish_output_message = "This is the result output:"
         wait_derive = "Wait the derivation to finish\nThis will take some time"
-        error_message = "Some configuration went wrong\nDouble check the theme chosen and your password"
+        config_error_message = "Some configuration might went wrong\n\tDouble check the theme chosen and your password"
+        execution_error_message = \
+            "The GreatWall execution might went wrong\n\tPlease double check your dependencies version and try again"
+        unknown_error_message = "Or some unexpected error occurred"
         hide_show = "Show output"
         copy_clipboard = "Copy output to clipboard"
 
@@ -162,7 +178,9 @@ class GreatWallQt(QMainWindow):
         self.copy_clipboard_button.clicked.connect(self.copy_to_clipboard)
 
         # Error widget
-        self.error_label.setText(error_message)
+        self.config_error_label.setText(config_error_message)
+        self.execution_error_label.setText(execution_error_message)
+        self.unknown_error_label.setText(unknown_error_message)
 
         themes = Mnemonic.find_themes()
         self.theme_combobox.addItems(themes)
@@ -303,25 +321,33 @@ class GreatWallQt(QMainWindow):
         dependent_derivation_state = QState()
         dependent_derivation_state.setObjectName("State 3")
 
-        result_state = QState()
-        result_state.setObjectName("State 4")
+        finish_output_state = QState()
+        finish_output_state.setObjectName("State 4")
+
+        gui_error_state = QState()
+        gui_error_state.setObjectName("State X01")
+
+        # List of states
+        self.error_states = [gui_error_state, ]
+        self.all_states = [quit_state, user_input_state, confirm_state, dependent_derivation_state,
+                           finish_output_state] + self.error_states
 
         # Define transitions
         user_input_state.addTransition(self.next_button.clicked, confirm_state)
         user_input_state.addTransition(self.back_button.clicked, quit_state)
         confirm_state.addTransition(self.next_button.clicked, dependent_derivation_state)
         confirm_state.addTransition(self.back_button.clicked, user_input_state)
-        dependent_derivation_state.addTransition(self.next_button.clicked, result_state)
+        dependent_derivation_state.addTransition(self.next_button.clicked, finish_output_state)
         dependent_derivation_state.addTransition(self.back_button.clicked, user_input_state)
-        result_state.addTransition(self.next_button.clicked, quit_state)
-        result_state.addTransition(self.back_button.clicked, user_input_state)
+        finish_output_state.addTransition(self.next_button.clicked, quit_state)
+        finish_output_state.addTransition(self.back_button.clicked, user_input_state)
+        gui_error_state.addTransition(self.back_button.clicked, user_input_state)
+        # Error transitions, add to all states except the error states
+        [each_state.addTransition(self.gui_error_signal, gui_error_state)
+         for each_state in set(self.all_states)-set(self.error_states)]
 
         # Add states to the state machine
-        self.state_machine.addState(quit_state)
-        self.state_machine.addState(user_input_state)
-        self.state_machine.addState(confirm_state)
-        self.state_machine.addState(dependent_derivation_state)
-        self.state_machine.addState(result_state)
+        [self.state_machine.addState(each_state) for each_state in self.all_states]
 
         # Set initial state
         self.state_machine.setInitialState(user_input_state)
@@ -334,7 +360,8 @@ class GreatWallQt(QMainWindow):
         user_input_state.entered.connect(self.state1_entered)
         confirm_state.entered.connect(self.state2_entered)
         dependent_derivation_state.entered.connect(self.state3_entered)
-        result_state.entered.connect(self.state4_entered)
+        finish_output_state.entered.connect(self.state4_entered)
+        gui_error_state.entered.connect(self.handle_gui_errors)
 
     def show_layout_hide_others(self, widgets: list):
         """Hide all widgets and show the given widgets list, also show the general widgets"""
@@ -380,9 +407,8 @@ class GreatWallQt(QMainWindow):
         password_success = self.greatwall.set_sa0(self.password_text.toPlainText())
 
         if not themed_success or not password_success:
-            self.show_layout_hide_others(self.error_widgets)
-            self.next_button.setEnabled(False)
-            self.back_button.setEnabled(True)
+            self.error_occurred = ValueError("Config error. Password and theme don't match")
+            self.gui_error_signal.emit()
             return
 
         self.configure_waiting_derivation_widgets()
@@ -394,6 +420,7 @@ class GreatWallQt(QMainWindow):
         self.worker_thread = GreatWallWorker(self.greatwall)
         self.worker_thread.finished.connect(self.handle_execution_finished)
         self.worker_thread.canceled.connect(self.handle_execution_canceled)
+        self.worker_thread.error_occurred.connect(self.handle_greatwall_error)
         self.worker_thread.start()
 
     def handle_execution_finished(self):
@@ -402,6 +429,14 @@ class GreatWallQt(QMainWindow):
 
     def handle_execution_canceled(self):
         print("Task canceled")
+
+    def handle_greatwall_error(self, error_msg):
+        error_dialog = QMessageBox()
+        error_dialog.setIcon(QMessageBox.Critical)
+        error_dialog.setText("GreatWall Error Occurred")
+        error_dialog.setInformativeText(error_msg)
+        error_dialog.setWindowTitle("Thread Error")
+        error_dialog.exec_()
 
     def cancel_task(self):
         if self.worker_thread.isRunning():
@@ -423,24 +458,40 @@ class GreatWallQt(QMainWindow):
         self.back_button.setText(reset_text)
 
     def loop_derivation(self):
-        if not self.greatwall:
-            return
-        if self.greatwall.current_level >= self.greatwall.tree_depth:
-            self.finish_output = self.greatwall.finish_output()
-            formatted_mnemonic = self.greatwall.mnemo.format_mnemonic(
-                self.greatwall.mnemo.to_mnemonic(self.finish_output)
-            )
-            formatted_mnemonic = "\n".join(formatted_mnemonic.split("\n")[1:self.greatwall.tree_arity+1])
-            local_finish_output = formatted_mnemonic
-            self.result_hash.setText(local_finish_output)
-            self.show_layout_hide_others(self.confirm_result_widgets)
-            self.dependent_derivation_widgets[1].show()
-            self.next_button.setEnabled(True)
-        else:
-            self.show_layout_hide_others(self.dependent_derivation_widgets)
-            user_options = self.greatwall.get_li_str_query().split("\n")
-            self.configure_selection_buttons(user_options)
-            self.next_button.setEnabled(False)
+        try:
+            if self.greatwall.current_level >= self.greatwall.tree_depth:
+                self.finish_output = self.greatwall.finish_output()
+                formatted_mnemonic = self.greatwall.mnemo.format_mnemonic(
+                    self.greatwall.mnemo.to_mnemonic(self.finish_output)
+                )
+                formatted_mnemonic = "\n".join(formatted_mnemonic.split("\n")[1:self.greatwall.tree_arity+1])
+                local_finish_output = formatted_mnemonic
+                self.result_hash.setText(local_finish_output)
+                self.show_layout_hide_others(self.confirm_result_widgets)
+                self.dependent_derivation_widgets[1].show()
+                self.next_button.setEnabled(True)
+            else:
+                self.show_layout_hide_others(self.dependent_derivation_widgets)
+                user_options = self.greatwall.get_li_str_query().split("\n")
+                self.configure_selection_buttons(user_options)
+                self.next_button.setEnabled(False)
+        except Exception as e:
+            self.error_occurred = e
+            self.gui_error_signal.emit()
+
+    def handle_gui_errors(self):
+        print('Error state Entered')
+        next_text = "Next"
+        reset_text = "Reset"
+        exception_message = f"Exception:\n{str(self.error_occurred)}"
+        self.exception_label.setText(exception_message)
+        self.show_layout_hide_others(self.error_widgets)
+        self.next_button.setText(next_text)
+        self.next_button.setEnabled(False)
+        self.next_button.hide()
+        self.back_button.setText(reset_text)
+        self.back_button.setEnabled(True)
+        self.back_button.show()
 
     def close_application(self):
         """ Close the parent which exit the application. Bye, come again!"""
