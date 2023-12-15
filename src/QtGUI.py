@@ -116,6 +116,7 @@ class GreatWallQt(QMainWindow):
         self.error_states = []
         self.state_machine = QStateMachine()
         self.init_ui()
+        self.init_state_machine()
 
     def init_ui(self):
         self.setWindowTitle("Great Wall Sample")
@@ -127,7 +128,6 @@ class GreatWallQt(QMainWindow):
 
         self.configure_ui_widgets()
         self.configure_layout()
-        self.init_state_machine()
 
     def configure_ui_widgets(self):
 
@@ -249,7 +249,8 @@ class GreatWallQt(QMainWindow):
         # Destroy widgets by setting the parents as None
         for i in reversed(range(self.derivation_layout.count())):
             self.derivation_layout.itemAt(i).widget().setParent(None)
-            self.derivation_layout.itemAt(i).widget().deleteLater()
+            if self.derivation_layout.itemAt(i) is not None:
+                self.derivation_layout.itemAt(i).widget().deleteLater()
 
         self.config_spinbox(self.derivation_spinbox, 0, self.greatwall.tree_arity, 1, 0)
         self.derivation_layout.addWidget(self.derivation_spinbox)
@@ -400,28 +401,32 @@ class GreatWallQt(QMainWindow):
         self.next_button.setText(next_text)
         self.back_button.setText(reset_text)
 
-        themed_success = self.greatwall.set_themed_mnemo(self.theme_combobox.currentText())
-        self.greatwall.set_tlp(self.tlp_spinbox.value())
-        self.greatwall.set_depth(self.depth_spinbox.value())
-        self.greatwall.set_arity(self.arity_spinbox.value())
-        password_success = self.greatwall.set_sa0(self.password_text.toPlainText())
+        try:
+            themed_success = self.greatwall.set_themed_mnemo(self.theme_combobox.currentText())
+            self.greatwall.set_tlp(self.tlp_spinbox.value())
+            self.greatwall.set_depth(self.depth_spinbox.value())
+            self.greatwall.set_arity(self.arity_spinbox.value())
+            password_success = self.greatwall.set_sa0(self.password_text.toPlainText())
 
-        if not themed_success or not password_success:
-            self.error_occurred = ValueError("Config error. Password and theme don't match")
+            if not themed_success or not password_success:
+                self.error_occurred = ValueError("Config error. Password and theme don't match")
+                self.gui_error_signal.emit()
+                return
+
+            self.configure_waiting_derivation_widgets()
+            self.configure_choose_derivation_widgets()
+            self.show_layout_hide_others(self.wait_derivation_widgets)
+            self.next_button.setEnabled(False)
+
+            # Start the execution in a separate thread
+            self.worker_thread = GreatWallWorker(self.greatwall)
+            self.worker_thread.finished.connect(self.handle_execution_finished)
+            self.worker_thread.canceled.connect(self.handle_execution_canceled)
+            self.worker_thread.error_occurred.connect(self.handle_greatwall_error)
+            self.worker_thread.start()
+        except Exception as e:
+            self.error_occurred = e
             self.gui_error_signal.emit()
-            return
-
-        self.configure_waiting_derivation_widgets()
-        self.configure_choose_derivation_widgets()
-        self.show_layout_hide_others(self.wait_derivation_widgets)
-        self.next_button.setEnabled(False)
-
-        # Start the execution in a separate thread
-        self.worker_thread = GreatWallWorker(self.greatwall)
-        self.worker_thread.finished.connect(self.handle_execution_finished)
-        self.worker_thread.canceled.connect(self.handle_execution_canceled)
-        self.worker_thread.error_occurred.connect(self.handle_greatwall_error)
-        self.worker_thread.start()
 
     def handle_execution_finished(self):
         # Perform actions when the execution is finished
