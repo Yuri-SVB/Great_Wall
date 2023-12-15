@@ -9,7 +9,7 @@ The follow steps will allow easy memorization of the path demonstrated in [demo 
 1. Download, install, and learn how to use [Anki](https://apps.ankiweb.net/) in your system;
 2. Download (or clone from repository) and import [demo 1 Anki deck](https://github.com/Yuri-SVB/Great_Wall/blob/main/demos/GW_procedural_memory_1.apkg);
 3. Study deck;
-4. Download (or clone from repository) [directory src](https://github.com/Yuri-SVB/Great_Wall/tree/main/src) **specifically in version** ```e8b1551c08a3d59ee8cf30f2b5dfa803556a00a6```;
+4. Download (or clone from repository) [directory src](./src) **specifically in version** ```e8b1551c08a3d59ee8cf30f2b5dfa803556a00a6```;
 5. In your system's terminal, open the directory, activate venv and then run main.py;
 6. Enter ```viboniboasmofiasbrchsprorirerugugucavehistmiinciwibowifltuor``` as the required input ```SA0```;
 7. You have, now, started to navigate the same tree as demonstrated in demo 1 from it's root. Continue as practiced with the aforementioned Anki deck until the leave;
