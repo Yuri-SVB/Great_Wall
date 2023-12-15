@@ -1,6 +1,7 @@
-# Great_Wall
-Protocol and application for providing Kerckhoffian, 0-trust, deviceless coercion-resistance in self-custody. To understand the protocol, refer to the [executive summary.](./docs/executive_summary.md)
-References: [linktr.ee/greatwallt3](https://linktr.ee/greatwallt3)
+# Great Wall [![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/) [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://lbesson.mit-license.org/) ![Maintainer](https://img.shields.io/badge/maintainer-Yuri_S_Villas_Boas-red)
+
+Protocol and application for providing Kerckhoffian, 0-trust, deviceless coercion-resistance in self-custody. To understand the protocol, refer to the [executive summary.](./executive_summary.md)
+References: [GreatWall](https://linktr.ee/greatwallt3)
 
 ## Reproducing Demo 1 Experiment:
 
