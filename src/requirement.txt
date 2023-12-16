@@ -1,1 +1,4 @@
-argon2==0.1.10
+argon2-cffi==23.1.0
+argon2-cffi-bindings==21.2.0
+cffi==1.16.0
+tk==0.1.0
