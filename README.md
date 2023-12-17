@@ -19,7 +19,7 @@
 <!-- TABLE OF CONTENTS -->
 ## Table of Contents
 1. [About](#about)
-2. [Demo](demo)
+2. [Demo](#demo)
 3. [Getting Started](#getting-started)
     * [Using in Beta](#using-in-beta)
 4. [Usage](#usage)
