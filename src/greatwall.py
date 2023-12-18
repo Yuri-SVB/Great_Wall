@@ -1,12 +1,48 @@
 import random
 import argon2
-from typing import Optional
+from typing import Optional, Union
 from src.mnemonic.mnemonic import Mnemonic
 # from user_interface import UserInterface
+from PIL import Image, ImageDraw
+import math
+
+
+class Shaper:
+    omega = 2*math.pi
+
+    def __init__(self, size: int = 101):
+        self.size = size
+
+        # Create a new image with a black background
+        self.image = Image.new("RGB", (size, size), "black")
+        self.draw = ImageDraw.Draw(self.image)
+
+    def draw_regular_shape(self, sides: int = 3):
+        size = self.size
+
+        # Calculate the coordinates for the polygon points
+        center_x, center_y = size // 2, size // 2
+
+        # Calculate the angle step in radians for each vertex
+        angle = self.omega/sides
+
+        # Calculate the vertices
+        vertices = [(int(center_x * math.sin(angle * i)) + center_x,
+                     -int(center_y * math.cos(angle * i)) + center_y)
+                    for i in range(sides)
+                    ]
+
+        # Draw the polygon
+        self.draw.polygon(vertices, outline="white")
+        self.image.show()
+        return self.image
 
 
 class GreatWall:
-    def __init__(self):
+    def __init__(self, query_type: str = "Formosa"):
+
+        self.query_type = query_type.lower()
+
         # user interface
         # self.user_interface = UserInterface()
         self.user_chosen_input: int = 0
@@ -160,6 +196,15 @@ class GreatWall:
             listr += str(i + 1) + ") " + shuffled_sentences[i] + "\n"
         return listr
 
+    def get_shape_query(self) -> list:
+        self.shuffle_bytes()
+        shuffled_shapes = [Shaper().draw_regular_shape(int(str(bytes_sentence)[0]))
+                           for bytes_sentence in self.shuffled_bytes]
+        listr = "Choose 1, ..., %d for level %d".format(self.tree_arity, self.current_level)
+        listr += "%s\n".format("" if not self.current_level else ", choose 0 to go back")
+        shuffled_shapes = [listr] + shuffled_shapes
+        return shuffled_shapes
+
     def finish_output(self):
         print("KA = \n", self.state.hex())
         self.is_finished = True
@@ -219,7 +264,9 @@ class GreatWall:
 
 
 def main():
-    GreatWall()
+    # GreatWall()
+    for i in range(4):
+        Shaper().draw_regular_shape(i+3)
 
 
 if __name__ == "__main__":
