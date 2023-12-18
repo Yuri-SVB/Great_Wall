@@ -44,6 +44,7 @@ class GreatWallQt(QMainWindow):
         self.next_button = QPushButton(self)
 
         # Input Widgets
+        self.user_query_combobox = QComboBox(self)
         self.theme_label = QLabel(self)
         self.theme_combobox = QComboBox(self)
         self.tlp_label = QLabel(self)
@@ -92,9 +93,9 @@ class GreatWallQt(QMainWindow):
         self.exception_label = QLabel(self)
 
         # Lists of widgets per step
-        self.input_state_widgets = [self.theme_label, self.theme_combobox, self.tlp_label, self.tlp_spinbox,
-                                    self.depth_label, self.depth_spinbox, self.arity_label, self.arity_spinbox,
-                                    self.password_label, self.password_text]
+        self.input_state_widgets = [self.user_query_combobox, self.theme_label, self.theme_combobox, self.tlp_label,
+                                    self.tlp_spinbox, self.depth_label, self.depth_spinbox, self.arity_label,
+                                    self.arity_spinbox, self.password_label, self.password_text]
         self.confirmation_widgets = [self.confirm_label, self.theme_confirm, self.tlp_confirm, self.depth_confirm,
                                      self.arity_confirm, self.password_confirm]
         self.wait_derivation_widgets = [self.wait_derive_label]
@@ -160,6 +161,15 @@ class GreatWallQt(QMainWindow):
         self.depth_label.setText(choose_depth)
         self.arity_label.setText(choose_arity)
         self.password_label.setText(password)
+        query_types = ["Formosa", "Shape"]
+        self.user_query_combobox.addItems(query_types)
+        self.user_query_combobox.setCurrentText(query_types[0])
+        self.user_query_combobox.currentTextChanged.connect(self.change_query_type)
+        themes = Mnemonic.find_themes()
+        self.theme_combobox.addItems(themes)
+        self.theme_combobox.setCurrentText(themes[0])
+        # Hardcode to fast tests
+        # self.theme_combobox.setCurrentText("medieval_fantasy")
 
         # Wait Derive Widget
         self.wait_derive_label.setText(wait_derive)
@@ -182,17 +192,18 @@ class GreatWallQt(QMainWindow):
         self.execution_error_label.setText(execution_error_message)
         self.unknown_error_label.setText(unknown_error_message)
 
-        themes = Mnemonic.find_themes()
-        self.theme_combobox.addItems(themes)
-        self.theme_combobox.setCurrentText(themes[0])
-        # Hardcode to fast tests
-        # self.theme_combobox.setCurrentText("medieval_fantasy")
-
         self.config_spinbox(self.tlp_spinbox, 1, 24*7*4*3, 1, 1)
         self.config_spinbox(self.depth_spinbox, 1, 256, 1, 1)
         # Hardcode to fast tests
         # self.config_spinbox(self.depth_spinbox, 1, 256, 1, 2)
         self.config_spinbox(self.arity_spinbox, 2, 256, 1, 2)
+
+    def change_query_type(self):
+        is_formosa = self.user_query_combobox.currentText() == "Formosa"
+        self.theme_combobox.setEnabled(is_formosa)
+        # self.theme_combobox.setVisible(is_formosa)
+        self.theme_label.setEnabled(is_formosa)
+        # self.theme_label.setVisible(is_formosa)
 
     def hide_show_output(self):
         self.finish_text.setVisible(not self.finish_text.isVisible())
@@ -256,7 +267,7 @@ class GreatWallQt(QMainWindow):
         self.derivation_layout.addWidget(self.derivation_spinbox)
         self.dependent_derivation_widgets.append(self.derivation_spinbox)
         for i in range(self.greatwall.tree_arity + 1):
-            button_text = f"{i}) Idle" if i > 0 else cancel_text
+            button_text = f"{i}) " if i > 0 else cancel_text
             button = QPushButton(button_text, self)
             button.clicked.connect(lambda state, x=i: self.button_clicked(x))
             self.derivation_layout.addWidget(button)
@@ -304,9 +315,16 @@ class GreatWallQt(QMainWindow):
         # Add the buttons layout to the main layout
         main_layout.addLayout(general_buttons_layout)
 
-    def configure_selection_buttons(self, valid_options: list[str]):
-        if len(valid_options) == len(self.selection_buttons)+1:
-            [self.selection_buttons[i].setText(valid_options[i]) for i in range(1, len(self.selection_buttons))]
+    def configure_selection_buttons(self):
+        if self.user_query_combobox.currentText() == "Formosa":
+            user_options = self.greatwall.get_li_str_query().split("\n")
+            if len(user_options) == len(self.selection_buttons)+1:
+                [self.selection_buttons[i].setText(user_options[i]) for i in range(1, len(self.selection_buttons))]
+        else:
+            # user_options = self.greatwall.get_shape_query()
+            # if len(user_options) == len(self.selection_buttons)+1:
+            #     [self.selection_buttons[i].setText("") for i in range(1, len(self.selection_buttons))]
+            pass
 
     def init_state_machine(self):
 
@@ -477,8 +495,7 @@ class GreatWallQt(QMainWindow):
                 self.next_button.setEnabled(True)
             else:
                 self.show_layout_hide_others(self.dependent_derivation_widgets)
-                user_options = self.greatwall.get_li_str_query().split("\n")
-                self.configure_selection_buttons(user_options)
+                self.configure_selection_buttons()
                 self.next_button.setEnabled(False)
         except Exception as e:
             self.error_occurred = e
