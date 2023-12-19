@@ -1,9 +1,7 @@
 import tkinter as tk
 from tkinter import simpledialog
-from tkinter import messagebox
 import sys
-import getpass
-from src.mnemonic.mnemonic import Mnemonic
+from mnemonic.mnemonic import Mnemonic
 
 class UserInterface:
     def __init__(self):
