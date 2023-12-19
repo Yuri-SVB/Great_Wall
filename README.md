@@ -36,7 +36,7 @@ Protocol and application for providing Kerckhoffian, 0-trust, deviceless coercio
 ## Demo
 The following steps will allow an easy memorization of the path demonstrated in [demo 1](https://drive.proton.me/urls/GQZDRPBKE8#33ZVNJBXKAMd) within as little as 1-2 hours:
 1. Download, install, and learn how to use [Anki](https://apps.ankiweb.net/) in your system;
-2. Download (or clone from repository) and import [demo 1 Anki deck](../demo/GW_procedural_memory_1.apkg);
+2. Download (or clone from repository) and import [demo 1 Anki deck](demos/GW_procedural_memory_1.apkg);
 3. Study deck;
 4. Download (or clone from repository) [directory src](./src) **specifically in version** `e8b1551c08a3d59ee8cf30f2b5dfa803556a00a6`
 5. In your system's terminal, open the directory, activate venv and then run main.py;
