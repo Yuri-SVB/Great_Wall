@@ -265,8 +265,8 @@ class GreatWall:
 
 def main():
     # GreatWall()
-    for i in range(4):
-        Shaper().draw_regular_shape(i+3)
+    for i in range(16):
+        Shaper(3).draw_regular_shape(i+3)
 
 
 if __name__ == "__main__":
