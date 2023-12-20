@@ -116,6 +116,8 @@ class GreatWallQt(QMainWindow):
         self.all_states = []
         self.error_states = []
         self.state_machine = QStateMachine()
+        self.dyn_state_machine = QStateMachine()
+        self.dyn_states = []
         self.init_ui()
         self.init_state_machine()
 
@@ -275,10 +277,12 @@ class GreatWallQt(QMainWindow):
             self.selection_buttons.append(button)
 
     def button_clicked(self, button_number):
-        if not self.greatwall:
-            return
-        self.greatwall.derive_from_user_choice(button_number)
-        self.loop_derivation()
+        print("button check", True if button_number else False)
+        if button_number > 0:
+            self.clicked_next_state(button_number)
+        else:
+            self.clicked_previous_state()
+        # self.loop_derivation()
 
     def keyPressEvent(self, event):
         """When enter key is pressed the derivation_spinbox will act as one selection button pressed"""
@@ -288,6 +292,14 @@ class GreatWallQt(QMainWindow):
             value = self.derivation_spinbox.value()
             if value <= len(self.selection_buttons) and self.greatwall.current_level < self.greatwall.tree_depth:
                 self.button_clicked(value)
+
+    def clicked_next_state(self, button_number):
+        """Method to adapt the dynamic state machine state transition"""
+        self.greatwall.derive_from_user_choice(button_number)
+
+    def clicked_previous_state(self):
+        """Method to adapt the dynamic state machine state transition"""
+        self.greatwall.derive_from_user_choice(0)
 
     def configure_layout(self):
         central_widget = QWidget()
@@ -382,6 +394,43 @@ class GreatWallQt(QMainWindow):
         finish_output_state.entered.connect(self.state4_entered)
         gui_error_state.entered.connect(self.handle_gui_errors)
 
+    def update_dynamic_states(self):
+        # TODO fix this
+        if self.dyn_state_machine.isRunning():
+            self.dyn_state_machine.stop()
+
+        # Emulate a change in the number of steps or states
+        num_states = self.depth_spinbox.value()  # Get the number of states dynamically
+
+        # Remove existing states
+        for state in self.dyn_states:
+            state.removeTransition(self.clicked_next_state)  # Disconnect next state from existing states
+            state.removeTransition(self.clicked_previous_state)  # Disconnect previous state from existing states
+            self.dyn_state_machine.removeState(state)
+            state.deleteLater()
+
+        # Create and add new states
+        self.dyn_states = []
+        for i in range(num_states):
+            state = QState()
+            # Add transitions, properties, etc., to the state as needed
+            # ...
+            state.entered.connect(self.loop_derivation)
+            self.dyn_state_machine.addState(state)
+            self.dyn_states.append(state)
+
+        # Add transitions between states
+        for state_index in range(1, len(self.dyn_states)-1):
+            current_state = self.dyn_states[state_index]
+            next_state = self.dyn_states[state_index+1]
+            previous_state = self.dyn_states[state_index-1]
+            current_state.addTransition(self.clicked_next_state, next_state)
+            current_state.addTransition(self.clicked_previous_state, previous_state)
+
+        # Start the state machine
+        self.dyn_state_machine.setInitialState(self.dyn_states[0])  # Set initial state
+        self.dyn_state_machine.start()
+
     def show_layout_hide_others(self, widgets: list):
         """Hide all widgets and show the given widgets list, also show the general widgets"""
         self.state_widgets = [self.input_state_widgets, self.confirmation_widgets,
@@ -447,8 +496,10 @@ class GreatWallQt(QMainWindow):
             self.gui_error_signal.emit()
 
     def handle_execution_finished(self):
+        # TODO fix this
         # Perform actions when the execution is finished
-        self.loop_derivation()
+        self.update_dynamic_states()
+        # self.loop_derivation()
 
     def handle_execution_canceled(self):
         print("Task canceled")
@@ -482,6 +533,9 @@ class GreatWallQt(QMainWindow):
 
     def loop_derivation(self):
         try:
+            # TODO fix this
+            print("State changed / 2nd SM")
+            print(self.greatwall.current_level)
             if self.greatwall.current_level >= self.greatwall.tree_depth:
                 self.finish_output = self.greatwall.finish_output()
                 formatted_mnemonic = self.greatwall.mnemo.format_mnemonic(
