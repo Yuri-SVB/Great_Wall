@@ -17,6 +17,7 @@ class GreatWallWorker(QThread):
         self.greatwall = greatwall
         self._is_canceled = False
 
+    # TODO it is running only once
     def run(self):
         try:
             self.greatwall.execute_greatwall()
@@ -32,6 +33,7 @@ class GreatWallWorker(QThread):
 
 class GreatWallQt(QMainWindow):
     gui_error_signal = pyqtSignal()
+    return_state_signal = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -113,13 +115,13 @@ class GreatWallQt(QMainWindow):
         self.worker_thread = GreatWallWorker(self.greatwall)
 
         # Launch UI
-        self.all_states = []
+        self.main_states = []
         self.error_states = []
-        self.state_machine = QStateMachine()
-        self.dyn_state_machine = QStateMachine()
-        self.dyn_states = []
+        self.main_gui_sm = QStateMachine()
+        self.loop_dynamic_sm = QStateMachine()
+        self.dynamic_states = []
         self.init_ui()
-        self.init_state_machine()
+        self.init_main_gui_sm()
 
     def init_ui(self):
         self.setWindowTitle("Great Wall Sample")
@@ -276,13 +278,10 @@ class GreatWallQt(QMainWindow):
             self.dependent_derivation_widgets.append(button)
             self.selection_buttons.append(button)
 
-    def button_clicked(self, button_number):
-        print("button check", True if button_number else False)
-        if button_number > 0:
-            self.clicked_next_state(button_number)
-        else:
-            self.clicked_previous_state()
-        # self.loop_derivation()
+    def button_clicked(self, button_number: int):
+        self.greatwall.derive_from_user_choice(button_number)
+        if not button_number:
+            self.return_state_signal.emit()
 
     def keyPressEvent(self, event):
         """When enter key is pressed the derivation_spinbox will act as one selection button pressed"""
@@ -292,14 +291,6 @@ class GreatWallQt(QMainWindow):
             value = self.derivation_spinbox.value()
             if value <= len(self.selection_buttons) and self.greatwall.current_level < self.greatwall.tree_depth:
                 self.button_clicked(value)
-
-    def clicked_next_state(self, button_number):
-        """Method to adapt the dynamic state machine state transition"""
-        self.greatwall.derive_from_user_choice(button_number)
-
-    def clicked_previous_state(self):
-        """Method to adapt the dynamic state machine state transition"""
-        self.greatwall.derive_from_user_choice(0)
 
     def configure_layout(self):
         central_widget = QWidget()
@@ -338,98 +329,97 @@ class GreatWallQt(QMainWindow):
             #     [self.selection_buttons[i].setText("") for i in range(1, len(self.selection_buttons))]
             pass
 
-    def init_state_machine(self):
+    def init_main_gui_sm(self):
 
         quit_state = QState()
-        quit_state.setObjectName("State 0")
+        quit_state.setObjectName("Quit Application")
 
-        user_input_state = QState()
-        user_input_state.setObjectName("State 1")
+        input_state = QState()
+        input_state.setObjectName("User Inputs")
 
         confirm_state = QState()
-        confirm_state.setObjectName("State 2")
+        confirm_state.setObjectName("User Confirm")
 
         dependent_derivation_state = QState()
-        dependent_derivation_state.setObjectName("State 3")
+        dependent_derivation_state.setObjectName("Dependent Derivation")
 
-        finish_output_state = QState()
-        finish_output_state.setObjectName("State 4")
+        output_state = QState()
+        output_state.setObjectName("Output")
 
         gui_error_state = QState()
-        gui_error_state.setObjectName("State X01")
+        gui_error_state.setObjectName("GUI Error")
 
         # List of states
         self.error_states = [gui_error_state, ]
-        self.all_states = [quit_state, user_input_state, confirm_state, dependent_derivation_state,
-                           finish_output_state] + self.error_states
+        self.main_states = [quit_state, input_state, confirm_state, dependent_derivation_state,
+                            output_state] + self.error_states
 
         # Define transitions
-        user_input_state.addTransition(self.next_button.clicked, confirm_state)
-        user_input_state.addTransition(self.back_button.clicked, quit_state)
+        input_state.addTransition(self.next_button.clicked, confirm_state)
+        input_state.addTransition(self.back_button.clicked, quit_state)
         confirm_state.addTransition(self.next_button.clicked, dependent_derivation_state)
-        confirm_state.addTransition(self.back_button.clicked, user_input_state)
-        dependent_derivation_state.addTransition(self.next_button.clicked, finish_output_state)
-        dependent_derivation_state.addTransition(self.back_button.clicked, user_input_state)
-        finish_output_state.addTransition(self.next_button.clicked, quit_state)
-        finish_output_state.addTransition(self.back_button.clicked, user_input_state)
-        gui_error_state.addTransition(self.back_button.clicked, user_input_state)
+        confirm_state.addTransition(self.back_button.clicked, input_state)
+        dependent_derivation_state.addTransition(self.next_button.clicked, output_state)
+        dependent_derivation_state.addTransition(self.back_button.clicked, input_state)
+        output_state.addTransition(self.next_button.clicked, quit_state)
+        output_state.addTransition(self.back_button.clicked, input_state)
+        gui_error_state.addTransition(self.back_button.clicked, input_state)
         # Error transitions, add to all states except the error states
         [each_state.addTransition(self.gui_error_signal, gui_error_state)
-         for each_state in set(self.all_states)-set(self.error_states)]
+         for each_state in set(self.main_states) - set(self.error_states)]
 
         # Add states to the state machine
-        [self.state_machine.addState(each_state) for each_state in self.all_states]
+        [self.main_gui_sm.addState(each_state) for each_state in self.main_states]
 
         # Set initial state
-        self.state_machine.setInitialState(user_input_state)
+        self.main_gui_sm.setInitialState(input_state)
 
         # Start the state machine
-        self.state_machine.start()
+        self.main_gui_sm.start()
 
         # Connect states to methods
-        quit_state.entered.connect(self.close_application)
-        user_input_state.entered.connect(self.state1_entered)
-        confirm_state.entered.connect(self.state2_entered)
-        dependent_derivation_state.entered.connect(self.state3_entered)
-        finish_output_state.entered.connect(self.state4_entered)
+        quit_state.entered.connect(self.quit_state_entered)
+        input_state.entered.connect(self.input_state1_entered)
+        confirm_state.entered.connect(self.confirm_state2_entered)
+        dependent_derivation_state.entered.connect(self.derivation_state3_entered)
+        output_state.entered.connect(self.output_state4_entered)
         gui_error_state.entered.connect(self.handle_gui_errors)
 
-    def update_dynamic_states(self):
+    def init_loop_dynamic_sm(self):
         # TODO fix this
-        if self.dyn_state_machine.isRunning():
-            self.dyn_state_machine.stop()
+        if self.loop_dynamic_sm.isRunning():
+            self.loop_dynamic_sm.stop()
 
         # Emulate a change in the number of steps or states
         num_states = self.depth_spinbox.value()  # Get the number of states dynamically
 
         # Remove existing states
-        for state in self.dyn_states:
-            state.removeTransition(self.clicked_next_state)  # Disconnect next state from existing states
-            state.removeTransition(self.clicked_previous_state)  # Disconnect previous state from existing states
-            self.dyn_state_machine.removeState(state)
+        for state in self.dynamic_states:
+            state.removeTransition(self.worker_thread.finished)
+            state.removeTransition(self.return_state_signal)
+            self.loop_dynamic_sm.removeState(state)
             state.deleteLater()
 
         # Create and add new states
-        self.dyn_states = []
+        self.dynamic_states = []
         for i in range(num_states):
             state = QState()
-            # Add transitions, properties, etc., to the state as needed
-            # ...
-            state.entered.connect(self.loop_derivation)
-            self.dyn_state_machine.addState(state)
-            self.dyn_states.append(state)
+            if not i:
+                state.entered.connect(self.loop_state_n_entered)
+            self.loop_dynamic_sm.addState(state)
+            self.dynamic_states.append(state)
 
         # Add transitions between states
-        for state_index in range(1, len(self.dyn_states)-1):
-            current_state = self.dyn_states[state_index]
-            next_state = self.dyn_states[state_index+1]
-            previous_state = self.dyn_states[state_index-1]
-            current_state.addTransition(self.clicked_next_state, next_state)
-            current_state.addTransition(self.clicked_previous_state, previous_state)
+        for state_index in range(1, len(self.dynamic_states) - 1):
+            current_state = self.dynamic_states[state_index]
+            next_state = self.dynamic_states[state_index + 1]
+            previous_state = self.dynamic_states[state_index - 1]
+            current_state.addTransition(self.worker_thread.finished, next_state)
+            current_state.addTransition(self.return_state_signal, previous_state)
 
         # Start the state machine
-        self.dyn_state_machine.setInitialState(self.dyn_states[0])  # Set initial state
-        self.dyn_state_machine.start()
+        self.loop_dynamic_sm.setInitialState(self.dynamic_states[0])  # Set initial state
+        self.loop_dynamic_sm.start()
 
     def show_layout_hide_others(self, widgets: list):
         """Hide all widgets and show the given widgets list, also show the general widgets"""
@@ -441,7 +431,7 @@ class GreatWallQt(QMainWindow):
         [widget.show() for widget in self.general_widgets]
         [state_widget.show() for state_widget in widgets]
 
-    def state1_entered(self):
+    def input_state1_entered(self):
         print('State 1 Entered')
         self.next_button.setEnabled(True)
         self.back_button.setEnabled(True)
@@ -452,7 +442,7 @@ class GreatWallQt(QMainWindow):
         self.back_button.setText(exit_text)
         self.cancel_task()
 
-    def state2_entered(self):
+    def confirm_state2_entered(self):
         print('State 2 Entered')
         self.configure_confirmation_widgets()
         self.show_layout_hide_others(self.confirmation_widgets)
@@ -461,7 +451,7 @@ class GreatWallQt(QMainWindow):
         self.next_button.setText(next_text)
         self.back_button.setText(back_text)
 
-    def state3_entered(self):
+    def derivation_state3_entered(self):
         print('State 3 Entered')
         next_text = "Next"
         reset_text = "Reset"
@@ -491,15 +481,16 @@ class GreatWallQt(QMainWindow):
             self.worker_thread.canceled.connect(self.handle_execution_canceled)
             self.worker_thread.error_occurred.connect(self.handle_greatwall_error)
             self.worker_thread.start()
+            self.init_loop_dynamic_sm()
         except Exception as e:
             self.error_occurred = e
             self.gui_error_signal.emit()
 
     def handle_execution_finished(self):
         # TODO fix this
-        # Perform actions when the execution is finished
-        self.update_dynamic_states()
-        # self.loop_derivation()
+        print("handle_execution_finished")
+        self.configure_selection_buttons()
+        self.show_layout_hide_others(self.dependent_derivation_widgets)
 
     def handle_execution_canceled(self):
         print("Task canceled")
@@ -517,7 +508,7 @@ class GreatWallQt(QMainWindow):
             self.greatwall.cancel_execution()  # Set the cancellation flag in GreatWall
             self.worker_thread.cancel()
 
-    def state4_entered(self):
+    def output_state4_entered(self):
         print('State 4 Entered')
         next_text = "Next"
         reset_text = "Reset"
@@ -531,7 +522,7 @@ class GreatWallQt(QMainWindow):
         self.next_button.hide()
         self.back_button.setText(reset_text)
 
-    def loop_derivation(self):
+    def loop_state_n_entered(self):
         try:
             # TODO fix this
             print("State changed / 2nd SM")
@@ -548,8 +539,7 @@ class GreatWallQt(QMainWindow):
                 self.dependent_derivation_widgets[1].show()
                 self.next_button.setEnabled(True)
             else:
-                self.show_layout_hide_others(self.dependent_derivation_widgets)
-                self.configure_selection_buttons()
+                self.show_layout_hide_others(self.wait_derivation_widgets)
                 self.next_button.setEnabled(False)
         except Exception as e:
             self.error_occurred = e
@@ -569,7 +559,7 @@ class GreatWallQt(QMainWindow):
         self.back_button.setEnabled(True)
         self.back_button.show()
 
-    def close_application(self):
+    def quit_state_entered(self):
         """ Close the parent which exit the application. Bye, come again!"""
         print("Closed")
         self.close()
