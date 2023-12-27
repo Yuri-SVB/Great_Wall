@@ -14,13 +14,24 @@ class GreatWallWorker(QThread):
 
     def __init__(self, greatwall: GreatWall):
         super().__init__()
-        self.greatwall = greatwall
-        self._is_canceled = False
+        self.greatwall: GreatWall = greatwall
+        self._is_initializing: bool = True
+        self._is_canceled: bool = False
+        self.user_choice: int = 0
 
-    # TODO it is running only once
     def run(self):
         try:
-            self.greatwall.execute_greatwall()
+            if self._is_initializing and self.greatwall.current_level:
+                raise ValueError(
+                    f"GreatWall initialization doesn't match the current level {self.greatwall.current_level}"
+                )
+            elif self._is_initializing and not self.greatwall.current_level:
+                print(f"GreatWall is executing with user choice {self.user_choice}")
+                self.greatwall.execute_greatwall()
+                self._is_initializing = False
+            else:
+                print(f"GreatWall is deriving with user choice {self.user_choice}")
+                self.greatwall.derive_from_user_choice(self.user_choice)
             if not self._is_canceled:
                 self.finished.emit()
         except Exception as e:
@@ -33,7 +44,9 @@ class GreatWallWorker(QThread):
 
 class GreatWallQt(QMainWindow):
     gui_error_signal = pyqtSignal()
-    return_state_signal = pyqtSignal()
+    sm2_is_running = pyqtSignal()
+    level_up_signal = pyqtSignal()
+    level_down_signal = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -173,7 +186,7 @@ class GreatWallQt(QMainWindow):
         self.theme_combobox.addItems(themes)
         self.theme_combobox.setCurrentText(themes[0])
         # Hardcode to fast tests
-        # self.theme_combobox.setCurrentText("medieval_fantasy")
+        self.theme_combobox.setCurrentText("medieval_fantasy")
 
         # Wait Derive Widget
         self.wait_derive_label.setText(wait_derive)
@@ -279,9 +292,11 @@ class GreatWallQt(QMainWindow):
             self.selection_buttons.append(button)
 
     def button_clicked(self, button_number: int):
-        self.greatwall.derive_from_user_choice(button_number)
-        if not button_number:
-            self.return_state_signal.emit()
+        if button_number:
+            self.level_up_signal.emit()
+        else:
+            self.level_down_signal.emit()
+        self.run_greatwall_threaded(button_number)
 
     def keyPressEvent(self, event):
         """When enter key is pressed the derivation_spinbox will act as one selection button pressed"""
@@ -320,10 +335,12 @@ class GreatWallQt(QMainWindow):
 
     def configure_selection_buttons(self):
         if self.user_query_combobox.currentText() == "Formosa":
+            # Set buttons to Formosa options
             user_options = self.greatwall.get_li_str_query().split("\n")
             if len(user_options) == len(self.selection_buttons)+1:
                 [self.selection_buttons[i].setText(user_options[i]) for i in range(1, len(self.selection_buttons))]
         else:
+            # Set buttons to Shape options
             # user_options = self.greatwall.get_shape_query()
             # if len(user_options) == len(self.selection_buttons)+1:
             #     [self.selection_buttons[i].setText("") for i in range(1, len(self.selection_buttons))]
@@ -386,40 +403,53 @@ class GreatWallQt(QMainWindow):
         gui_error_state.entered.connect(self.handle_gui_errors)
 
     def init_loop_dynamic_sm(self):
-        # TODO fix this
+
+        # SM1
+        # st1->st2
+        # st2->st3
+        # st3->     SM2  worker
+        #           st1 -> hash -> st+1
+        #           ...
+        #           stn -> st4
+        # st4
+
         if self.loop_dynamic_sm.isRunning():
             self.loop_dynamic_sm.stop()
 
         # Emulate a change in the number of steps or states
-        num_states = self.depth_spinbox.value()  # Get the number of states dynamically
+        num_states = self.depth_spinbox.value()+1  # Get the number of states dynamically
 
         # Remove existing states
-        for state in self.dynamic_states:
-            state.removeTransition(self.worker_thread.finished)
-            state.removeTransition(self.return_state_signal)
-            self.loop_dynamic_sm.removeState(state)
-            state.deleteLater()
+        for each_dyn_state in self.dynamic_states:
+            each_dyn_state.removeTransition(self.level_up_signal)
+            each_dyn_state.removeTransition(self.level_down_signal)
+            self.loop_dynamic_sm.removeState(each_dyn_state)
+            each_dyn_state.deleteLater()
 
         # Create and add new states
         self.dynamic_states = []
         for i in range(num_states):
             state = QState()
-            if not i:
-                state.entered.connect(self.loop_state_n_entered)
+            state.entered.connect(self.loop_state_n_entered)
             self.loop_dynamic_sm.addState(state)
             self.dynamic_states.append(state)
 
         # Add transitions between states
-        for state_index in range(1, len(self.dynamic_states) - 1):
-            current_state = self.dynamic_states[state_index]
+        for state_index in range(0, len(self.dynamic_states) - 1):
+            each_state = self.dynamic_states[state_index]
             next_state = self.dynamic_states[state_index + 1]
-            previous_state = self.dynamic_states[state_index - 1]
-            current_state.addTransition(self.worker_thread.finished, next_state)
-            current_state.addTransition(self.return_state_signal, previous_state)
+            each_state.addTransition(self.level_up_signal, next_state)
+            print(f"The {each_state} \nadded a transition to \n{next_state} \nwhen triggered by \n{self.level_up_signal}")
+            print(f"Transitions {len(each_state.transitions())}")
+            if state_index:
+                previous_state = self.dynamic_states[state_index - 1]
+                each_state.addTransition(self.level_down_signal, previous_state)
 
         # Start the state machine
         self.loop_dynamic_sm.setInitialState(self.dynamic_states[0])  # Set initial state
         self.loop_dynamic_sm.start()
+        self.sm2_is_running.emit()
+        self.run_greatwall_threaded()
 
     def show_layout_hide_others(self, widgets: list):
         """Hide all widgets and show the given widgets list, also show the general widgets"""
@@ -432,7 +462,7 @@ class GreatWallQt(QMainWindow):
         [state_widget.show() for state_widget in widgets]
 
     def input_state1_entered(self):
-        print('State 1 Entered')
+        print("SM1 State 1 Entered")
         self.next_button.setEnabled(True)
         self.back_button.setEnabled(True)
         self.show_layout_hide_others(self.input_state_widgets)
@@ -443,7 +473,7 @@ class GreatWallQt(QMainWindow):
         self.cancel_task()
 
     def confirm_state2_entered(self):
-        print('State 2 Entered')
+        print("SM1 State 2 Entered")
         self.configure_confirmation_widgets()
         self.show_layout_hide_others(self.confirmation_widgets)
         next_text = "Next"
@@ -452,7 +482,7 @@ class GreatWallQt(QMainWindow):
         self.back_button.setText(back_text)
 
     def derivation_state3_entered(self):
-        print('State 3 Entered')
+        print("SM1 State 3 Entered")
         next_text = "Next"
         reset_text = "Reset"
         self.next_button.setText(next_text)
@@ -480,15 +510,18 @@ class GreatWallQt(QMainWindow):
             self.worker_thread.finished.connect(self.handle_execution_finished)
             self.worker_thread.canceled.connect(self.handle_execution_canceled)
             self.worker_thread.error_occurred.connect(self.handle_greatwall_error)
-            self.worker_thread.start()
             self.init_loop_dynamic_sm()
         except Exception as e:
             self.error_occurred = e
             self.gui_error_signal.emit()
 
+    def run_greatwall_threaded(self, user_choice: int = 0):
+        if user_choice >= 0:
+            self.worker_thread.user_choice = user_choice
+            self.worker_thread.start()
+
     def handle_execution_finished(self):
-        # TODO fix this
-        print("handle_execution_finished")
+        print(f"GreatWall execution finished at level {self.greatwall.current_level}")
         self.configure_selection_buttons()
         self.show_layout_hide_others(self.dependent_derivation_widgets)
 
@@ -509,7 +542,7 @@ class GreatWallQt(QMainWindow):
             self.worker_thread.cancel()
 
     def output_state4_entered(self):
-        print('State 4 Entered')
+        print("SM1 State 4 Entered")
         next_text = "Next"
         reset_text = "Reset"
 
@@ -524,9 +557,7 @@ class GreatWallQt(QMainWindow):
 
     def loop_state_n_entered(self):
         try:
-            # TODO fix this
-            print("State changed / 2nd SM")
-            print(self.greatwall.current_level)
+            print(f"SM2 State Entered at level {self.greatwall.current_level} of {self.greatwall.tree_depth}")
             if self.greatwall.current_level >= self.greatwall.tree_depth:
                 self.finish_output = self.greatwall.finish_output()
                 formatted_mnemonic = self.greatwall.mnemo.format_mnemonic(
@@ -546,7 +577,7 @@ class GreatWallQt(QMainWindow):
             self.gui_error_signal.emit()
 
     def handle_gui_errors(self):
-        print('Error state Entered')
+        print("Error State Entered")
         next_text = "Next"
         reset_text = "Reset"
         exception_message = f"Exception:\n{str(self.error_occurred)}"
