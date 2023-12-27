@@ -121,14 +121,13 @@ class GreatWall:
         self.sa3 = self.sa0         # dummy initialization
         self.states = [bytes.fromhex("00")]*self.tree_depth  # dummy initialization
 
-    def execute_greatwall(self):
+    def initialize_state_hashes(self):
         self.state = self.sa0
         self.shuffled_bytes = self.sa0  # dummy initialization
         self.current_level = 0
 
         # Actual work
         self.time_intensive_derivation()
-        # self.user_dependent_derivation()
 
     def time_intensive_derivation(self):
         # Calculating SA1 from SA0

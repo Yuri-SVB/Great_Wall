@@ -26,8 +26,8 @@ class GreatWallWorker(QThread):
                     f"GreatWall initialization doesn't match the current level {self.greatwall.current_level}"
                 )
             elif self._is_initializing and not self.greatwall.current_level:
-                print(f"GreatWall is executing with user choice {self.user_choice}")
-                self.greatwall.execute_greatwall()
+                print(f"GreatWall is initializing the hashes")
+                self.greatwall.initialize_state_hashes()
                 self._is_initializing = False
             else:
                 print(f"GreatWall is deriving with user choice {self.user_choice}")
