@@ -53,6 +53,7 @@ class GreatWallQt(QMainWindow):
         self.finish_output: bytes = bytes(0000)
         self.greatwall = GreatWall()
         self.error_occurred = Exception
+        self.button_number: int = 0
 
         # General Widgets
         self.back_button = QPushButton(self)
@@ -292,11 +293,11 @@ class GreatWallQt(QMainWindow):
             self.selection_buttons.append(button)
 
     def button_clicked(self, button_number: int):
+        self.button_number = button_number
         if button_number:
             self.level_up_signal.emit()
         else:
             self.level_down_signal.emit()
-        self.run_greatwall_threaded(button_number)
 
     def keyPressEvent(self, event):
         """When enter key is pressed the derivation_spinbox will act as one selection button pressed"""
@@ -404,15 +405,6 @@ class GreatWallQt(QMainWindow):
 
     def init_loop_dynamic_sm(self):
 
-        # SM1
-        # st1->st2
-        # st2->st3
-        # st3->     SM2  worker
-        #           st1 -> hash -> st+1
-        #           ...
-        #           stn -> st4
-        # st4
-
         if self.loop_dynamic_sm.isRunning():
             self.loop_dynamic_sm.stop()
 
@@ -421,6 +413,7 @@ class GreatWallQt(QMainWindow):
 
         # Remove existing states
         for each_dyn_state in self.dynamic_states:
+            # TODO solve error with remove transition
             each_dyn_state.removeTransition(self.level_up_signal)
             each_dyn_state.removeTransition(self.level_down_signal)
             self.loop_dynamic_sm.removeState(each_dyn_state)
@@ -435,12 +428,11 @@ class GreatWallQt(QMainWindow):
             self.dynamic_states.append(state)
 
         # Add transitions between states
-        for state_index in range(0, len(self.dynamic_states) - 1):
+        for state_index in range(len(self.dynamic_states)):
             each_state = self.dynamic_states[state_index]
-            next_state = self.dynamic_states[state_index + 1]
-            each_state.addTransition(self.level_up_signal, next_state)
-            print(f"The {each_state} \nadded a transition to \n{next_state} \nwhen triggered by \n{self.level_up_signal}")
-            print(f"Transitions {len(each_state.transitions())}")
+            if state_index < len(self.dynamic_states)-1:
+                next_state = self.dynamic_states[state_index + 1]
+                each_state.addTransition(self.level_up_signal, next_state)
             if state_index:
                 previous_state = self.dynamic_states[state_index - 1]
                 each_state.addTransition(self.level_down_signal, previous_state)
@@ -521,9 +513,20 @@ class GreatWallQt(QMainWindow):
             self.worker_thread.start()
 
     def handle_execution_finished(self):
-        print(f"GreatWall execution finished at level {self.greatwall.current_level}")
-        self.configure_selection_buttons()
-        self.show_layout_hide_others(self.dependent_derivation_widgets)
+        if self.greatwall.current_level >= self.greatwall.tree_depth:
+            self.finish_output = self.greatwall.finish_output()
+            formatted_mnemonic = self.greatwall.mnemo.format_mnemonic(
+                self.greatwall.mnemo.to_mnemonic(self.finish_output)
+            )
+            formatted_mnemonic = "\n".join(formatted_mnemonic.split("\n")[1:self.greatwall.tree_arity+1])
+            local_finish_output = formatted_mnemonic
+            self.result_hash.setText(local_finish_output)
+            self.show_layout_hide_others(self.confirm_result_widgets)
+            self.dependent_derivation_widgets[1].show()
+            self.next_button.setEnabled(True)
+        else:
+            self.configure_selection_buttons()
+            self.show_layout_hide_others(self.dependent_derivation_widgets)
 
     def handle_execution_canceled(self):
         print("Task canceled")
@@ -558,20 +561,9 @@ class GreatWallQt(QMainWindow):
     def loop_state_n_entered(self):
         try:
             print(f"SM2 State Entered at level {self.greatwall.current_level} of {self.greatwall.tree_depth}")
-            if self.greatwall.current_level >= self.greatwall.tree_depth:
-                self.finish_output = self.greatwall.finish_output()
-                formatted_mnemonic = self.greatwall.mnemo.format_mnemonic(
-                    self.greatwall.mnemo.to_mnemonic(self.finish_output)
-                )
-                formatted_mnemonic = "\n".join(formatted_mnemonic.split("\n")[1:self.greatwall.tree_arity+1])
-                local_finish_output = formatted_mnemonic
-                self.result_hash.setText(local_finish_output)
-                self.show_layout_hide_others(self.confirm_result_widgets)
-                self.dependent_derivation_widgets[1].show()
-                self.next_button.setEnabled(True)
-            else:
-                self.show_layout_hide_others(self.wait_derivation_widgets)
-                self.next_button.setEnabled(False)
+            self.show_layout_hide_others(self.wait_derivation_widgets)
+            self.next_button.setEnabled(False)
+            self.run_greatwall_threaded(self.button_number)
         except Exception as e:
             self.error_occurred = e
             self.gui_error_signal.emit()
