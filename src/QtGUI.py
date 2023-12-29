@@ -84,7 +84,9 @@ class GreatWallQt(QMainWindow):
         self.wait_derive_label = QLabel(self)
 
         # Dependent Derivation Widgets
+        self.select_label = QLabel(self)
         self.derivation_spinbox = QSpinBox(self)
+        self.level_label = QLabel(self)
         self.derivation_layout = QVBoxLayout()
         self.selection_buttons = []
         self.confirm_labels = []
@@ -115,8 +117,8 @@ class GreatWallQt(QMainWindow):
         self.confirmation_widgets = [self.confirm_label, self.theme_confirm, self.tlp_confirm, self.depth_confirm,
                                      self.arity_confirm, self.password_confirm]
         self.wait_derivation_widgets = [self.wait_derive_label]
-        self.dependent_derivation_widgets = [self.derivation_spinbox]
-        self.confirm_result_widgets = [self.confirm_result_label, self.result_hash]
+        self.dependent_derivation_widgets = [self.level_label, self.select_label, self.derivation_spinbox]
+        self.confirm_result_widgets = [self.level_label, self.confirm_result_label, self.result_hash]
         self.finish_widgets = [self.finish_output_label, self.finish_text, self.hide_show_button,
                                self.copy_clipboard_button]
         self.error_widgets = [self.config_error_label, self.execution_error_label,
@@ -168,6 +170,7 @@ class GreatWallQt(QMainWindow):
         unknown_error_message = "Or some unexpected error occurred"
         hide_show = "Show output"
         copy_clipboard = "Copy output to clipboard"
+        selection_text = "Select option"
 
         # General Widgets
         self.back_button.setText(next_text)
@@ -193,6 +196,7 @@ class GreatWallQt(QMainWindow):
         self.wait_derive_label.setText(wait_derive)
 
         # Confirmation Widgets
+        self.select_label.setText(selection_text)
         self.configure_confirmation_widgets()
 
         # Result Widget
@@ -211,7 +215,9 @@ class GreatWallQt(QMainWindow):
         self.unknown_error_label.setText(unknown_error_message)
 
         self.config_spinbox(self.tlp_spinbox, 1, 24*7*4*3, 1, 1)
-        self.config_spinbox(self.depth_spinbox, 1, 256, 1, 1)
+        # Hardcode to fast tests
+        # self.config_spinbox(self.depth_spinbox, 1, 256, 1, 1)
+        self.config_spinbox(self.depth_spinbox, 1, 256, 1, 3)
         # Hardcode to fast tests
         # self.config_spinbox(self.depth_spinbox, 1, 256, 1, 2)
         self.config_spinbox(self.arity_spinbox, 2, 256, 1, 2)
@@ -282,18 +288,29 @@ class GreatWallQt(QMainWindow):
                 self.derivation_layout.itemAt(i).widget().deleteLater()
 
         self.config_spinbox(self.derivation_spinbox, 0, self.greatwall.tree_arity, 1, 0)
-        self.derivation_layout.addWidget(self.derivation_spinbox)
+        self.derivation_layout.addWidget(self.level_label)
+        level_layout = QHBoxLayout()
+        level_layout.addWidget(self.select_label)
+        level_layout.addWidget(self.derivation_spinbox)
+        level_layout.addStretch(1)
+        self.derivation_layout.addLayout(level_layout)
+        self.dependent_derivation_widgets.append(self.level_label)
+        self.dependent_derivation_widgets.append(self.select_label)
         self.dependent_derivation_widgets.append(self.derivation_spinbox)
         for i in range(self.greatwall.tree_arity + 1):
             button_text = f"{i}) " if i > 0 else cancel_text
             button = QPushButton(button_text, self)
             button.clicked.connect(lambda state, x=i: self.button_clicked(x))
+            if button not in self.confirm_result_widgets and i == 0:
+                # Button 0 'previous step' must be visible in the last step
+                self.confirm_result_widgets.append(button)
             self.derivation_layout.addWidget(button)
             self.dependent_derivation_widgets.append(button)
             self.selection_buttons.append(button)
 
     def button_clicked(self, button_number: int):
         self.button_number = button_number
+        print(f"Button {self.button_number} pressed")
         if button_number:
             self.level_up_signal.emit()
         else:
@@ -335,6 +352,7 @@ class GreatWallQt(QMainWindow):
         main_layout.addLayout(general_buttons_layout)
 
     def configure_selection_buttons(self):
+        self.level_label.setText(f"Level {self.greatwall.current_level} of {self.greatwall.tree_depth}")
         if self.user_query_combobox.currentText() == "Formosa":
             # Set buttons to Formosa options
             user_options = self.greatwall.get_li_str_query().split("\n")
@@ -521,8 +539,8 @@ class GreatWallQt(QMainWindow):
             formatted_mnemonic = "\n".join(formatted_mnemonic.split("\n")[1:self.greatwall.tree_arity+1])
             local_finish_output = formatted_mnemonic
             self.result_hash.setText(local_finish_output)
+            self.configure_selection_buttons()
             self.show_layout_hide_others(self.confirm_result_widgets)
-            self.dependent_derivation_widgets[1].show()
             self.next_button.setEnabled(True)
         else:
             self.configure_selection_buttons()
