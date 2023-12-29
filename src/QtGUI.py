@@ -26,11 +26,9 @@ class GreatWallWorker(QThread):
                     f"GreatWall initialization doesn't match the current level {self.greatwall.current_level}"
                 )
             elif self._is_initializing and not self.greatwall.current_level:
-                print(f"GreatWall is initializing the hashes")
                 self.greatwall.initialize_state_hashes()
                 self._is_initializing = False
             else:
-                print(f"GreatWall is deriving with user choice {self.user_choice}")
                 self.greatwall.derive_from_user_choice(self.user_choice)
             if not self._is_canceled:
                 self.finished.emit()
@@ -87,6 +85,7 @@ class GreatWallQt(QMainWindow):
         self.select_label = QLabel(self)
         self.derivation_spinbox = QSpinBox(self)
         self.level_label = QLabel(self)
+        # Attention to add widgets to this layout, they will be deleted later and can cause an exception
         self.derivation_layout = QVBoxLayout()
         self.selection_buttons = []
         self.confirm_labels = []
@@ -273,19 +272,21 @@ class GreatWallQt(QMainWindow):
         pass
 
     def configure_choose_derivation_widgets(self):
-        if not self.greatwall:
-            return
 
         cancel_text = "0) Previous Step"
 
         # Clear widgets from list and layout
         self.dependent_derivation_widgets = []
         self.selection_buttons = []
-        # Destroy widgets by setting the parents as None
+        # Destroy widgets in the layout by setting the parents as None
         for i in reversed(range(self.derivation_layout.count())):
-            self.derivation_layout.itemAt(i).widget().setParent(None)
-            if self.derivation_layout.itemAt(i) is not None:
+            if self.derivation_layout.itemAt(i) is None:
+                continue
+            if self.derivation_layout.itemAt(i).widget() is None:
+                continue
+            if self.derivation_layout.itemAt(i).widget() != self.level_label:
                 self.derivation_layout.itemAt(i).widget().deleteLater()
+                self.derivation_layout.itemAt(i).widget().setParent(None)
 
         self.config_spinbox(self.derivation_spinbox, 0, self.greatwall.tree_arity, 1, 0)
         self.derivation_layout.addWidget(self.level_label)
@@ -310,7 +311,6 @@ class GreatWallQt(QMainWindow):
 
     def button_clicked(self, button_number: int):
         self.button_number = button_number
-        print(f"Button {self.button_number} pressed")
         if button_number:
             self.level_up_signal.emit()
         else:
@@ -461,15 +461,20 @@ class GreatWallQt(QMainWindow):
         self.sm2_is_running.emit()
         self.run_greatwall_threaded()
 
-    def show_layout_hide_others(self, widgets: list):
+    def show_layout_hide_others(self, widgets_to_show: list):
         """Hide all widgets and show the given widgets list, also show the general widgets"""
         self.state_widgets = [self.input_state_widgets, self.confirmation_widgets,
                               self.dependent_derivation_widgets, self.wait_derivation_widgets,
                               self.confirm_result_widgets, self.finish_widgets, self.error_widgets]
-        for widgets_list in self.state_widgets:
-            [widget.hide() for widget in widgets_list]
+        for widgets_to_hide in self.state_widgets:
+            for widget in widgets_to_hide:
+                # Try to hide widget, it may have been deleted causing an exception
+                try:
+                    widget.hide()
+                except RuntimeError:
+                    continue
         [widget.show() for widget in self.general_widgets]
-        [state_widget.show() for state_widget in widgets]
+        [state_widget.show() for state_widget in widgets_to_show]
 
     def input_state1_entered(self):
         print("SM1 State 1 Entered")
