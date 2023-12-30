@@ -68,7 +68,7 @@ The second main component is **T**acit **K**nowlege-**B**ased **A**uthentication
 
 Much like Bitcoin itself Great Wall is an original recombination of preexisting concepts. Combining the cryptographic imposition of an arbitrary time delay with the **in**capacity to transmit an authenticating information, unless upon being prompted by specific interface that has brute-force resistant parameters, we have coercion-resistance. Rationale is the way adversary can access said tacit authenticating information is keeping victim under custody for the entire said time. By setting said time to a few hours, days or possibly weeks, defendant impairs attack. The diagram below explain the protocol in terms of its cryptographic elements:
 
-![Diagram representing derivation of KA from SA0 and tacit knowledge](https://github.com/Yuri-SVB/Great_Wall/blob/main/derivation_of_KA_from_SA0.svg)
+![Diagram representing derivation of KA from SA0 and tacit knowledge](./derivation_of_KA_from_SA0.svg)
 
 1. User inputs brute-force resistant SA0 (a strong password) from their memory;
 2. Ordinary and non-critical device hashes SA0 into SA1;
@@ -120,7 +120,7 @@ In summary:
 
 ## Business and Practical Considerations
 
-We aim at a **seed investment of 100K USD for 12.5% of the company**, therefore with implied **valuation of 800K USD**. Refer to [valuation spreadsheet](https://github.com/Yuri-SVB/Great_Wall/blob/main/business_valuation.ods) and [development cost estimation spreadsheet](https://github.com/Yuri-SVB/Great_Wall/blob/main/business_dev_cost_estimation.ods).
+We aim at a **seed investment of 100K USD for 12.5% of the company**, therefore with implied **valuation of 800K USD**. Refer to [valuation spreadsheet](./business_valuation.ods) and [development cost estimation spreadsheet](./business_dev_cost_estimation.ods).
 
 Below are further considerations worth mentioning:
 
