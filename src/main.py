@@ -1,7 +1,5 @@
 import random
-import argon2
 from argon2 import PasswordHasher
-from src.mnemonic.mnemonic import Mnemonic
 from user_interface import UserInterface
 
 class GreatWall:
