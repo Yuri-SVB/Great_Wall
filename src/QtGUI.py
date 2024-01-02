@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QStateMachine, QState, QThread, pyqtSignal
+from PyQt5.QtCore import QStateMachine, QState, QThread, pyqtSignal, QSignalTransition
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QWidget, QLabel, QPushButton, QMessageBox,
                              QComboBox, QSpinBox, QTextEdit, QHBoxLayout, QVBoxLayout)
 from PyQt5.QtCore import Qt
@@ -52,6 +52,7 @@ class GreatWallQt(QMainWindow):
         self.greatwall = GreatWall()
         self.error_occurred = Exception
         self.button_number: int = 0
+        self.transitions = []
 
         # General Widgets
         self.back_button = QPushButton(self)
@@ -118,6 +119,9 @@ class GreatWallQt(QMainWindow):
         self.wait_derivation_widgets = [self.wait_derive_label]
         self.dependent_derivation_widgets = [self.level_label, self.select_label, self.derivation_spinbox]
         self.confirm_result_widgets = [self.level_label, self.confirm_result_label, self.result_hash]
+        # Track the length of confirm_result_widgets,
+        # widgets will be added to confirm_result_widgets and should be removed after deletion
+        self.widget_to_remove = len(self.confirm_result_widgets)
         self.finish_widgets = [self.finish_output_label, self.finish_text, self.hide_show_button,
                                self.copy_clipboard_button]
         self.error_widgets = [self.config_error_label, self.execution_error_label,
@@ -276,8 +280,11 @@ class GreatWallQt(QMainWindow):
         cancel_text = "0) Previous Step"
 
         # Clear widgets from list and layout
-        self.dependent_derivation_widgets = []
-        self.selection_buttons = []
+        self.dependent_derivation_widgets.clear()
+        self.selection_buttons.clear()
+        if len(self.confirm_result_widgets) > self.widget_to_remove:
+            self.confirm_result_widgets = self.confirm_result_widgets[:self.widget_to_remove]
+
         # Destroy widgets in the layout by setting the parents as None
         for i in reversed(range(self.derivation_layout.count())):
             if self.derivation_layout.itemAt(i) is None:
@@ -426,34 +433,45 @@ class GreatWallQt(QMainWindow):
         if self.loop_dynamic_sm.isRunning():
             self.loop_dynamic_sm.stop()
 
-        # Emulate a change in the number of steps or states
-        num_states = self.depth_spinbox.value()+1  # Get the number of states dynamically
+        num_states = self.depth_spinbox.value()+1
 
         # Remove existing states
-        for each_dyn_state in self.dynamic_states:
-            # TODO solve error with remove transition
-            each_dyn_state.removeTransition(self.level_up_signal)
-            each_dyn_state.removeTransition(self.level_down_signal)
-            self.loop_dynamic_sm.removeState(each_dyn_state)
-            each_dyn_state.deleteLater()
+        for each_transition in self.transitions:
+            # Remove the transitions from states
+            source_state = each_transition.sourceState()
+            if source_state:
+                source_state.removeTransition(each_transition)
+
+        # Clear the transitions list after removal
+        self.transitions.clear()
 
         # Create and add new states
-        self.dynamic_states = []
+        self.dynamic_states.clear()
         for i in range(num_states):
             state = QState()
             state.entered.connect(self.loop_state_n_entered)
             self.loop_dynamic_sm.addState(state)
             self.dynamic_states.append(state)
 
-        # Add transitions between states
+        # Add transitions between states,
+        # except the first state doesn't transit with level_down_signal
+        # and the last state doesn't transit with level_up_signal
         for state_index in range(len(self.dynamic_states)):
             each_state = self.dynamic_states[state_index]
-            if state_index < len(self.dynamic_states)-1:
+
+            if state_index < len(self.dynamic_states) - 1:
                 next_state = self.dynamic_states[state_index + 1]
-                each_state.addTransition(self.level_up_signal, next_state)
+                transition = QSignalTransition(self.level_up_signal)
+                transition.setTargetState(next_state)
+                each_state.addTransition(transition)
+                self.transitions.append(transition)
+
             if state_index:
                 previous_state = self.dynamic_states[state_index - 1]
-                each_state.addTransition(self.level_down_signal, previous_state)
+                transition = QSignalTransition(self.level_down_signal)
+                transition.setTargetState(previous_state)
+                each_state.addTransition(transition)
+                self.transitions.append(transition)
 
         # Start the state machine
         self.loop_dynamic_sm.setInitialState(self.dynamic_states[0])  # Set initial state
@@ -563,6 +581,9 @@ class GreatWallQt(QMainWindow):
         error_dialog.exec_()
 
     def cancel_task(self):
+        self.greatwall.current_level = 0
+        if self.loop_dynamic_sm.isRunning():
+            self.loop_dynamic_sm.stop()
         if self.worker_thread.isRunning():
             self.greatwall.cancel_execution()  # Set the cancellation flag in GreatWall
             self.worker_thread.cancel()
