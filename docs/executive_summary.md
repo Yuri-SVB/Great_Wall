@@ -68,7 +68,7 @@ The second main component is **T**acit **K**nowlege-**B**ased **A**uthentication
 
 Much like Bitcoin itself Great Wall is an original recombination of preexisting concepts. Combining the cryptographic imposition of an arbitrary time delay with the **in**capacity to transmit an authenticating information, unless upon being prompted by specific interface that has brute-force resistant parameters, we have coercion-resistance. Rationale is the way adversary can access said tacit authenticating information is keeping victim under custody for the entire said time. By setting said time to a few hours, days or possibly weeks, defendant impairs attack. The diagram below explain the protocol in terms of its cryptographic elements:
 
-![Diagram representing derivation of KA from SA0 and tacit knowledge](https://github.com/Yuri-SVB/Great_Wall/docs/blob/main/derivation_of_KA_from_SA0.svg)
+![Diagram representing derivation of KA from SA0 and tacit knowledge](derivation_of_KA_from_SA0.svg)
 
 1. User inputs brute-force resistant SA0 (a strong password) from their memory;
 2. Ordinary and non-critical device hashes SA0 into SA1;
