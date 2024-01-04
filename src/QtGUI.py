@@ -1,7 +1,7 @@
-from PyQt5.QtCore import QStateMachine, QState, QThread, pyqtSignal, QSignalTransition
+from PyQt5.QtCore import Qt, QStateMachine, QState, QThread, pyqtSignal, QSignalTransition
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QWidget, QLabel, QPushButton, QMessageBox,
-                             QComboBox, QSpinBox, QTextEdit, QHBoxLayout, QVBoxLayout)
-from PyQt5.QtCore import Qt
+                             QComboBox, QSpinBox, QTextEdit, QHBoxLayout, QVBoxLayout, QSizePolicy)
+from PyQt5.QtGui import QIcon
 from greatwall import GreatWall
 from src.mnemonic.mnemonic import Mnemonic
 
@@ -117,8 +117,10 @@ class GreatWallQt(QMainWindow):
         self.confirmation_widgets = [self.confirm_label, self.theme_confirm, self.tlp_confirm, self.depth_confirm,
                                      self.arity_confirm, self.password_confirm]
         self.wait_derivation_widgets = [self.wait_derive_label]
-        self.dependent_derivation_widgets = [self.level_label, self.select_label, self.derivation_spinbox]
-        self.confirm_result_widgets = [self.level_label, self.confirm_result_label, self.result_hash]
+        self.dependent_derivation_widgets: list[QWidget] = [self.level_label, self.select_label,
+                                                            self.derivation_spinbox
+                                                            ]
+        self.confirm_result_widgets: list[QWidget] = [self.level_label, self.confirm_result_label, self.result_hash]
         # Track the length of confirm_result_widgets,
         # widgets will be added to confirm_result_widgets and should be removed after deletion
         self.widget_to_remove = len(self.confirm_result_widgets)
@@ -187,7 +189,9 @@ class GreatWallQt(QMainWindow):
         self.password_label.setText(password)
         query_types = ["Formosa", "Shape"]
         self.user_query_combobox.addItems(query_types)
-        self.user_query_combobox.setCurrentText(query_types[0])
+        # Hardcode to fast tests
+        # self.user_query_combobox.setCurrentText(query_types[0])
+        self.user_query_combobox.setCurrentText(query_types[1])
         self.user_query_combobox.currentTextChanged.connect(self.change_query_type)
         themes = Mnemonic.find_themes()
         self.theme_combobox.addItems(themes)
@@ -365,12 +369,13 @@ class GreatWallQt(QMainWindow):
             user_options = self.greatwall.get_li_str_query().split("\n")
             if len(user_options) == len(self.selection_buttons)+1:
                 [self.selection_buttons[i].setText(user_options[i]) for i in range(1, len(self.selection_buttons))]
-        else:
+        elif self.user_query_combobox.currentText() == "Shape":
             # Set buttons to Shape options
-            # user_options = self.greatwall.get_shape_query()
-            # if len(user_options) == len(self.selection_buttons)+1:
-            #     [self.selection_buttons[i].setText("") for i in range(1, len(self.selection_buttons))]
-            pass
+            user_options = self.greatwall.get_shape_query()
+            if len(user_options) == len(self.selection_buttons):
+                for i in range(1, len(self.selection_buttons)):
+                    self.selection_buttons[i].setIcon(QIcon(str(user_options[i])))
+                    # TODO buttons size must be changed here
 
     def init_main_gui_sm(self):
 
