@@ -41,15 +41,12 @@ class Shaper:
         self.draw.polygon(vertices, outline="white")
         # Showing for debugging purpose
         # self.image.show()
-        # self.save_image(sides)
-        # return self.image
         return self.save_image(sides)
 
     def save_image(self, name):
         parent_path = Path(__file__).parent
         icons_folder_name = f"Icons"
         filename = f"s{name}-polygon.png"
-        print(filename)
         file_path = parent_path / Path(icons_folder_name) / Path(filename)
         self.image.save(file_path, format="png")
         return file_path
