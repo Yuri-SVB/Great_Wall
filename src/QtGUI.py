@@ -373,9 +373,12 @@ class GreatWallQt(QMainWindow):
             # Set buttons to Shape options
             user_options = self.greatwall.get_shape_query()
             if len(user_options) == len(self.selection_buttons):
-                for i in range(1, len(self.selection_buttons)):
-                    self.selection_buttons[i].setIcon(QIcon(str(user_options[i])))
-                    # TODO buttons size must be changed here
+                for button in self.selection_buttons[1:]:
+                    button_index = self.selection_buttons.index(button)
+                    icon = QIcon(str(user_options[button_index]))
+                    button.setIcon(icon)
+                    button.setFixedSize(125, 100)
+                    button.setIconSize(button.size())
 
     def init_main_gui_sm(self):
 
