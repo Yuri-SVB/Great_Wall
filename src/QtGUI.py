@@ -1,7 +1,7 @@
-from PyQt5.QtCore import Qt, QStateMachine, QState, QThread, pyqtSignal, QSignalTransition
+from PyQt5.QtCore import Qt, QStateMachine, QState, QThread, pyqtSignal, QSignalTransition, QSize
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QWidget, QLabel, QPushButton, QMessageBox,
                              QComboBox, QSpinBox, QTextEdit, QHBoxLayout, QVBoxLayout)
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QPixmap
 from greatwall import GreatWall
 from src.mnemonic.mnemonic import Mnemonic
 
@@ -374,12 +374,14 @@ class GreatWallQt(QMainWindow):
             # Set buttons to Shape options
             user_options = self.greatwall.get_shape_query()
             if len(user_options) == len(self.selection_buttons):
+                offset = QSize(25, 5)
                 for button in self.selection_buttons[1:]:
                     button_index = self.selection_buttons.index(button)
-                    icon = QIcon(str(user_options[button_index]))
+                    image = QPixmap(str(user_options[button_index]))
+                    icon = QIcon(image)
                     button.setIcon(icon)
-                    button.setFixedSize(125, 100)
-                    button.setIconSize(button.size())
+                    button.setFixedSize(image.size()+offset)
+                    button.setIconSize(image.size())
 
     def init_main_gui_sm(self):
 
