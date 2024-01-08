@@ -1,51 +1,8 @@
 import random
 import argon2
-from typing import Optional, Union
+from typing import Optional
 from src.mnemonic.mnemonic import Mnemonic
 from Shaper import Shaper
-# from user_interface import UserInterface
-
-
-# class Shaper:
-#     def __init__(self, size: int = 101):
-#         self.size = size
-#
-#         # Create a new image with a black background
-#         self.image = Image.new("RGB", (size, size), "black")
-#         self.draw = ImageDraw.Draw(self.image)
-#
-#     @staticmethod
-#     def get_first_digit(number: bytes):
-#         bytes_1st_digit = int(str(number[0]))
-#         integer_1st_digit = str(bytes_1st_digit)[0]
-#         return int(integer_1st_digit)
-#
-#     def draw_regular_shape(self, sides: Union[int, bytes, bytearray] = 3):
-#         if isinstance(sides, bytes) or isinstance(sides, bytearray):
-#             # If sides is given as bytes it will get the int of the first digit with an offset of 2
-#             sides = self.get_first_digit(sides)+2
-#         size = self.size
-#
-#         # Calculate the coordinates for the polygon points
-#         center_x, center_y = size // 2, size // 2
-#
-#         # Calculate the angle step in radians for each vertex
-#         angle = 2*math.pi/sides
-#
-#         # Calculate the vertices
-#         vertices = [(int(center_x * math.sin(angle * i)) + center_x,
-#                      -int(center_y * math.cos(angle * i)) + center_y)
-#                     for i in range(sides)
-#                     ]
-#
-#         # Draw the polygon
-#         self.draw.polygon(vertices, outline="white")
-#         # Showing for debugging purpose
-#         self.image.show()
-#         filename = f"s{sides}-polygon"
-#         print(filename)
-#         self.image.save(filename+".png")
-#         return self.image
 
 
 class GreatWall:
@@ -53,12 +10,9 @@ class GreatWall:
 
         self.query_type = query_type.lower()
 
-        # user interface
-        # self.user_interface = UserInterface()
-        self.user_chosen_input: int = 0
-
         self.is_finished = False
         self.is_canceled = False
+        self.is_initialized = False
 
         # Formosa
         self.mnemo: Optional[Mnemonic] = None
@@ -75,7 +29,6 @@ class GreatWall:
         self.tree_arity: int = 0
 
         # diagram values
-        # self.sa0 = bytes(bytearray(32 // 8))
         self.sa0: bytes = bytes(00)
         self.sa1: bytes = self.sa0         # dummy initialization
         self.sa2: bytes = self.sa0         # dummy initialization
@@ -93,7 +46,7 @@ class GreatWall:
     def set_themed_mnemo(self, theme: str) -> bool:
         try:
             self.mnemo = Mnemonic(theme)
-            self.nbytesform = 4 #if self.mnemo.is_bip39_theme else 2 #number of bytes in formosa sentence TODO soft code me
+            self.nbytesform = 4  # TODO soft code me
             return True
         except ValueError:
             # TODO treat error
@@ -138,6 +91,7 @@ class GreatWall:
 
         # Actual work
         self.time_intensive_derivation()
+        self.is_initialized = True
 
     def time_intensive_derivation(self):
         # Calculating SA1 from SA0
@@ -192,17 +146,17 @@ class GreatWall:
     def shuffle_bytes(self):
         """ Shuffles a section of level_hash bytes"""
         a = self.nbytesform
-        # self.shuffled_bytes = [bytes(self.state[a * i:a * (i + 1)]) for i in range(self.tree_arity)]
         self.shuffled_bytes = [self.state[a * i:a * (i + 1)] for i in range(self.tree_arity)]
         random.shuffle(self.shuffled_bytes)
 
     def get_li_str_query(self) -> str:
         self.shuffle_bytes()
         shuffled_sentences = [self.mnemo.to_mnemonic(bytes_sentence) for bytes_sentence in self.shuffled_bytes]
-        listr = "Choose 1, ..., %d for level %d".format(self.tree_arity, self.current_level)
-        listr += "%s\n".format("" if not self.current_level else ", choose 0 to go back")
+        listr = f"Choose 1, ..., {self.tree_arity} for level {self.current_level}"
+        return_complement = "" if not self.current_level else ", choose 0 to go back"
+        listr += f"{return_complement}\n"
         for i in range(len(shuffled_sentences)):
-            listr += str(i + 1) + ") " + shuffled_sentences[i] + "\n"
+            listr += f"{str(i + 1)}) {shuffled_sentences[i]}\n"
         return listr
 
     def get_shape_query(self) -> list:
@@ -225,57 +179,20 @@ class GreatWall:
             self.state += bytes(self.shuffled_bytes[chosen_input - 1])
             self.update_with_quick_hash()
             self.current_level += 1
-            self.user_chosen_input = chosen_input
         else:
             self.return_level()
 
     def return_level(self):
         if not self.current_level:
             return
+        if self.is_finished:
+            self.is_finished = False
         self.current_level -= 1
         self.state = self.states[self.current_level]
 
-    # def finish_derivation(self):
-    #     if self.current_level >= self.tree_depth:
-    #         self.finish_output()
-    #         self.user_interface.prompt_integer("Enter 1 to terminate derivation and 0 to go back:", 0, 1)
-    #         if self.user_interface.index_input_int == 1:
-    #             self.is_finished = True
-    #         else:
-    #             self.current_level -= 1
-    #             self.state = self.states[self.current_level]
-    #
-    #
-    #
-    # def _user_dependent_derivation(self):
-    #     while not self.is_finished:
-    #         # Ask user to choose between a set of sentences generated from the shuffled level_hash bytes
-    #         listr = self.get_li_str_query()
-    #         self.user_interface.prompt_integer(listr, 0 if self.current_level != 0 else 1, self.tree_arity)
-    #         if self.user_interface.index_input_int != 0:
-    #             self.user_interface.user_chosen_input = self.shuffled_bytes[self.user_interface.index_input_int - 1]
-    #             self.states[self.current_level] = self.state
-    #             self.state += self.user_interface.user_chosen_input
-    #             self.update_with_quick_hash()
-    #             self.current_level += 1
-    #         else:
-    #             self.current_level -= 1
-    #             self.state = self.states[self.current_level]
-    #         if self.current_level >= self.tree_depth:
-    #             self.finish_output()
-    #             self.user_interface.prompt_integer("Enter 1 to terminate derivation and 0 to go back:", 0, 1)
-    #             if self.user_interface.index_input_int == 1:
-    #                 self.is_finished = True
-    #             else:
-    #                 self.current_level -= 1
-    #                 self.state = self.states[self.current_level]
-    #     # self.finish_output()
-
 
 def main():
-    # GreatWall()
-    for i in range(16):
-        Shaper(3).draw_regular_shape(i+3)
+    return GreatWall()
 
 
 if __name__ == "__main__":
