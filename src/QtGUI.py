@@ -1,6 +1,6 @@
 from PyQt5.QtCore import Qt, QStateMachine, QState, QThread, pyqtSignal, QSignalTransition
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QWidget, QLabel, QPushButton, QMessageBox,
-                             QComboBox, QSpinBox, QTextEdit, QHBoxLayout, QVBoxLayout, QSizePolicy)
+                             QComboBox, QSpinBox, QTextEdit, QHBoxLayout, QVBoxLayout)
 from PyQt5.QtGui import QIcon
 from greatwall import GreatWall
 from src.mnemonic.mnemonic import Mnemonic
@@ -198,6 +198,7 @@ class GreatWallQt(QMainWindow):
         self.theme_combobox.setCurrentText(themes[0])
         # Hardcode to fast tests
         self.theme_combobox.setCurrentText("medieval_fantasy")
+        self.change_query_type()
 
         # Wait Derive Widget
         self.wait_derive_label.setText(wait_derive)
