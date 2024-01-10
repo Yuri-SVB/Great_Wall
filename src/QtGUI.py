@@ -53,6 +53,8 @@ class GreatWallQt(QMainWindow):
         self.error_occurred = Exception
         self.button_number: int = 0
         self.transitions = []
+        self.query_available = ["Formosa", "Shape"]
+        self.query_selected = ""
 
         # General Widgets
         self.back_button = QPushButton(self)
@@ -187,11 +189,10 @@ class GreatWallQt(QMainWindow):
         self.depth_label.setText(choose_depth)
         self.arity_label.setText(choose_arity)
         self.password_label.setText(password)
-        query_types = ["Formosa", "Shape"]
-        self.user_query_combobox.addItems(query_types)
+        self.user_query_combobox.addItems(self.query_available)
         # Hardcode to fast tests
-        # self.user_query_combobox.setCurrentText(query_types[0])
-        self.user_query_combobox.setCurrentText(query_types[1])
+        # self.user_query_combobox.setCurrentText(self.query_available[0])
+        self.user_query_combobox.setCurrentText(self.query_available[1])
         self.user_query_combobox.currentTextChanged.connect(self.change_query_type)
         themes = Mnemonic.find_themes()
         self.theme_combobox.addItems(themes)
@@ -231,11 +232,15 @@ class GreatWallQt(QMainWindow):
         self.config_spinbox(self.arity_spinbox, 2, 256, 1, 2)
 
     def change_query_type(self):
-        is_formosa = self.user_query_combobox.currentText() == "Formosa"
+        if self.user_query_combobox.currentText() not in self.query_available:
+            self.error_occurred = ValueError("Cryptographic option not available")
+            self.gui_error_signal.emit()
+            return
+        is_formosa = self.user_query_combobox.currentText() == self.query_available[0]
+        is_shape = self.user_query_combobox.currentText() == self.query_available[1]
+        self.query_selected = self.user_query_combobox.currentText()
         self.theme_combobox.setEnabled(is_formosa)
-        # self.theme_combobox.setVisible(is_formosa)
         self.theme_label.setEnabled(is_formosa)
-        # self.theme_label.setVisible(is_formosa)
 
     def hide_show_output(self):
         self.finish_text.setVisible(not self.finish_text.isVisible())
@@ -509,6 +514,8 @@ class GreatWallQt(QMainWindow):
         print("SM1 State 1 Entered")
         self.next_button.setEnabled(True)
         self.back_button.setEnabled(True)
+        self.result_hash.clear()
+        self.result_hash.setText("")
         self.show_layout_hide_others(self.input_state_widgets)
         next_text = "Next"
         exit_text = "Exit"
@@ -567,12 +574,19 @@ class GreatWallQt(QMainWindow):
     def handle_execution_finished(self):
         if self.greatwall.current_level >= self.greatwall.tree_depth:
             self.finish_output = self.greatwall.finish_output()
-            formatted_mnemonic = self.greatwall.mnemo.format_mnemonic(
-                self.greatwall.mnemo.to_mnemonic(self.finish_output)
-            )
-            formatted_mnemonic = "\n".join(formatted_mnemonic.split("\n")[1:self.greatwall.tree_arity+1])
-            local_finish_output = formatted_mnemonic
-            self.result_hash.setText(local_finish_output)
+            if self.query_selected == self.query_available[0]:
+                formatted_mnemonic = self.greatwall.mnemo.format_mnemonic(
+                    self.greatwall.mnemo.to_mnemonic(self.finish_output)
+                )
+                formatted_mnemonic = "\n".join(formatted_mnemonic.split("\n")[1:self.greatwall.tree_arity+1])
+                local_finish_output = formatted_mnemonic
+                self.result_hash.setText(local_finish_output)
+            if self.query_selected == self.query_available[1]:
+                image_path = self.greatwall.shaper.draw_regular_shape(self.finish_output)
+                image = QPixmap(str(image_path))
+                self.result_hash.setPixmap(image)
+                self.result_hash.resize(image.size())
+
             self.configure_selection_buttons()
             self.show_layout_hide_others(self.confirm_result_widgets)
             self.next_button.setEnabled(True)

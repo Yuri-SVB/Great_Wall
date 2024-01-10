@@ -18,6 +18,9 @@ class GreatWall:
         self.mnemo: Optional[Mnemonic] = None
         self.nbytesform: int = 0
 
+        # Shaper
+        self.shaper = Shaper()
+
         # constants
         self.argon2salt = "00000000000000000000000000000000"
 
