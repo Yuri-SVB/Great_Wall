@@ -16,4 +16,4 @@ As of the time of writing, we already have the public, formal backing of the pro
 and ongoing communication with potential investors.
 
 For further information, check out our [demo](https://mega.nz/file/vfwhRTwZ#sP3hSRthQNssWRdcmD8XRNIeJX7Eq174ImY4eva_Pwo), our [official site](https://linktr.ee/greatwallt3) and 
-our [executive summary / white paper](./executive_summary.md).
+our [executive summary / white paper](https://github.com/Yuri-SVB/Great_Wall/blob/main/docs/background/executive_summary.md).
