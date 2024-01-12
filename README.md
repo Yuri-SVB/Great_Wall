@@ -1,5 +1,7 @@
-# Great_Wall
-Protocol and application for providing Kerckhoffian, 0-trust, deviceless coercion-resistance in self-custody.
+# Great Wall [![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/) [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://lbesson.mit-license.org/) ![Maintainer](https://img.shields.io/badge/maintainer-Yuri_S_Villas_Boas-red)
+
+Protocol and application for providing Kerckhoffian, 0-trust, deviceless coercion-resistance in self-custody. To understand the protocol, refer to the [executive summary.](./executive_summary.md)
+References: [GreatWall](https://linktr.ee/greatwallt3)
 
 ## Reproducing Demo 1 Experiment:
 
@@ -8,7 +10,7 @@ The follow steps will allow easy memorization of the path demonstrated in [demo 
 1. Download, install, and learn how to use [Anki](https://apps.ankiweb.net/) in your system;
 2. Download (or clone from repository) and import [demo 1 Anki deck](https://github.com/Yuri-SVB/Great_Wall/blob/main/demos/GW_procedural_memory_1.apkg);
 3. Study deck;
-4. Download (or clone from repository) [directory src](https://github.com/Yuri-SVB/Great_Wall/tree/main/src) **specifically in version** ```e8b1551c08a3d59ee8cf30f2b5dfa803556a00a6```;
+4. Download (or clone from repository) [directory src](./src) **specifically in version** ```e8b1551c08a3d59ee8cf30f2b5dfa803556a00a6```;
 5. In your system's terminal, open the directory, activate venv and then run main.py;
 6. Enter ```viboniboasmofiasbrchsprorirerugugucavehistmiinciwibowifltuor``` as the required input ```SA0```;
 7. You have, now, started to navigate the same tree as demonstrated in demo 1 from it's root. Continue as practiced with the aforementioned Anki deck until the leave;
