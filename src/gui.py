@@ -52,7 +52,7 @@ class GreatWallQt(QMainWindow):
         self.greatwall = GreatWall()
         self.error_occurred = Exception
         self.button_number: int = 0
-        self.transitions = []
+        self.transitions: list[QSignalTransition] = []
         self.query_available = ["Formosa", "Shape"]
         self.query_selected = ""
 
@@ -90,8 +90,7 @@ class GreatWallQt(QMainWindow):
         self.level_label = QLabel(self)
         # Attention to add widgets to this layout, they will be deleted later and can cause an exception
         self.derivation_layout = QVBoxLayout()
-        self.selection_buttons = []
-        self.confirm_labels = []
+        self.selection_buttons: list[QPushButton] = []
 
         # Result Widgets
         self.confirm_result_label = QLabel(self)
@@ -132,17 +131,17 @@ class GreatWallQt(QMainWindow):
                               self.unknown_error_label, self.exception_label]
 
         # List of widgets lists
-        self.state_widgets = []
+        self.state_widgets: list[list[QWidget]] = []
 
         # Threaded execution objects
         self.worker_thread = GreatWallWorker(self.greatwall)
 
         # Launch UI
-        self.main_states = []
-        self.error_states = []
+        self.main_states: list[QState()] = []
+        self.error_states: list[QState()] = []
         self.main_gui_sm = QStateMachine()
         self.loop_dynamic_sm = QStateMachine()
-        self.dynamic_states = []
+        self.dynamic_states: list[QState()] = []
         self.init_ui()
         self.init_main_gui_sm()
 
