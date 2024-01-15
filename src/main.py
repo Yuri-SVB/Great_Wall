@@ -1,6 +1,6 @@
 import sys
-import QtGUI
-from user_interface import UserInterface
+from gui import main as gui_main
+from cli import UserInterface
 from greatwall import GreatWall
 
 
@@ -37,7 +37,7 @@ def run_greatwall_cli():
 def main():
     if len(sys.argv) == 2:
         if sys.argv[1].upper() == "GUI":
-            QtGUI.main()
+            gui_main()
         elif sys.argv[1].upper() == "CLI":
             run_greatwall_cli()
     else:
