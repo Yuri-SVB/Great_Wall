@@ -130,3 +130,6 @@ dmypy.json
 
 #IDE folder
 .idea/*
+
+#Dummy icons folder
+src/Icons/*.png
