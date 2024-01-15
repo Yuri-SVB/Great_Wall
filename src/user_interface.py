@@ -45,3 +45,11 @@ class UserInterface:
     def get_sa0(self):
         secret_input = getpass.getpass(prompt="Enter Time-Lock Puzzle password:").split("\n", 1)[0]
         self.user_chosen_input = self.mnemo.expand_password(secret_input)
+
+
+def main():
+    print(f"  (use \"main.py CLI\" to run the GreatWall application with command-line interface)")
+
+
+if __name__ == '__main__':
+    main()

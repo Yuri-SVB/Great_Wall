@@ -41,8 +41,9 @@ def main():
         elif sys.argv[1].upper() == "CLI":
             run_greatwall_cli()
     else:
-        print(f"No execution mode was chosen, please choose between 'GUI' or 'CLI'")
+        print(f"  (use \"main.py GUI\" to run the GreatWall application with graphic user interface)\n"
+              f"  (or \"main.py CLI\" to run with command-line interface)")
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
