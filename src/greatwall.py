@@ -1,7 +1,7 @@
 import random
 import argon2
 from typing import Optional
-from src.mnemonic.mnemonic import Mnemonic
+from mnemonic.mnemonic import Mnemonic
 from Shaper import Shaper
 
 
@@ -198,5 +198,5 @@ def main():
     return GreatWall()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

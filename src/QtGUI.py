@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import (QMainWindow, QApplication, QWidget, QLabel, QPushBu
                              QComboBox, QSpinBox, QTextEdit, QHBoxLayout, QVBoxLayout)
 from PyQt5.QtGui import QIcon, QPixmap
 from greatwall import GreatWall
-from src.mnemonic.mnemonic import Mnemonic
+from mnemonic.mnemonic import Mnemonic
 
 
 # Custom Worker class to perform the time-consuming task
