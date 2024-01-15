@@ -152,7 +152,7 @@ class GreatWallQt(QMainWindow):
 
         self.password_text.setGeometry(0, 0, 100, 50)
         # Hardcode to fast tests
-        self.password_text.setText("viboniboasmofiasbrchsprorirerugugucavehistmiinciwibowifltuor")
+        # self.password_text.setText("viboniboasmofiasbrchsprorirerugugucavehistmiinciwibowifltuor")
 
         self.configure_ui_widgets()
         self.configure_layout()
@@ -191,14 +191,14 @@ class GreatWallQt(QMainWindow):
         self.password_label.setText(password)
         self.user_query_combobox.addItems(self.query_available)
         # Hardcode to fast tests
-        # self.user_query_combobox.setCurrentText(self.query_available[0])
-        self.user_query_combobox.setCurrentText(self.query_available[1])
+        self.user_query_combobox.setCurrentText(self.query_available[0])
+        # self.user_query_combobox.setCurrentText(self.query_available[1])
         self.user_query_combobox.currentTextChanged.connect(self.change_query_type)
         themes = Mnemonic.find_themes()
         self.theme_combobox.addItems(themes)
         self.theme_combobox.setCurrentText(themes[0])
         # Hardcode to fast tests
-        self.theme_combobox.setCurrentText("medieval_fantasy")
+        # self.theme_combobox.setCurrentText("medieval_fantasy")
         self.change_query_type()
 
         # Wait Derive Widget
@@ -225,11 +225,11 @@ class GreatWallQt(QMainWindow):
 
         self.config_spinbox(self.tlp_spinbox, 1, 24*7*4*3, 1, 1)
         # Hardcode to fast tests
-        # self.config_spinbox(self.depth_spinbox, 1, 256, 1, 1)
-        self.config_spinbox(self.depth_spinbox, 1, 256, 1, 3)
+        self.config_spinbox(self.depth_spinbox, 1, 256, 1, 1)
+        # self.config_spinbox(self.depth_spinbox, 1, 256, 1, 3)
         # Hardcode to fast tests
-        # self.config_spinbox(self.depth_spinbox, 1, 256, 1, 2)
-        self.config_spinbox(self.arity_spinbox, 2, 256, 1, 2)
+        self.config_spinbox(self.arity_spinbox, 1, 256, 1, 2)
+        # self.config_spinbox(self.arity_spinbox, 2, 256, 1, 2)
 
     def change_query_type(self):
         if self.user_query_combobox.currentText() not in self.query_available:
