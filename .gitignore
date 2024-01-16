@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+#IDE folder
+.idea/*
+
+#Dummy icons folder
+src/Icons/*.png
