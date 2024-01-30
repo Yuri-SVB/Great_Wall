@@ -1,5 +1,6 @@
-import sys
 import getpass
+import sys
+
 from mnemonic.mnemonic import Mnemonic
 
 
@@ -21,14 +22,14 @@ class UserInterface:
             try:
                 self.index_input_int = int(self.index_input_str)
                 if self.index_input_int < min_value:
-                    print('parameter cannot be lower than ', min_value)
+                    print("parameter cannot be lower than ", min_value)
                 elif max_value < self.index_input_int:
-                    print('parameter cannot be higher than ', max_value)
+                    print("parameter cannot be higher than ", max_value)
                 else:
                     self.index_input_is_valid = True
             except ValueError:
                 # Handle the exception
-                print('Please enter an integer')
+                print("Please enter an integer")
 
     def prompt_integer(self, text, min_value, max_value):
         print(text)
@@ -39,17 +40,21 @@ class UserInterface:
         theme_list = Mnemonic.find_themes()
         for i in range(len(theme_list)):
             holderstr += str(i) + ") " + theme_list[i] + "\n"
-        self.prompt_integer(holderstr, 0, len(theme_list)-1)
+        self.prompt_integer(holderstr, 0, len(theme_list) - 1)
         self.user_chosen_input = theme_list[self.index_input_int]
 
     def get_sa0(self):
-        secret_input = getpass.getpass(prompt="Enter Time-Lock Puzzle password:").split("\n", 1)[0]
+        secret_input = getpass.getpass(prompt="Enter Time-Lock Puzzle password:").split(
+            "\n", 1
+        )[0]
         self.user_chosen_input = self.mnemo.expand_password(secret_input)
 
 
 def main():
-    print(f"  (use \"main.py CLI\" to run the GreatWall application with command-line interface)")
+    print(
+        f'  (use "main.py CLI" to run the GreatWall application with command-line interface)'
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
