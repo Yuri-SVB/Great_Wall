@@ -58,17 +58,30 @@ class GreatWall:
             return False
 
     def set_tlp(self, tlp: int):
-        # topology of TLP derivation,
-        # tlp parameter is the number of iterations of memory-hard hash, from 1 to 24*7*4*3
+        """Topology of TLP derivation.
+
+        Args:
+            tlp (int): parameter is the number of iterations of memory-hard hash,
+                from 1 to 24*7*4*3.
+        """
         self.TLP_param = tlp
 
     def set_depth(self, tree_depth: int):
-        # topology of iterative derivation,
-        # tree depth is the number of iterative procedural memory choices needed, from 1 to 256
+        """Topology of iterative derivation.
+
+        Args:
+            tree_depth (int): is the number of iterative procedural memory
+                choices needed, from 1 to 256.
+        """
         self.tree_depth = tree_depth
 
     def set_arity(self, tree_arity: int):
-        # topology of iterative derivation, tree arity is the number of options at each iteration, from 2 to 256
+        """Topology of iterative derivation.
+
+        Args:
+            tree_arity (int): is the number of options at each iteration,
+                from 2 to 256
+        """
         self.tree_arity = tree_arity
 
     def set_sa0(self, mnemonic: str) -> bool:
