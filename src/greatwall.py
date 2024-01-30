@@ -1,6 +1,8 @@
 import random
-import argon2
 from typing import Optional
+
+from argon2 import low_level
+
 from mnemonic.mnemonic import Mnemonic
 from Shaper import Shaper
 
@@ -22,7 +24,7 @@ class GreatWall:
         self.shaper = Shaper()
 
         # constants
-        self.argon2salt = "00000000000000000000000000000000"
+        self.argon2salt = bytes("00000000000000000000000000000000", "utf-8")
 
         # topology of TLP derivation
         self.TLP_param: int = 0
@@ -31,12 +33,12 @@ class GreatWall:
         self.tree_depth: int = 0
         self.tree_arity: int = 0
 
-        # diagram values
+        # diagram dummy init values
         self.sa0: bytes = bytes(00)
-        self.sa1: bytes = self.sa0         # dummy initialization
-        self.sa2: bytes = self.sa0         # dummy initialization
-        self.sa3: bytes = self.sa0         # dummy initialization
-        self.states: list[bytes] = [bytes.fromhex("00")]*self.tree_depth  # dummy initialization
+        self.sa1: bytes = self.sa0
+        self.sa2: bytes = self.sa0
+        self.sa3: bytes = self.sa0
+        self.states: list[bytes] = [bytes.fromhex("00")] * self.tree_depth
 
         # Initial state
         self.state: bytes = self.sa0
@@ -56,17 +58,30 @@ class GreatWall:
             return False
 
     def set_tlp(self, tlp: int):
-        # topology of TLP derivation,
-        # tlp parameter is the number of iterations of memory-hard hash, from 1 to 24*7*4*3
+        """Topology of TLP derivation.
+
+        Args:
+            tlp (int): parameter is the number of iterations of memory-hard hash,
+                from 1 to 24*7*4*3.
+        """
         self.TLP_param = tlp
 
     def set_depth(self, tree_depth: int):
-        # topology of iterative derivation,
-        # tree depth is the number of iterative procedural memory choices needed, from 1 to 256
+        """Topology of iterative derivation.
+
+        Args:
+            tree_depth (int): is the number of iterative procedural memory
+                choices needed, from 1 to 256.
+        """
         self.tree_depth = tree_depth
 
     def set_arity(self, tree_arity: int):
-        # topology of iterative derivation, tree arity is the number of options at each iteration, from 2 to 256
+        """Topology of iterative derivation.
+
+        Args:
+            tree_arity (int): is the number of options at each iteration,
+                from 2 to 256
+        """
         self.tree_arity = tree_arity
 
     def set_sa0(self, mnemonic: str) -> bool:
@@ -82,10 +97,10 @@ class GreatWall:
 
     def init_diagram_values(self):
         # Diagram values
-        self.sa1 = self.sa0         # dummy initialization
-        self.sa2 = self.sa0         # dummy initialization
-        self.sa3 = self.sa0         # dummy initialization
-        self.states = [bytes.fromhex("00")]*self.tree_depth  # dummy initialization
+        self.sa1 = self.sa0  # dummy initialization
+        self.sa2 = self.sa0  # dummy initialization
+        self.sa3 = self.sa0  # dummy initialization
+        self.states = [bytes.fromhex("00")] * self.tree_depth  # dummy initialization
 
     def initialize_state_hashes(self):
         self.state = self.sa0
@@ -98,63 +113,68 @@ class GreatWall:
 
     def time_intensive_derivation(self):
         # Calculating SA1 from SA0
-        print('Initializing SA0')
+        print("Initializing SA0")
         self.state = self.sa0
         if self.is_canceled:
             print("Task canceled")
             return  # Exit the task if canceled
-        print('Deriving SA0 -> SA1')
+        print("Deriving SA0 -> SA1")
         self.update_with_quick_hash()
         self.sa1 = self.state
         if self.is_canceled:
             print("Task canceled")
             return  # Exit the task if canceled
-        print('Deriving SA1 -> SA2')
+        print("Deriving SA1 -> SA2")
         self.update_with_long_hash()
         self.sa2 = self.state
         self.state = self.sa0 + self.state
         if self.is_canceled:
             print("Task canceled")
             return  # Exit the task if canceled
-        print('Deriving SA2 -> SA3')
+        print("Deriving SA2 -> SA3")
         self.update_with_quick_hash()
         self.sa3 = self.state
 
     def update_with_long_hash(self):
-        """ Update self.level_hash with the hash of the previous self.level_hash taking presumably a long time"""
+        """Update self.level_hash with the hash of the previous self.level_hash taking presumably a long time"""
         for i in range(self.TLP_param):
-            print("iteration #", i+1, " of TLP:")
-            self.state = argon2.argon2_hash(
-                password=self.state,
+            print("iteration #", i + 1, " of TLP:")
+            self.state = low_level.hash_secret_raw(
+                secret=self.state,
                 salt=self.argon2salt,
-                t=8,
-                m=1048576,
-                p=1,
-                buflen=128,
-                argon_type=argon2.Argon2Type.Argon2_i
+                time_cost=8,
+                memory_cost=1048576,
+                parallelism=1,
+                hash_len=128,
+                type=low_level.Type.I,
             )
 
     def update_with_quick_hash(self):
-        """ Update self.level_hash with the hash of the previous self.level_hash taking presumably a quick time"""
-        self.state = argon2.argon2_hash(
-            password=self.state,
+        """Update self.level_hash with the hash of the previous self.level_hash taking presumably a quick time"""
+        self.state = low_level.hash_secret_raw(
+            secret=self.state,
             salt=self.argon2salt,
-            t=32,
-            m=1024,
-            p=1,
-            buflen=128,
-            argon_type=argon2.Argon2Type.Argon2_i
+            time_cost=32,
+            memory_cost=1024,
+            parallelism=1,
+            hash_len=128,
+            type=low_level.Type.I,
         )
 
     def shuffle_bytes(self):
-        """ Shuffles a section of level_hash bytes"""
+        """Shuffles a section of level_hash bytes"""
         a = self.nbytesform
-        self.shuffled_bytes = [self.state[a * i:a * (i + 1)] for i in range(self.tree_arity)]
+        self.shuffled_bytes = [
+            self.state[a * i : a * (i + 1)] for i in range(self.tree_arity)
+        ]
         random.shuffle(self.shuffled_bytes)
 
     def get_li_str_query(self) -> str:
         self.shuffle_bytes()
-        shuffled_sentences = [self.mnemo.to_mnemonic(bytes_sentence) for bytes_sentence in self.shuffled_bytes]
+        shuffled_sentences = [
+            self.mnemo.to_mnemonic(bytes_sentence)
+            for bytes_sentence in self.shuffled_bytes
+        ]
         listr = f"Choose 1, ..., {self.tree_arity} for level {self.current_level}"
         return_complement = "" if not self.current_level else ", choose 0 to go back"
         listr += f"{return_complement}\n"
@@ -164,10 +184,16 @@ class GreatWall:
 
     def get_shape_query(self) -> list:
         self.shuffle_bytes()
-        shuffled_shapes = [Shaper().draw_regular_shape(bytes_sentence)
-                           for bytes_sentence in self.shuffled_bytes]
-        listr = "Choose 1, ..., %d for level %d".format(self.tree_arity, self.current_level)
-        listr += "%s\n".format("" if not self.current_level else ", choose 0 to go back")
+        shuffled_shapes = [
+            Shaper().draw_regular_shape(bytes_sentence)
+            for bytes_sentence in self.shuffled_bytes
+        ]
+        listr = "Choose 1, ..., %d for level %d".format(
+            self.tree_arity, self.current_level
+        )
+        listr += "%s\n".format(
+            "" if not self.current_level else ", choose 0 to go back"
+        )
         shuffled_shapes = [listr] + shuffled_shapes
         return shuffled_shapes
 
@@ -198,5 +224,5 @@ def main():
     return GreatWall()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

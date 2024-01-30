@@ -17,11 +17,11 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-import os
 import hashlib
 import hmac
 import itertools
 import json
+import os
 import sys
 import unicodedata
 from pathlib import Path
@@ -47,9 +47,10 @@ class ThemeNotFound(Exception):
 
 class ThemeDict(dict):
     """
-        This class inherits builtin dict and facilitate the access to structural keys
-        mitigating issues with string references
+    This class inherits builtin dict and facilitate the access to structural keys
+    mitigating issues with string references
     """
+
     FILL_SEQUENCE_KEY = "FILLING_ORDER"
     NATURAL_SEQUENCE_KEY = "NATURAL_ORDER"
     LEADS_KW = "LEADS"
@@ -72,8 +73,8 @@ class ThemeDict(dict):
 
     def __getitem__(self, item):
         """
-            Overloads __getitem__ from dict to return ThemeDict type when the returned item is a dict
-            Work as dict.__getitem__ in all other ways
+        Overloads __getitem__ from dict to return ThemeDict type when the returned item is a dict
+        Work as dict.__getitem__ in all other ways
         """
         ret = dict.__getitem__(self, item)
         ret = ThemeDict(ret) if isinstance(ret, dict) else ret
@@ -81,66 +82,81 @@ class ThemeDict(dict):
 
     def __setitem__(self, key, value):
         """
-            Overloads __setitem__ from dict to set ThemeDict type when the set item is a dict
-            Work as dict.__setitem__ in all other ways
+        Overloads __setitem__ from dict to set ThemeDict type when the set item is a dict
+        Work as dict.__setitem__ in all other ways
         """
-        dict.__setitem__(self, key, ThemeDict(value)) \
-            if isinstance(value, dict) else dict.__setitem__(self, key, value)
+        (
+            dict.__setitem__(self, key, ThemeDict(value))
+            if isinstance(value, dict)
+            else dict.__setitem__(self, key, value)
+        )
 
     def update(self, *args, **kwargs):
-        """ Overloads update from dict to call this class overloaded methods"""
+        """Overloads update from dict to call this class overloaded methods"""
         for k, v in ThemeDict(*args, **kwargs).items():
             self[k] = v
 
     @property
     def filling_order(self) -> list[str]:
-        """ The list of words in restriction sequence to form a sentence"""
-        filling_order = self[self.FILL_SEQUENCE_KEY] if self.FILL_SEQUENCE_KEY in self.keys() else []
+        """The list of words in restriction sequence to form a sentence"""
+        filling_order = (
+            self[self.FILL_SEQUENCE_KEY]
+            if self.FILL_SEQUENCE_KEY in self.keys()
+            else []
+        )
         return filling_order
 
     @property
     def natural_order(self) -> list[str]:
-        """ The list of words in natural speech to form a sentence"""
-        natural_order = self[self.NATURAL_SEQUENCE_KEY] if self.NATURAL_SEQUENCE_KEY in self.keys() else []
+        """The list of words in natural speech to form a sentence"""
+        natural_order = (
+            self[self.NATURAL_SEQUENCE_KEY]
+            if self.NATURAL_SEQUENCE_KEY in self.keys()
+            else []
+        )
         return natural_order
 
     @property
     def leads(self) -> list:
-        """ The list of words led by this dictionary"""
+        """The list of words led by this dictionary"""
         leads = self[self.LEADS_KW] if self.LEADS_KW in self.keys() else []
         return leads
 
     @property
     def total_words(self) -> list:
-        """ The list of all words of this syntactic word"""
+        """The list of all words of this syntactic word"""
         total_words = self[self.TOTALS_KW] if self.TOTALS_KW in self.keys() else []
         return total_words
 
     @property
     def image(self) -> list:
-        """ The list of all words led by current syntactic word"""
+        """The list of all words led by current syntactic word"""
         image = self[self.IMAGE_KW] if self.IMAGE_KW in self.keys() else []
         return image
 
     @property
-    def mapping(self) -> 'ThemeDict':
-        """ The list of all words led by this syntactic word"""
-        mapping = ThemeDict(self[self.MAPPING_KW]) if self.MAPPING_KW in self.keys() else ThemeDict()
+    def mapping(self) -> "ThemeDict":
+        """The list of all words led by this syntactic word"""
+        mapping = (
+            ThemeDict(self[self.MAPPING_KW])
+            if self.MAPPING_KW in self.keys()
+            else ThemeDict()
+        )
         return mapping
 
     @property
     def bit_length(self) -> int:
-        """ The number of bits to map the words"""
+        """The number of bits to map the words"""
         bit_length = self[self.BITS_KW] if self.BITS_KW in self.keys() else 0
         return bit_length
 
     @property
     def led_by(self) -> str:
-        """ The word that leads this dictionary"""
+        """The word that leads this dictionary"""
         led_by = self[self.LED_KW] if self.LED_KW in self.keys() else ""
         return led_by
 
-    def get_led_by_mapping(self, led_by: str) -> 'ThemeDict':
+    def get_led_by_mapping(self, led_by: str) -> "ThemeDict":
         """
             Get the mapping of the leading word
 
@@ -160,19 +176,21 @@ class ThemeDict(dict):
 
     @property
     def bits_per_phrase(self) -> int:
-        """ Bits mapped by each phrase in this theme"""
-        bits_per_phrase = sum([self[syntactic_word].bit_length for syntactic_word in self.filling_order])
+        """Bits mapped by each phrase in this theme"""
+        bits_per_phrase = sum(
+            [self[syntactic_word].bit_length for syntactic_word in self.filling_order]
+        )
         return bits_per_phrase
 
     @property
     def bits_fill_sequence(self) -> list[int]:
-        """ The bit length of the word in the filling order"""
+        """The bit length of the word in the filling order"""
         bit_sequence = [self[each_word].bit_length for each_word in self.filling_order]
         return bit_sequence
 
     @property
     def words_per_phrase(self) -> int:
-        """ Words mapping in each phrase in this theme"""
+        """Words mapping in each phrase in this theme"""
         words_per_phrase = len(self.filling_order)
         if words_per_phrase != len(self.natural_order):
             error_message = "The theme is malformed"
@@ -181,20 +199,27 @@ class ThemeDict(dict):
 
     @property
     def wordlist(self) -> list[str]:
-        """ All words used in the theme"""
+        """All words used in the theme"""
         # Remove duplicates with list(dict.fromkeys(x)), concatenate all lists with itertools.chain.from_iterable(y)
-        wordlist = list(dict.fromkeys(itertools.chain.from_iterable(
-            self[each_fill_word].total_words
-            for each_fill_word in self.filling_order
-            if each_fill_word in self.keys())))
+        wordlist = list(
+            dict.fromkeys(
+                itertools.chain.from_iterable(
+                    self[each_fill_word].total_words
+                    for each_fill_word in self.filling_order
+                    if each_fill_word in self.keys()
+                )
+            )
+        )
         return wordlist
 
     @property
     def restriction_sequence(self) -> list[tuple[str, str]]:
-        """ The list of restrictions used in this theme"""
-        restriction_sequence = [(syntactic_word, each_restriction)
-                                for syntactic_word in self.filling_order
-                                for each_restriction in self[syntactic_word].leads]
+        """The list of restrictions used in this theme"""
+        restriction_sequence = [
+            (syntactic_word, each_restriction)
+            for syntactic_word in self.filling_order
+            for each_restriction in self[syntactic_word].leads
+        ]
         return restriction_sequence
 
     def natural_index(self, syntactic_word: str) -> int:
@@ -216,29 +241,33 @@ class ThemeDict(dict):
 
     @property
     def natural_map(self) -> list[int]:
-        """ The mapping of indexes of the natural order in the filling order"""
+        """The mapping of indexes of the natural order in the filling order"""
         natural_map = list(map(self.natural_index, self.filling_order))
         return natural_map
 
     @property
     def filling_map(self) -> list[int]:
-        """ The mapping of indexes of the filling order in the natural order"""
+        """The mapping of indexes of the filling order in the natural order"""
         filling_map = list(map(self.fill_index, self.natural_order))
         return filling_map
 
     @property
     def restriction_indexes(self) -> list[tuple[int, int]]:
-        """ The indexes of the restriction sequence of the sentence in natural speech"""
-        leads_indexes = [(self.natural_index(each_restrict[0]),
-                          self.natural_index(each_restrict[1]))
-                         for each_restrict in self.restriction_sequence]
+        """The indexes of the restriction sequence of the sentence in natural speech"""
+        leads_indexes = [
+            (self.natural_index(each_restrict[0]), self.natural_index(each_restrict[1]))
+            for each_restrict in self.restriction_sequence
+        ]
         return leads_indexes
 
     @property
     def prime_syntactic_leads(self) -> list[str]:
-        """ Syntactic words which does not follow any other syntactic word"""
-        prime_syntactic_leads = [each_word for each_word in self.filling_order
-                                 if self[each_word].led_by == "NONE"]
+        """Syntactic words which does not follow any other syntactic word"""
+        prime_syntactic_leads = [
+            each_word
+            for each_word in self.filling_order
+            if self[each_word].led_by == "NONE"
+        ]
         return prime_syntactic_leads
 
     @staticmethod
@@ -292,9 +321,10 @@ class ThemeDict(dict):
             The list of restriction relation of the words from the given sentence
             ordered as a tuple of leading word and led word respectively
         """
-        restriction_pairs = [(sentence[each_pair[0]],
-                              sentence[each_pair[1]])
-                             for each_pair in self.restriction_indexes]
+        restriction_pairs = [
+            (sentence[each_pair[0]], sentence[each_pair[1]])
+            for each_pair in self.restriction_indexes
+        ]
         return restriction_pairs
 
     def get_relation_indexes(self, relation: tuple) -> tuple[int, int]:
@@ -353,13 +383,16 @@ class ThemeDict(dict):
             error_message = "The number of words in sentence must be %d, but it is %d"
             raise ValueError(error_message % (len(sentence), self.words_per_phrase))
 
-        word_indexes = [0]*len(sentence)
+        word_indexes = [0] * len(sentence)
         restriction_sequence = self.restriction_sequence
         prime_syntactic_leads = self.prime_syntactic_leads
         word_restriction_pairs = self.restriction_pairs(sentence)
         restriction_relation = zip(restriction_sequence, word_restriction_pairs)
         for each_syntactic_leads in prime_syntactic_leads:
-            each_relation = (each_syntactic_leads, sentence[self.natural_index(each_syntactic_leads)])
+            each_relation = (
+                each_syntactic_leads,
+                sentence[self.natural_index(each_syntactic_leads)],
+            )
             mnemo_index, word_index = self.get_relation_indexes(each_relation)
             word_indexes[mnemo_index] = word_index
         for each_relation in restriction_relation:
@@ -389,8 +422,9 @@ class ThemeDict(dict):
             raise ValueError(error_message % (len(sentence), self.words_per_phrase))
 
         word_natural_indexes = self.get_natural_indexes(sentence)
-        word_fill_indexes = [word_natural_indexes[each_index]
-                             for each_index in self.natural_map]
+        word_fill_indexes = [
+            word_natural_indexes[each_index] for each_index in self.natural_map
+        ]
         return word_fill_indexes
 
     def get_phrase_amount(self, mnemonic: Union[str, list[str]]) -> int:
@@ -430,8 +464,10 @@ class ThemeDict(dict):
         mnemonic = self.normalize_mnemonic(mnemonic)
         phrase_size = self.words_per_phrase
         phrase_amount = self.get_phrase_amount(mnemonic)
-        sentences = [mnemonic[phrase_size*each_phrase:phrase_size*(each_phrase+1)]
-                     for each_phrase in range(phrase_amount)]
+        sentences = [
+            mnemonic[phrase_size * each_phrase : phrase_size * (each_phrase + 1)]
+            for each_phrase in range(phrase_amount)
+        ]
         return sentences
 
     def get_phrase_indexes(self, mnemonic: Union[str, list[str]]) -> list[int]:
@@ -452,8 +488,11 @@ class ThemeDict(dict):
         """
         mnemonic = self.normalize_mnemonic(mnemonic)
         sentences = self.get_sentences(mnemonic)
-        indexes = [each_fill_index for each_phrase in sentences
-                   for each_fill_index in self.get_filling_indexes(each_phrase)]
+        indexes = [
+            each_fill_index
+            for each_phrase in sentences
+            for each_fill_index in self.get_filling_indexes(each_phrase)
+        ]
         return indexes
 
     def get_lead_mapping(self, syntactic_key):
@@ -520,7 +559,7 @@ class ThemeDict(dict):
 
             bit_length = self[syntactic_key].bit_length
             # Integer from substring of zeroes and ones representing index of current word within its list
-            word_index = int(data_bits[bit_index: bit_index + bit_length], 2)
+            word_index = int(data_bits[bit_index : bit_index + bit_length], 2)
             bit_index += bit_length
 
             list_of_words = self.get_lead_list(syntactic_key, current_sentence)
@@ -545,7 +584,9 @@ class ThemeDict(dict):
         sentences = []
         for phrase_index in range(phrases_amount):
             sentence_index = self.bits_per_phrase * phrase_index
-            data_segment = data_bits[sentence_index: sentence_index + self.bits_per_phrase]
+            data_segment = data_bits[
+                sentence_index : sentence_index + self.bits_per_phrase
+            ]
             sentences += self.assemble_sentence(data_segment)
         return sentences
 
@@ -562,7 +603,7 @@ def b58encode(v: bytes) -> str:
     string = ""
     while acc:
         acc, idx = divmod(acc, 58)
-        string = alphabet[idx: idx + 1] + string
+        string = alphabet[idx : idx + 1] + string
     return string
 
 
@@ -571,13 +612,15 @@ class Mnemonic(object):
 
     @property
     def is_bip39_theme(self) -> bool:
-        """ Evaluates whether the theme chosen is from BIP39 or not"""
+        """Evaluates whether the theme chosen is from BIP39 or not"""
         is_bip39 = self.base_theme.startswith(self.DEFAULT_THEME)
         return is_bip39
 
     def __init__(self, theme: str):
         self.base_theme = theme
-        theme_file = Path(__file__).parent.absolute() / Path("themes") / Path("%s.json" % theme)
+        theme_file = (
+            Path(__file__).parent.absolute() / Path("themes") / Path("%s.json" % theme)
+        )
         if Path.exists(theme_file) and Path.is_file(theme_file):
             with open(theme_file) as json_file:
                 self.words_dictionary = ThemeDict(json.load(json_file))
@@ -598,9 +641,11 @@ class Mnemonic(object):
             The list the name of the themes found in the folder
         """
         themes_path = Path("themes")
-        theme_files = [str(each_file).split(".")[0]
-                       for each_file in os.listdir(Path(__file__).parent.absolute() / themes_path)
-                       if str(each_file).endswith(".json")]
+        theme_files = [
+            str(each_file).split(".")[0]
+            for each_file in os.listdir(Path(__file__).parent.absolute() / themes_path)
+            if str(each_file).endswith(".json")
+        ]
         return theme_files
 
     @staticmethod
@@ -648,7 +693,9 @@ class Mnemonic(object):
         code = cls.normalize_string(code)
         possible_themes = set(cls(each_theme) for each_theme in cls.find_themes())
         for word in code.split():
-            possible_themes = set(theme for theme in possible_themes if word in theme.wordlist)
+            possible_themes = set(
+                theme for theme in possible_themes if word in theme.wordlist
+            )
             if not possible_themes:
                 raise ThemeNotFound(f"Theme unrecognized for {word!r}")
         if len(possible_themes) == 1:
@@ -702,10 +749,17 @@ class Mnemonic(object):
         n = 4 if self.is_bip39_theme else 2
         # Concatenate the first n letters of each word in a single string
         # If the word in BIP39 has 3 letters finish with "-"
-        password = ["".join([w[:n] if len(w) >= n else w+"-" for w in mnemonic]) + "\n"]
+        password = [
+            "".join([w[:n] if len(w) >= n else w + "-" for w in mnemonic]) + "\n"
+        ]
         phrase_size = self.words_dictionary.words_per_phrase
-        password += [" ".join(mnemonic[phrase_size * phrase_index:phrase_size * (phrase_index + 1)]) + "\n"
-                     for phrase_index in range(len(mnemonic) // phrase_size)]
+        password += [
+            " ".join(
+                mnemonic[phrase_size * phrase_index : phrase_size * (phrase_index + 1)]
+            )
+            + "\n"
+            for phrase_index in range(len(mnemonic) // phrase_size)
+        ]
         password = "".join(password)[:-1]
         return password
 
@@ -740,13 +794,15 @@ class Mnemonic(object):
 
         # Determining strength of the password
         number_phrases = words_size // words_dict.words_per_phrase
-        concat_len_bits = round(number_phrases*words_dict.bits_per_phrase)
-        checksum_length_bits = round(concat_len_bits//bits_per_checksum_bit)
-        entropy_length_bits = concat_len_bits-checksum_length_bits
+        concat_len_bits = round(number_phrases * words_dict.bits_per_phrase)
+        checksum_length_bits = round(concat_len_bits // bits_per_checksum_bit)
+        entropy_length_bits = concat_len_bits - checksum_length_bits
 
-        idx = map(lambda x, y: bin(x)[2:].zfill(y),
-                  words_dict.get_phrase_indexes(words),
-                  words_dict.bits_fill_sequence * phrase_amount)
+        idx = map(
+            lambda x, y: bin(x)[2:].zfill(y),
+            words_dict.get_phrase_indexes(words),
+            words_dict.bits_fill_sequence * phrase_amount,
+        )
         concat_bits = [bit == "1" for bit in "".join(idx)]
 
         # Extract original entropy as bytes.
@@ -762,9 +818,10 @@ class Mnemonic(object):
         hash_bytes = hashlib.sha256(entropy).digest()
         hash_bits = list(
             itertools.chain.from_iterable(
-                [checksum_byte & (1 << (8 - 1 - bit_idx)) != 0
-                 for bit_idx in range(8)]
-                for checksum_byte in hash_bytes))
+                [checksum_byte & (1 << (8 - 1 - bit_idx)) != 0 for bit_idx in range(8)]
+                for checksum_byte in hash_bytes
+            )
+        )
 
         # Test checksum
         valid = True
@@ -795,24 +852,27 @@ class Mnemonic(object):
             raise TypeError("Input data must be bytes or str.")
 
         if isinstance(data, str):
-            data = data.encode('utf-8')
+            data = data.encode("utf-8")
 
-            padding_length = (least_multiple - (len(data) % least_multiple)) % least_multiple
-            padding = b'\0' * padding_length
+            padding_length = (
+                least_multiple - (len(data) % least_multiple)
+            ) % least_multiple
+            padding = b"\0" * padding_length
             data = data + padding
 
-
         if len(data) % least_multiple != 0:
-
 
             error_message = "Number of bytes should be multiple of %s, but it is %s."
             raise ValueError(error_message % (least_multiple, len(data)))
 
-
         hash_object = hashlib.sha256(data)
         hash_digest = hash_object.digest()
-        entropy_bits = bin(int.from_bytes(data, byteorder="big"))[2:].zfill(len(data) * 8)
-        checksum_bits = bin(int.from_bytes(hash_digest, byteorder="big"))[2:].zfill(256)[: len(data) * 8 // 32]
+        entropy_bits = bin(int.from_bytes(data, byteorder="big"))[2:].zfill(
+            len(data) * 8
+        )
+        checksum_bits = bin(int.from_bytes(hash_digest, byteorder="big"))[2:].zfill(
+            256
+        )[: len(data) * 8 // 32]
         data_bits = entropy_bits + checksum_bits
 
         sentences = self.words_dictionary.get_sentences_from_bits(data_bits)
@@ -820,9 +880,9 @@ class Mnemonic(object):
         return mnemonic
 
     @staticmethod
-    def convert_theme(mnemonic: Union[str, list[str]],
-                      new_theme: str,
-                      current_theme: str = None) -> str:
+    def convert_theme(
+        mnemonic: Union[str, list[str]], new_theme: str, current_theme: str = None
+    ) -> str:
         """
             Convert a mnemonic in a theme to another theme, preserving the original entropy
             The object base theme WILL NOT change to the new theme
@@ -859,22 +919,28 @@ class Mnemonic(object):
             mnemonic = " ".join(mnemonic)
         mnemonic_list = self.normalize_string(mnemonic).split(" ")
         # Test the mnemonic length for BIP39 or other theme in each case
-        if self.is_bip39_theme and len(mnemonic_list) not in [i for i in range(3, 25, 3)] or \
-                not self.is_bip39_theme and len(mnemonic_list) not in [i for i in range(6, 49, 6)]:
+        if (
+            self.is_bip39_theme
+            and len(mnemonic_list) not in [i for i in range(3, 25, 3)]
+            or not self.is_bip39_theme
+            and len(mnemonic_list) not in [i for i in range(6, 49, 6)]
+        ):
             return False
         words_dict = self.words_dictionary
         phrase_amount = words_dict.get_phrase_amount(mnemonic_list)
         try:
             # Get the bits from the filling indexes with the size of word in sequence for phrases
-            idx = map(lambda x, y: bin(x)[2:].zfill(y),
-                      words_dict.get_phrase_indexes(mnemonic_list),
-                      words_dict.bits_fill_sequence * phrase_amount)
+            idx = map(
+                lambda x, y: bin(x)[2:].zfill(y),
+                words_dict.get_phrase_indexes(mnemonic_list),
+                words_dict.bits_fill_sequence * phrase_amount,
+            )
             b = "".join(idx)
         except ValueError:
             return False
         l = len(b)  # noqa: E741
         d = b[: l // 33 * 32]
-        h = b[-l // 33:]
+        h = b[-l // 33 :]
         nd = int(d, 2).to_bytes(l // 33 * 4, byteorder="big")
         nh = bin(int(hashlib.sha256(nd).hexdigest(), 16))[2:].zfill(256)[: l // 33]
         return h == nh
@@ -921,11 +987,14 @@ class Mnemonic(object):
                 else:
                     expanded_phrase[word_index] = mnemonic_led
             # Complement for non-restricted themes
-            for syntactic_leads in list(set(words_dict.prime_syntactic_leads) - set([each_leads[0]
-                                                                                     for each_leads in
-                                                                                     leading_sequence])):
+            for syntactic_leads in list(
+                set(words_dict.prime_syntactic_leads)
+                - set([each_leads[0] for each_leads in leading_sequence])
+            ):
                 word_index = words_dict.natural_index(syntactic_leads)
-                each_leads = each_phrase[words_dict.filling_order.index(syntactic_leads)]
+                each_leads = each_phrase[
+                    words_dict.filling_order.index(syntactic_leads)
+                ]
                 self.wordlist = words_dict[syntactic_leads].total_words
                 expanded_phrase[word_index] = self.expand_word(each_leads)
 
@@ -953,9 +1022,16 @@ class Mnemonic(object):
         n = 4 if self.is_bip39_theme else 2
         if len(password) % n != 0:
             return password
-        password = " ".join([password[i:i+n-1]
-                             if password[i + n - 1] == "-" and self.is_bip39_theme else password[i:i+n]
-                             for i in range(0, len(password), n)])
+        password = " ".join(
+            [
+                (
+                    password[i : i + n - 1]
+                    if password[i + n - 1] == "-" and self.is_bip39_theme
+                    else password[i : i + n]
+                )
+                for i in range(0, len(password), n)
+            ]
+        )
         return self.expand(password)
 
     @classmethod

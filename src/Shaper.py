@@ -1,8 +1,8 @@
-import random
-from typing import Optional, Union
-from PIL import Image, ImageDraw
-from pathlib import Path
 import math
+from pathlib import Path
+from typing import Union
+
+from PIL import Image, ImageDraw
 
 
 class Shaper:
@@ -22,20 +22,23 @@ class Shaper:
     def draw_regular_shape(self, sides: Union[int, bytes, bytearray] = 3):
         if isinstance(sides, bytes) or isinstance(sides, bytearray):
             # If sides is given as bytes it will get the int of the first digit with an offset of 2
-            sides = self.get_first_digit(sides)+2
+            sides = self.get_first_digit(sides) + 2
         size = self.size
 
         # Calculate the coordinates for the polygon points
         center_x, center_y = size // 2, size // 2
 
         # Calculate the angle step in radians for each vertex
-        angle = 2*math.pi/sides
+        angle = 2 * math.pi / sides
 
         # Calculate the vertices
-        vertices = [(int(center_x * math.sin(angle * i)) + center_x,
-                     -int(center_y * math.cos(angle * i)) + center_y)
-                    for i in range(sides)
-                    ]
+        vertices = [
+            (
+                int(center_x * math.sin(angle * i)) + center_x,
+                -int(center_y * math.cos(angle * i)) + center_y,
+            )
+            for i in range(sides)
+        ]
 
         # Draw the polygon
         self.draw.polygon(vertices, outline="white")
