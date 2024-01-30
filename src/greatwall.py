@@ -1,5 +1,5 @@
 import random
-import argon2
+from argon2 import low_level
 from typing import Optional
 from mnemonic.mnemonic import Mnemonic
 from Shaper import Shaper
@@ -22,7 +22,7 @@ class GreatWall:
         self.shaper = Shaper()
 
         # constants
-        self.argon2salt = "00000000000000000000000000000000"
+        self.argon2salt = bytes("00000000000000000000000000000000", "utf-8")
 
         # topology of TLP derivation
         self.TLP_param: int = 0
@@ -124,26 +124,26 @@ class GreatWall:
         """ Update self.level_hash with the hash of the previous self.level_hash taking presumably a long time"""
         for i in range(self.TLP_param):
             print("iteration #", i+1, " of TLP:")
-            self.state = argon2.argon2_hash(
-                password=self.state,
+            self.state = low_level.hash_secret_raw(
+                secret=self.state,
                 salt=self.argon2salt,
-                t=8,
-                m=1048576,
-                p=1,
-                buflen=128,
-                argon_type=argon2.Argon2Type.Argon2_i
+                time_cost=8,
+                memory_cost=1048576,
+                parallelism=1,
+                hash_len=128,
+                type=low_level.Type.I,
             )
 
     def update_with_quick_hash(self):
         """ Update self.level_hash with the hash of the previous self.level_hash taking presumably a quick time"""
-        self.state = argon2.argon2_hash(
-            password=self.state,
+        self.state = low_level.hash_secret_raw(
+            secret=self.state,
             salt=self.argon2salt,
-            t=32,
-            m=1024,
-            p=1,
-            buflen=128,
-            argon_type=argon2.Argon2Type.Argon2_i
+            time_cost=32,
+            memory_cost=1024,
+            parallelism=1,
+            hash_len=128,
+            type=low_level.Type.I,
         )
 
     def shuffle_bytes(self):
