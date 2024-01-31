@@ -11,6 +11,7 @@ from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import (
     QApplication,
     QComboBox,
+    QGraphicsView,
     QHBoxLayout,
     QLabel,
     QMainWindow,
@@ -21,13 +22,13 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from resources.greatwall import GreatWall
+from resources.knowledge.mnemonic.mnemonic import Mnemonic
 
-from greatwall import GreatWall
-from mnemonic.mnemonic import Mnemonic
 
-
-# Custom Worker class to perform the time-consuming task
 class GreatWallWorker(QThread):
+    """Custom Worker class to perform the time-consuming task."""
+
     finished = pyqtSignal()
     canceled = pyqtSignal()
     error_occurred = pyqtSignal(str)  # Signal for passing error messages
@@ -60,7 +61,65 @@ class GreatWallWorker(QThread):
         self.canceled.emit()
 
 
-class GreatWallQt(QMainWindow):
+class ImageViewer(QGraphicsView):
+    """Custom image viewer with zoom and pan capability."""
+
+    def __init__(self, parent):
+        super(ImageViewer, self).__init__(parent)
+        self._zoom = 0
+        self._scene = QtWidgets.QGraphicsScene(self)
+        self._photo = QtWidgets.QGraphicsPixmapItem()
+        self._scene.addItem(self._photo)
+
+        self.setScene(self._scene)
+        self.setTransformationAnchor(QtWidgets.QGraphicsView.AnchorUnderMouse)
+        self.setResizeAnchor(QtWidgets.QGraphicsView.AnchorUnderMouse)
+        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.setBackgroundBrush(QtGui.QBrush(QtGui.QColor(30, 30, 30)))
+        self.setFrameShape(QtWidgets.QFrame.NoFrame)
+
+    def fitInView(self, scale=True):
+        rect = QtCore.QRectF(self._photo.pixmap().rect())
+        if not rect.isNull():
+            self.setSceneRect(rect)
+            unity = self.transform().mapRect(QtCore.QRectF(0, 0, 1, 1))
+            self.scale(1 / unity.width(), 1 / unity.height())
+            viewrect = self.viewport().rect()
+            scenerect = self.transform().mapRect(rect)
+            factor = min(
+                viewrect.width() / scenerect.width(),
+                viewrect.height() / scenerect.height(),
+            )
+            self.scale(factor, factor)
+            self._zoom = 0
+
+    def setPhoto(self, pixmap=None):
+        self._zoom = 0
+        if pixmap and not pixmap.isNull():
+            self.setDragMode(QtWidgets.QGraphicsView.ScrollHandDrag)
+            self._photo.setPixmap(pixmap)
+        else:
+            self.setDragMode(QtWidgets.QGraphicsView.NoDrag)
+            self._photo.setPixmap(QtGui.QPixmap())
+        self.fitInView()
+
+    def wheelEvent(self, event):
+        if event.angleDelta().y() > 0:
+            factor = 1.25
+            self._zoom += 1
+        else:
+            factor = 0.8
+            self._zoom -= 1
+        if self._zoom > 0:
+            self.scale(factor, factor)
+        elif self._zoom == 0:
+            self.fitInView()
+        else:
+            self._zoom = 0
+
+
+class GreatWallGui(QMainWindow):
     gui_error_signal = pyqtSignal()
     sm2_is_running = pyqtSignal()
     level_up_signal = pyqtSignal()
@@ -69,11 +128,12 @@ class GreatWallQt(QMainWindow):
     def __init__(self):
         super().__init__()
         self.finish_output: bytes = bytes(0000)
-        self.greatwall = GreatWall()
         self.error_occurred = Exception
         self.button_number: int = 0
         self.transitions: list[QSignalTransition] = []
-        self.query_available = ["Formosa", "Shape"]
+
+        self.greatwall = GreatWall()
+        self.query_available = ["Fractal", "Formosa", "Shape"]
         self.query_selected = ""
 
         # General Widgets
@@ -82,14 +142,19 @@ class GreatWallQt(QMainWindow):
 
         # Input Widgets
         self.user_query_combobox = QComboBox(self)
+
         self.theme_label = QLabel(self)
         self.theme_combobox = QComboBox(self)
+
         self.tlp_label = QLabel(self)
         self.tlp_spinbox = QSpinBox(self)
+
         self.depth_label = QLabel(self)
         self.depth_spinbox = QSpinBox(self)
+
         self.arity_label = QLabel(self)
         self.arity_spinbox = QSpinBox(self)
+
         self.password_label = QLabel(self)
         self.password_text = QTextEdit(self)
 
@@ -122,14 +187,14 @@ class GreatWallQt(QMainWindow):
         self.hide_show_button = QPushButton(self)
         self.copy_clipboard_button = QPushButton(self)
 
-        # List of general Widgets
-        self.general_widgets = [self.next_button, self.back_button]
-
         # Error widgets
         self.config_error_label = QLabel(self)
         self.execution_error_label = QLabel(self)
         self.unknown_error_label = QLabel(self)
         self.exception_label = QLabel(self)
+
+        # List of general Widgets
+        self.general_widgets = [self.next_button, self.back_button]
 
         # Lists of widgets per step
         self.input_state_widgets = [
@@ -199,7 +264,7 @@ class GreatWallQt(QMainWindow):
         self.setWindowTitle("Great Wall Sample")
         self.setGeometry(100, 100, 100, 100)
 
-        self.password_text.setGeometry(0, 0, 100, 50)
+        self.password_text.setGeometry(0, 0, 50, 50)
         # Hardcode to fast tests
         # self.password_text.setText("viboniboasmofiasbrchsprorirerugugucavehistmiinciwibowifltuor")
 
@@ -287,8 +352,8 @@ class GreatWallQt(QMainWindow):
         is_formosa = self.user_query_combobox.currentText() == self.query_available[0]
         is_shape = self.user_query_combobox.currentText() == self.query_available[1]
         self.query_selected = self.user_query_combobox.currentText()
-        self.theme_combobox.setEnabled(is_formosa)
-        self.theme_label.setEnabled(is_formosa)
+        # self.theme_combobox.setEnabled(is_formosa)
+        # self.theme_label.setEnabled(is_formosa)
 
     def hide_show_output(self):
         self.finish_text.setVisible(not self.finish_text.isVisible())
@@ -752,7 +817,7 @@ class GreatWallQt(QMainWindow):
 
 def main():
     app = QApplication([])
-    window = GreatWallQt()
+    window = GreatWallGui()
     window.show()
     app.exec_()
 

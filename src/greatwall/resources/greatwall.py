@@ -2,9 +2,9 @@ import random
 from typing import Optional
 
 from argon2 import low_level
-
-from mnemonic.mnemonic import Mnemonic
-from Shaper import Shaper
+from .knowledge.fractal import Fractal
+from .knowledge.mnemonic.mnemonic import Mnemonic
+from .knowledge.shaper import Shaper
 
 
 class GreatWall:
@@ -19,6 +19,9 @@ class GreatWall:
         # Formosa
         self.mnemo: Optional[Mnemonic] = None
         self.nbytesform: int = 0
+
+        # Fractal
+        self.fractal = Fractal()
 
         # Shaper
         self.shaper = Shaper()
@@ -218,11 +221,3 @@ class GreatWall:
             self.is_finished = False
         self.current_level -= 1
         self.state = self.states[self.current_level]
-
-
-def main():
-    return GreatWall()
-
-
-if __name__ == "__main__":
-    main()
