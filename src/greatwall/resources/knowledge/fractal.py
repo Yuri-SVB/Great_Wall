@@ -96,3 +96,23 @@ class Fractal:
                 else:
                     pixels[i, j] = 0
         return pixels
+
+    def mandelbrot_set(
+        self, x_min, x_max, y_min, y_max, width=512, height=512, max_iters=100
+    ):
+        x = np.linspace(x_min, x_max, width)
+        y = np.linspace(y_min, y_max, height)
+
+        pixels = np.zeros((height, width))
+        for i in range(height):
+            for j in range(width):
+                c = x[j] + y[i] * 1j
+                z = c
+                for n in range(max_iters):
+                    if abs(z) > 2**2:
+                        pixels[i, j] = n
+                        break
+                    z = z ** 2 + c
+                else:
+                    pixels[i, j] = max_iters
+        return pixels
