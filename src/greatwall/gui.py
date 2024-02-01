@@ -22,6 +22,7 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from resources import constants
 from resources.greatwall import GreatWall
 from resources.knowledge.mnemonic.mnemonic import Mnemonic
 
@@ -272,7 +273,6 @@ class GreatWallGui(QMainWindow):
         self.configure_layout()
 
     def configure_ui_widgets(self):
-
         # Strings variables to easily translate in the future versions
         next_text = "Next"
         back_text = "Back"
@@ -405,7 +405,6 @@ class GreatWallGui(QMainWindow):
         pass
 
     def configure_choose_derivation_widgets(self):
-
         cancel_text = "0) Previous Step"
 
         # Clear widgets from list and layout
@@ -518,7 +517,6 @@ class GreatWallGui(QMainWindow):
                     button.setIconSize(image.size())
 
     def init_main_gui_sm(self):
-
         quit_state = QState()
         quit_state.setObjectName("Quit Application")
 
@@ -585,7 +583,6 @@ class GreatWallGui(QMainWindow):
         gui_error_state.entered.connect(self.handle_gui_errors)
 
     def init_loop_dynamic_sm(self):
-
         if self.loop_dynamic_sm.isRunning():
             self.loop_dynamic_sm.stop()
 

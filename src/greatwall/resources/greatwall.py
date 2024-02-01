@@ -2,6 +2,7 @@ import random
 from typing import Optional
 
 from argon2 import low_level
+
 from .knowledge.fractal import Fractal
 from .knowledge.mnemonic.mnemonic import Mnemonic
 from .knowledge.shaper import Shaper
