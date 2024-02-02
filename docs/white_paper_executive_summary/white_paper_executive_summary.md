@@ -1,4 +1,4 @@
-# Great Wall executive summary
+# Great Wall white paper / executive summary
 
 The wake of the last crypto winter has the vivid memory of recent events that were both long anticipated by the founding doctrine of Bitcoin, and pointed out as unmistakable confirmation of it. In one hand, we have the exponential inflation of the supplies of essentially all state currencies simultaneously as consequence of abuse of them by state power, including, particularly the mighty US Dollar. On the other hand a case like FTX collapse is an eery reminder of the aphorism "not your keys, not your coins". More than ever, therefore, early adopters and newcomers alike are feeling the necessity to *afford and/or improve self-custody* of their crypto patrimony. Is, however, the community ready for it?
 
