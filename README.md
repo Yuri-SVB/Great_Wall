@@ -29,7 +29,7 @@
 
 <!-- About -->
 ## About
-Protocol and application for providing Kerckhoffian, 0-trust, deviceless coercion-resistance in self-custody. To understand the protocol, refer to the [executive summary.](docs/background/executive_summary.md)
+Protocol and application for providing Kerckhoffian, 0-trust, deviceless coercion-resistance in self-custody. To understand the protocol, refer to the [executive summary.](docs/white_paper_executive_summary/white_paper_executive_summary.md)
 
 
 <!-- Reproducing Demo 1 Experiment -->
