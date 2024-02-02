@@ -9,9 +9,9 @@ from .knowledge.shaper import Shaper
 
 
 class GreatWall:
-    def __init__(self, query_type: str = "Formosa"):
+    def __init__(self, tacit_knowledge_type: str = "Formosa"):
 
-        self.query_type = query_type.lower()
+        self.tacit_knowledge_type = tacit_knowledge_type.lower()
 
         self.is_finished = False
         self.is_canceled = False

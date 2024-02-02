@@ -134,15 +134,16 @@ class GreatWallGui(QMainWindow):
         self.transitions: list[QSignalTransition] = []
 
         self.greatwall = GreatWall()
-        self.query_available = ["Fractal", "Formosa", "Shape"]
-        self.query_selected = ""
+        self.available_tacit_knowledge = ["Fractal", "Formosa", "Shape"]
+        self.selected_tacit_knowledge = ""
 
         # General Widgets
         self.back_button = QPushButton(self)
         self.next_button = QPushButton(self)
 
         # Input Widgets
-        self.user_query_combobox = QComboBox(self)
+        self.tacit_knowledge_label = QLabel(self)
+        self.tacit_knowledge_combobox = QComboBox(self)
 
         self.theme_label = QLabel(self)
         self.theme_combobox = QComboBox(self)
@@ -199,7 +200,8 @@ class GreatWallGui(QMainWindow):
 
         # Lists of widgets per step
         self.input_state_widgets = [
-            self.user_query_combobox,
+            self.tacit_knowledge_label,
+            self.tacit_knowledge_combobox,
             self.theme_label,
             self.theme_combobox,
             self.tlp_label,
@@ -249,9 +251,6 @@ class GreatWallGui(QMainWindow):
         # List of widgets lists
         self.state_widgets: list[list[QWidget]] = []
 
-        # Threaded execution objects
-        self.worker_thread = GreatWallWorker(self.greatwall)
-
         # Launch UI
         self.main_states: list[QState()] = []
         self.error_states: list[QState()] = []
@@ -259,13 +258,12 @@ class GreatWallGui(QMainWindow):
         self.loop_dynamic_sm = QStateMachine()
         self.dynamic_states: list[QState()] = []
         self.init_ui()
-        self.init_main_gui_sm()
+        self.init_main_app_state()
 
     def init_ui(self):
         self.setWindowTitle("Great Wall Sample")
-        self.setGeometry(100, 100, 100, 100)
+        self.setGeometry(100, 100, 500, 300)
 
-        self.password_text.setGeometry(0, 0, 50, 50)
         # Hardcode to fast tests
         # self.password_text.setText("viboniboasmofiasbrchsprorirerugugucavehistmiinciwibowifltuor")
 
@@ -277,6 +275,7 @@ class GreatWallGui(QMainWindow):
         next_text = "Next"
         back_text = "Back"
 
+        choose_tacit_knowledge_type = "Tacit knowledge Type"
         choose_theme = "Choose Theme"
         choose_tlp = "Choose TLP parameter from 1 to 2016"
         choose_depth = "Choose tree depth from 1 to 256"
@@ -297,22 +296,22 @@ class GreatWallGui(QMainWindow):
         self.next_button.setText(back_text)
 
         # Input Widgets
+        self.tacit_knowledge_label.setText(choose_tacit_knowledge_type)
         self.theme_label.setText(choose_theme)
         self.tlp_label.setText(choose_tlp)
         self.depth_label.setText(choose_depth)
         self.arity_label.setText(choose_arity)
         self.password_label.setText(password)
-        self.user_query_combobox.addItems(self.query_available)
-        # Hardcode to fast tests
-        self.user_query_combobox.setCurrentText(self.query_available[0])
-        # self.user_query_combobox.setCurrentText(self.query_available[1])
-        self.user_query_combobox.currentTextChanged.connect(self.change_query_type)
-        themes = Mnemonic.find_themes()
-        self.theme_combobox.addItems(themes)
-        self.theme_combobox.setCurrentText(themes[0])
-        # Hardcode to fast tests
-        # self.theme_combobox.setCurrentText("medieval_fantasy")
-        self.change_query_type()
+
+        # Set default input values
+        self.tacit_knowledge_combobox.addItems(self.available_tacit_knowledge)
+        self.tacit_knowledge_combobox.setCurrentText(self.available_tacit_knowledge[0])
+        self.tacit_knowledge_combobox.currentTextChanged.connect(
+            self.on_change_tacit_knowledge_combobox
+        )
+        self.theme_combobox.addItems(constants.FORMOSA_THEMES)
+        self.theme_combobox.setCurrentText(constants.FORMOSA_THEMES[0])
+        self.on_change_tacit_knowledge_combobox()
 
         # Wait Derive Widget
         self.wait_derive_label.setText(wait_derive)
@@ -327,7 +326,7 @@ class GreatWallGui(QMainWindow):
         # Finish Widget
         self.finish_output_label.setText(finish_output_message)
         self.hide_show_button.setText(hide_show)
-        self.hide_show_button.clicked.connect(self.hide_show_output)
+        self.hide_show_button.clicked.connect(self.on_hide_show_button_click)
         self.copy_clipboard_button.setText(copy_clipboard)
         self.copy_clipboard_button.clicked.connect(self.copy_to_clipboard)
 
@@ -337,49 +336,11 @@ class GreatWallGui(QMainWindow):
         self.unknown_error_label.setText(unknown_error_message)
 
         self.config_spinbox(self.tlp_spinbox, 1, 24 * 7 * 4 * 3, 1, 1)
-        # Hardcode to fast tests
         self.config_spinbox(self.depth_spinbox, 1, 256, 1, 1)
-        # self.config_spinbox(self.depth_spinbox, 1, 256, 1, 3)
-        # Hardcode to fast tests
         self.config_spinbox(self.arity_spinbox, 1, 256, 1, 2)
-        # self.config_spinbox(self.arity_spinbox, 2, 256, 1, 2)
 
-    def change_query_type(self):
-        if self.user_query_combobox.currentText() not in self.query_available:
-            self.error_occurred = ValueError("Cryptographic option not available")
-            self.gui_error_signal.emit()
-            return
-        is_formosa = self.user_query_combobox.currentText() == self.query_available[0]
-        is_shape = self.user_query_combobox.currentText() == self.query_available[1]
-        self.query_selected = self.user_query_combobox.currentText()
-        # self.theme_combobox.setEnabled(is_formosa)
-        # self.theme_label.setEnabled(is_formosa)
-
-    def hide_show_output(self):
-        self.finish_text.setVisible(not self.finish_text.isVisible())
-        button_text = "Hide" if self.finish_text.isVisible() else "Show"
-        self.hide_show_button.setText(f"{button_text} output")
-
-    def copy_to_clipboard(self):
-        if not self.greatwall.is_finished:
-            return
-        clipboard = QApplication.clipboard()
-        clipboard.setText(self.finish_output.hex())
-
-    @staticmethod
-    def config_spinbox(
-        spinbox: QSpinBox,
-        min_value: int,
-        max_value: int,
-        step_value: int = 1,
-        default_value: int = 0,
-        set_wrapping: bool = True,
-    ):
-        """Easy configure any spinbox with one line call"""
-        spinbox.setRange(min_value, max_value)
-        spinbox.setSingleStep(step_value)
-        spinbox.setValue(default_value)
-        spinbox.setWrapping(set_wrapping)
+    def on_change_tacit_knowledge_combobox(self):
+        self.selected_tacit_knowledge = self.tacit_knowledge_combobox.currentText()
 
     def configure_confirmation_widgets(self):
         confirm_values = "Confirm your values"
@@ -400,70 +361,20 @@ class GreatWallGui(QMainWindow):
             password_chosen + self.password_text.toPlainText()
         )
 
-    def configure_waiting_derivation_widgets(self):
-        """Configure any message or effect to be shown while derive"""
-        pass
-
-    def configure_choose_derivation_widgets(self):
-        cancel_text = "0) Previous Step"
-
-        # Clear widgets from list and layout
-        self.dependent_derivation_widgets.clear()
-        self.selection_buttons.clear()
-        if len(self.confirm_result_widgets) > self.widget_to_remove:
-            self.confirm_result_widgets = self.confirm_result_widgets[
-                : self.widget_to_remove
-            ]
-
-        # Destroy widgets in the layout by setting the parents as None
-        for i in reversed(range(self.derivation_layout.count())):
-            if self.derivation_layout.itemAt(i) is None:
-                continue
-            if self.derivation_layout.itemAt(i).widget() is None:
-                continue
-            if self.derivation_layout.itemAt(i).widget() != self.level_label:
-                self.derivation_layout.itemAt(i).widget().deleteLater()
-                self.derivation_layout.itemAt(i).widget().setParent(None)
-
-        self.config_spinbox(self.derivation_spinbox, 0, self.greatwall.tree_arity, 1, 0)
-        self.derivation_layout.addWidget(self.level_label)
-        level_layout = QHBoxLayout()
-        level_layout.addWidget(self.select_label)
-        level_layout.addWidget(self.derivation_spinbox)
-        level_layout.addStretch(1)
-        self.derivation_layout.addLayout(level_layout)
-        self.dependent_derivation_widgets.append(self.level_label)
-        self.dependent_derivation_widgets.append(self.select_label)
-        self.dependent_derivation_widgets.append(self.derivation_spinbox)
-        for i in range(self.greatwall.tree_arity + 1):
-            button_text = f"{i}) " if i > 0 else cancel_text
-            button = QPushButton(button_text, self)
-            button.clicked.connect(lambda state, x=i: self.button_clicked(x))
-            if button not in self.confirm_result_widgets and i == 0:
-                # Button 0 'previous step' must be visible in the last step
-                self.confirm_result_widgets.append(button)
-            self.derivation_layout.addWidget(button)
-            self.dependent_derivation_widgets.append(button)
-            self.selection_buttons.append(button)
-
-    def button_clicked(self, button_number: int):
-        self.button_number = button_number
-        if button_number:
-            self.level_up_signal.emit()
-        else:
-            self.level_down_signal.emit()
-
-    def keyPressEvent(self, event):
-        """When enter key is pressed the derivation_spinbox will act as one selection button pressed"""
-        if not self.greatwall:
-            return
-        if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
-            value = self.derivation_spinbox.value()
-            if (
-                value <= len(self.selection_buttons)
-                and self.greatwall.current_level < self.greatwall.tree_depth
-            ):
-                self.button_clicked(value)
+    @staticmethod
+    def config_spinbox(
+        spinbox: QSpinBox,
+        min_value: int,
+        max_value: int,
+        step_value: int = 1,
+        default_value: int = 0,
+        set_wrapping: bool = True,
+    ):
+        """An easy configuration to any spinbox with one line call."""
+        spinbox.setRange(min_value, max_value)
+        spinbox.setSingleStep(step_value)
+        spinbox.setValue(default_value)
+        spinbox.setWrapping(set_wrapping)
 
     def configure_layout(self):
         central_widget = QWidget()
@@ -485,40 +396,14 @@ class GreatWallGui(QMainWindow):
         # Horizontal layout for buttons
         general_buttons_layout = QHBoxLayout()
         general_buttons_layout.addWidget(self.back_button)
-        general_buttons_layout.addStretch(1)  # Add stretchable space between buttons
         general_buttons_layout.addWidget(self.next_button)
 
         # Add the buttons layout to the main layout
         main_layout.addLayout(general_buttons_layout)
 
-    def configure_selection_buttons(self):
-        self.level_label.setText(
-            f"Level {self.greatwall.current_level} of {self.greatwall.tree_depth}"
-        )
-        if self.user_query_combobox.currentText() == "Formosa":
-            # Set buttons to Formosa options
-            user_options = self.greatwall.get_li_str_query().split("\n")
-            if len(user_options) == len(self.selection_buttons) + 1:
-                [
-                    self.selection_buttons[i].setText(user_options[i])
-                    for i in range(1, len(self.selection_buttons))
-                ]
-        elif self.user_query_combobox.currentText() == "Shape":
-            # Set buttons to Shape options
-            user_options = self.greatwall.get_shape_query()
-            if len(user_options) == len(self.selection_buttons):
-                offset = QSize(25, 5)
-                for button in self.selection_buttons[1:]:
-                    button_index = self.selection_buttons.index(button)
-                    image = QPixmap(str(user_options[button_index]))
-                    icon = QIcon(image)
-                    button.setIcon(icon)
-                    button.setFixedSize(image.size() + offset)
-                    button.setIconSize(image.size())
-
-    def init_main_gui_sm(self):
-        quit_state = QState()
-        quit_state.setObjectName("Quit Application")
+    def init_main_app_state(self):
+        closing_app_state = QState()
+        closing_app_state.setObjectName("Quit Application")
 
         input_state = QState()
         input_state.setObjectName("User Inputs")
@@ -540,7 +425,7 @@ class GreatWallGui(QMainWindow):
             gui_error_state,
         ]
         self.main_states = [
-            quit_state,
+            closing_app_state,
             input_state,
             confirm_state,
             dependent_derivation_state,
@@ -549,14 +434,14 @@ class GreatWallGui(QMainWindow):
 
         # Define transitions
         input_state.addTransition(self.next_button.clicked, confirm_state)
-        input_state.addTransition(self.back_button.clicked, quit_state)
+        input_state.addTransition(self.back_button.clicked, closing_app_state)
         confirm_state.addTransition(
             self.next_button.clicked, dependent_derivation_state
         )
         confirm_state.addTransition(self.back_button.clicked, input_state)
         dependent_derivation_state.addTransition(self.next_button.clicked, output_state)
         dependent_derivation_state.addTransition(self.back_button.clicked, input_state)
-        output_state.addTransition(self.next_button.clicked, quit_state)
+        output_state.addTransition(self.next_button.clicked, closing_app_state)
         output_state.addTransition(self.back_button.clicked, input_state)
         gui_error_state.addTransition(self.back_button.clicked, input_state)
         # Error transitions, add to all states except the error states
@@ -575,12 +460,193 @@ class GreatWallGui(QMainWindow):
         self.main_gui_sm.start()
 
         # Connect states to methods
-        quit_state.entered.connect(self.quit_state_entered)
+        closing_app_state.entered.connect(self.on_close_app)
         input_state.entered.connect(self.input_state1_entered)
         confirm_state.entered.connect(self.confirm_state2_entered)
         dependent_derivation_state.entered.connect(self.derivation_state3_entered)
         output_state.entered.connect(self.output_state4_entered)
         gui_error_state.entered.connect(self.handle_gui_errors)
+
+    def configure_selection_buttons(self):
+        self.level_label.setText(
+            f"Level {self.greatwall.current_level} of {self.greatwall.tree_depth}"
+        )
+        if self.tacit_knowledge_combobox.currentText() == constants.FRACTAL:
+            # Set buttons to Fractal options
+            pass
+        elif self.tacit_knowledge_combobox.currentText() == constants.FORMOSA:
+            # Set buttons to Formosa options
+            user_options = self.greatwall.get_li_str_query().split("\n")
+            if len(user_options) == len(self.selection_buttons) + 1:
+                [
+                    self.selection_buttons[i].setText(user_options[i])
+                    for i in range(1, len(self.selection_buttons))
+                ]
+        elif self.tacit_knowledge_combobox.currentText() == constants.SHAPE:
+            # Set buttons to Shape options
+            user_options = self.greatwall.get_shape_query()
+            if len(user_options) == len(self.selection_buttons):
+                offset = QSize(25, 5)
+                for button in self.selection_buttons[1:]:
+                    button_index = self.selection_buttons.index(button)
+                    image = QPixmap(str(user_options[button_index]))
+                    icon = QIcon(image)
+                    button.setIcon(icon)
+                    button.setFixedSize(image.size() + offset)
+                    button.setIconSize(image.size())
+
+    def copy_to_clipboard(self):
+        if not self.greatwall.is_finished:
+            return
+        clipboard = QApplication.clipboard()
+        clipboard.setText(self.finish_output.hex())
+
+    def configure_waiting_derivation_widgets(self):
+        """Configure any message or effect to be shown while derive"""
+        pass
+
+    def configure_choose_derivation_widgets(self):
+        cancel_text = "0) Previous Step"
+
+        # Clear widgets from list and layout
+        self.dependent_derivation_widgets.clear()
+        self.selection_buttons.clear()
+        if len(self.confirm_result_widgets) > self.widget_to_remove:
+            self.confirm_result_widgets = self.confirm_result_widgets[
+                : self.widget_to_remove
+            ]
+
+        # Destroy widgets in the layout by setting the parents as None
+        for i in reversed(range(self.derivation_layout.count())):
+            if (
+                self.derivation_layout.itemAt(i) is None
+                or self.derivation_layout.itemAt(i).widget() is None
+                or self.derivation_layout.itemAt(i).widget() == self.level_label
+            ):
+                continue
+            else:
+                self.derivation_layout.itemAt(i).widget().deleteLater()
+                self.derivation_layout.itemAt(i).widget().setParent(None)
+
+        self.config_spinbox(self.derivation_spinbox, 0, self.greatwall.tree_arity, 1, 0)
+        self.derivation_layout.addWidget(self.level_label)
+        level_layout = QHBoxLayout()
+        level_layout.addWidget(self.select_label)
+        level_layout.addWidget(self.derivation_spinbox)
+        level_layout.addStretch(1)
+        self.derivation_layout.addLayout(level_layout)
+        self.dependent_derivation_widgets.append(self.level_label)
+        self.dependent_derivation_widgets.append(self.select_label)
+        self.dependent_derivation_widgets.append(self.derivation_spinbox)
+        for i in range(self.greatwall.tree_arity + 1):
+            button_text = f"{i}) " if i > 0 else cancel_text
+            button = QPushButton(button_text, self)
+            button.clicked.connect(lambda state, x=i: self.on_button_click(x))
+            if button not in self.confirm_result_widgets and i == 0:
+                # Button 0 'previous step' must be visible in the last step
+                self.confirm_result_widgets.append(button)
+            self.derivation_layout.addWidget(button)
+            self.dependent_derivation_widgets.append(button)
+            self.selection_buttons.append(button)
+
+    def on_button_click(self, button_number: int):
+        self.button_number = button_number
+        if button_number:
+            self.level_up_signal.emit()
+        else:
+            self.level_down_signal.emit()
+
+    def keyPressEvent(self, event):
+        """When enter key is pressed the derivation_spinbox will act as one selection button pressed"""
+        if not self.greatwall:
+            return
+        if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
+            value = self.derivation_spinbox.value()
+            if (
+                value <= len(self.selection_buttons)
+                and self.greatwall.current_level < self.greatwall.tree_depth
+            ):
+                self.on_button_click(value)
+
+    def show_layout_hide_others(self, widgets_to_show: list):
+        """Hide all widgets and show the given widgets list, also show the general widgets"""
+        self.state_widgets = [
+            self.input_state_widgets,
+            self.confirmation_widgets,
+            self.dependent_derivation_widgets,
+            self.wait_derivation_widgets,
+            self.confirm_result_widgets,
+            self.finish_widgets,
+            self.error_widgets,
+        ]
+        for widgets_to_hide in self.state_widgets:
+            for widget in widgets_to_hide:
+                # Try to hide widget, it may have been deleted causing an exception
+                try:
+                    widget.hide()
+                except RuntimeError:
+                    continue
+        [widget.show() for widget in self.general_widgets]
+        [state_widget.show() for state_widget in widgets_to_show]
+
+    def input_state1_entered(self):
+        print("SM1 State 1 Entered")
+        self.next_button.setText("Next")
+        self.next_button.setEnabled(True)
+        self.back_button.setText("Exit")
+        self.back_button.setEnabled(True)
+        self.result_hash.clear()
+        self.result_hash.setText("")
+        self.show_layout_hide_others(self.input_state_widgets)
+        self.reinit_running_greatwall()
+
+    def confirm_state2_entered(self):
+        print("SM1 State 2 Entered")
+        self.configure_confirmation_widgets()
+        self.show_layout_hide_others(self.confirmation_widgets)
+        next_text = "Next"
+        back_text = "Reset"
+        self.next_button.setText(next_text)
+        self.back_button.setText(back_text)
+
+    def derivation_state3_entered(self):
+        print("SM1 State 3 Entered")
+        next_text = "Next"
+        reset_text = "Reset"
+        self.next_button.setText(next_text)
+        self.back_button.setText(reset_text)
+
+        try:
+            themed_success = self.greatwall.set_themed_mnemo(
+                self.theme_combobox.currentText()
+            )
+            self.greatwall.set_tlp(self.tlp_spinbox.value())
+            self.greatwall.set_depth(self.depth_spinbox.value())
+            self.greatwall.set_arity(self.arity_spinbox.value())
+            password_success = self.greatwall.set_sa0(self.password_text.toPlainText())
+
+            if not themed_success or not password_success:
+                self.error_occurred = ValueError(
+                    "Config error. Password and Theme don't match"
+                )
+                self.gui_error_signal.emit()
+                return
+
+            self.configure_waiting_derivation_widgets()
+            self.configure_choose_derivation_widgets()
+            self.show_layout_hide_others(self.wait_derivation_widgets)
+            self.next_button.setEnabled(False)
+
+            # Start the execution in a separate thread
+            self.greatwall_thread = GreatWallWorker(self.greatwall)
+            self.greatwall_thread.finished.connect(self.on_thread_finish)
+            self.greatwall_thread.canceled.connect(self.on_thread_cancel)
+            self.greatwall_thread.error_occurred.connect(self.on_thread_error)
+            self.init_loop_dynamic_sm()
+
+        except Exception as e:
+            self.error_occurred = e
+            self.gui_error_signal.emit()
 
     def init_loop_dynamic_sm(self):
         if self.loop_dynamic_sm.isRunning():
@@ -627,144 +693,15 @@ class GreatWallGui(QMainWindow):
                 self.transitions.append(transition)
 
         # Start the state machine
-        self.loop_dynamic_sm.setInitialState(
-            self.dynamic_states[0]
-        )  # Set initial state
+        self.loop_dynamic_sm.setInitialState(self.dynamic_states[0])
         self.loop_dynamic_sm.start()
         self.sm2_is_running.emit()
-        self.run_greatwall_threaded()
+        self.run_greatwall_thread()
 
-    def show_layout_hide_others(self, widgets_to_show: list):
-        """Hide all widgets and show the given widgets list, also show the general widgets"""
-        self.state_widgets = [
-            self.input_state_widgets,
-            self.confirmation_widgets,
-            self.dependent_derivation_widgets,
-            self.wait_derivation_widgets,
-            self.confirm_result_widgets,
-            self.finish_widgets,
-            self.error_widgets,
-        ]
-        for widgets_to_hide in self.state_widgets:
-            for widget in widgets_to_hide:
-                # Try to hide widget, it may have been deleted causing an exception
-                try:
-                    widget.hide()
-                except RuntimeError:
-                    continue
-        [widget.show() for widget in self.general_widgets]
-        [state_widget.show() for state_widget in widgets_to_show]
-
-    def input_state1_entered(self):
-        print("SM1 State 1 Entered")
-        self.next_button.setEnabled(True)
-        self.back_button.setEnabled(True)
-        self.result_hash.clear()
-        self.result_hash.setText("")
-        self.show_layout_hide_others(self.input_state_widgets)
-        next_text = "Next"
-        exit_text = "Exit"
-        self.next_button.setText(next_text)
-        self.back_button.setText(exit_text)
-        self.cancel_task()
-
-    def confirm_state2_entered(self):
-        print("SM1 State 2 Entered")
-        self.configure_confirmation_widgets()
-        self.show_layout_hide_others(self.confirmation_widgets)
-        next_text = "Next"
-        back_text = "Reset"
-        self.next_button.setText(next_text)
-        self.back_button.setText(back_text)
-
-    def derivation_state3_entered(self):
-        print("SM1 State 3 Entered")
-        next_text = "Next"
-        reset_text = "Reset"
-        self.next_button.setText(next_text)
-        self.back_button.setText(reset_text)
-
-        try:
-            themed_success = self.greatwall.set_themed_mnemo(
-                self.theme_combobox.currentText()
-            )
-            self.greatwall.set_tlp(self.tlp_spinbox.value())
-            self.greatwall.set_depth(self.depth_spinbox.value())
-            self.greatwall.set_arity(self.arity_spinbox.value())
-            password_success = self.greatwall.set_sa0(self.password_text.toPlainText())
-
-            if not themed_success or not password_success:
-                self.error_occurred = ValueError(
-                    "Config error. Password and theme don't match"
-                )
-                self.gui_error_signal.emit()
-                return
-
-            self.configure_waiting_derivation_widgets()
-            self.configure_choose_derivation_widgets()
-            self.show_layout_hide_others(self.wait_derivation_widgets)
-            self.next_button.setEnabled(False)
-
-            # Start the execution in a separate thread
-            self.worker_thread = GreatWallWorker(self.greatwall)
-            self.worker_thread.finished.connect(self.handle_execution_finished)
-            self.worker_thread.canceled.connect(self.handle_execution_canceled)
-            self.worker_thread.error_occurred.connect(self.handle_greatwall_error)
-            self.init_loop_dynamic_sm()
-        except Exception as e:
-            self.error_occurred = e
-            self.gui_error_signal.emit()
-
-    def run_greatwall_threaded(self, user_choice: int = 0):
+    def run_greatwall_thread(self, user_choice: int = 0):
         if user_choice >= 0:
-            self.worker_thread.user_choice = user_choice
-            self.worker_thread.start()
-
-    def handle_execution_finished(self):
-        if self.greatwall.current_level >= self.greatwall.tree_depth:
-            self.finish_output = self.greatwall.finish_output()
-            if self.query_selected == self.query_available[0]:
-                formatted_mnemonic = self.greatwall.mnemo.format_mnemonic(
-                    self.greatwall.mnemo.to_mnemonic(self.finish_output)
-                )
-                formatted_mnemonic = "\n".join(
-                    formatted_mnemonic.split("\n")[1 : self.greatwall.tree_arity + 1]
-                )
-                local_finish_output = formatted_mnemonic
-                self.result_hash.setText(local_finish_output)
-            if self.query_selected == self.query_available[1]:
-                image_path = self.greatwall.shaper.draw_regular_shape(
-                    self.finish_output
-                )
-                image = QPixmap(str(image_path))
-                self.result_hash.setPixmap(image)
-                self.result_hash.resize(image.size())
-
-            self.configure_selection_buttons()
-            self.show_layout_hide_others(self.confirm_result_widgets)
-            self.next_button.setEnabled(True)
-        else:
-            self.configure_selection_buttons()
-            self.show_layout_hide_others(self.dependent_derivation_widgets)
-
-    def handle_execution_canceled(self):
-        print("Task canceled")
-
-    def handle_greatwall_error(self, error_msg):
-        error_dialog = QMessageBox()
-        error_dialog.setIcon(QMessageBox.Critical)
-        error_dialog.setText("GreatWall Error Occurred")
-        error_dialog.setInformativeText(error_msg)
-        error_dialog.setWindowTitle("Thread Error")
-        error_dialog.exec_()
-
-    def cancel_task(self):
-        self.greatwall.current_level = 0
-        if self.loop_dynamic_sm.isRunning():
-            self.loop_dynamic_sm.stop()
-        if self.worker_thread.isRunning():
-            self.greatwall.cancel_execution()  # Set the cancellation flag in GreatWall
-            self.worker_thread.cancel()
+            self.greatwall_thread.user_choice = user_choice
+            self.greatwall_thread.start()
 
     def output_state4_entered(self):
         print("SM1 State 4 Entered")
@@ -787,7 +724,7 @@ class GreatWallGui(QMainWindow):
             )
             self.show_layout_hide_others(self.wait_derivation_widgets)
             self.next_button.setEnabled(False)
-            self.run_greatwall_threaded(self.button_number)
+            self.run_greatwall_thread(self.button_number)
         except Exception as e:
             self.error_occurred = e
             self.gui_error_signal.emit()
@@ -806,7 +743,59 @@ class GreatWallGui(QMainWindow):
         self.back_button.setEnabled(True)
         self.back_button.show()
 
-    def quit_state_entered(self):
+    def reinit_running_greatwall(self):
+        if hasattr(self, "greatwall_thread") and self.greatwall_thread.isRunning():
+            self.greatwall.cancel_execution()
+            self.greatwall_thread.cancel()
+        if self.loop_dynamic_sm.isRunning():
+            self.loop_dynamic_sm.stop()
+
+        self.greatwall.current_level = 0
+
+    def on_hide_show_button_click(self):
+        self.finish_text.setVisible(not self.finish_text.isVisible())
+        button_text = "Hide" if self.finish_text.isVisible() else "Show"
+        self.hide_show_button.setText(f"{button_text} output")
+
+    def on_thread_finish(self):
+        if self.greatwall.current_level >= self.greatwall.tree_depth:
+            self.finish_output = self.greatwall.finish_output()
+            if self.selected_tacit_knowledge == constants.FORMOSA:
+                formatted_mnemonic = self.greatwall.mnemo.format_mnemonic(
+                    self.greatwall.mnemo.to_mnemonic(self.finish_output)
+                )
+                formatted_mnemonic = "\n".join(
+                    formatted_mnemonic.split("\n")[1 : self.greatwall.tree_arity + 1]
+                )
+                local_finish_output = formatted_mnemonic
+                self.result_hash.setText(local_finish_output)
+            if self.selected_tacit_knowledge == constants.SHAPE:
+                image_path = self.greatwall.shaper.draw_regular_shape(
+                    self.finish_output
+                )
+                image = QPixmap(str(image_path))
+                self.result_hash.setPixmap(image)
+                self.result_hash.resize(image.size())
+
+            self.configure_selection_buttons()
+            self.show_layout_hide_others(self.confirm_result_widgets)
+            self.next_button.setEnabled(True)
+        else:
+            self.configure_selection_buttons()
+            self.show_layout_hide_others(self.dependent_derivation_widgets)
+
+    def on_thread_cancel(self):
+        print("Task canceled")
+
+    def on_thread_error(self, error_msg):
+        error_dialog = QMessageBox()
+        error_dialog.setIcon(QMessageBox.Critical)
+        error_dialog.setText("GreatWall Error Occurred")
+        error_dialog.setInformativeText(error_msg)
+        error_dialog.setWindowTitle("Thread Error")
+        error_dialog.exec_()
+
+    def on_close_app(self):
         """Close the parent which exit the application. Bye, come again!"""
         print("Closed")
         self.close()

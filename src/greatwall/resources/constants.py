@@ -1,4 +1,14 @@
 ###############################################################################
+# Available Tacit Knowledge Types
+###############################################################################
+
+FRACTAL = "Fractal"
+FORMOSA = "Formosa"
+SHAPE = "Shape"
+
+AVAILABLE_TACIT_KNOWLEDGE_TYPES = [FRACTAL, FORMOSA, SHAPE]
+
+###############################################################################
 # Formosa Themes
 ###############################################################################
 
@@ -12,7 +22,7 @@ MEDIEVAL_FANTASY = "medieval_fantasy"
 SCI_FIC = "sci-fi"
 TOURISM = "tourism"
 
-FORMOSA_THEMES = {
+FORMOSA_THEMES = [
     BIP39,
     BIP39_FRENCH,
     COPY_LEFT,
@@ -22,7 +32,7 @@ FORMOSA_THEMES = {
     MEDIEVAL_FANTASY,
     SCI_FIC,
     TOURISM,
-}
+]
 
 ###############################################################################
 # Fractal Functions
@@ -31,4 +41,4 @@ FORMOSA_THEMES = {
 MANDELBROT = "mandelbrot"
 BURNING_SHIP = "burningship"
 
-FRACTAL_FUNCTIONS = {MANDELBROT, BURNING_SHIP}
+FRACTAL_FUNCTIONS = [MANDELBROT, BURNING_SHIP]
