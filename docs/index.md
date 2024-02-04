@@ -1,7 +1,7 @@
 <!-- PROJECT LOGO -->
 <p align="center">
   <a href="https://github.com/Yuri-SVB/Great_Wall">
-	<img alt="Great Wall Logo" src="background/images/logo_big.jpg" height="160" />
+	<img alt="Great Wall Logo" src="images/logo_big.jpg" height="160" />
   </a>
   <h3 align="center">Great Wall</h3>
   <p align="center">Protocol and application for providing Kerckhoffian, 0-trust, deviceless coercion-resistance in self-custody. For details, see <a href="https://github.com/Yuri-SVB/Great_Wall/tree/main/docs/index.md">docs</a>. To understand the protocol, refer to the <a href="https://github.com/Yuri-SVB/Great_Wall/tree/main/docs/index.md">executive summary</a>.
