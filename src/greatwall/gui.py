@@ -936,11 +936,10 @@ class GreatWallGui(QMainWindow):
                     )[3],
                 )
 
-                image = QPixmap.fromImage(
-                    ImageViewer.rgb_array_to_Qimage(
-                        ImageViewer.gray_array_to_rgb_array(formated_fractal)
-                    )
-                )
+                rgb_array = ImageViewer.gray_array_to_rgb_array(formated_fractal)
+                qimage = ImageViewer.rgb_array_to_Qimage(rgb_array)
+                image = QPixmap.fromImage(qimage)
+
                 self.result_hash.setPixmap(image)
                 self.result_hash.resize(image.size())
             if self.selected_tacit_knowledge == constants.FORMOSA:
