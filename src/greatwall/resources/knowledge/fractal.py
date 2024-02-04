@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 
@@ -15,8 +15,8 @@ class Fractal:
         x_max=0.5,
         y_min=-1.25,
         y_max=1.25,
-        width=512,
-        height=512,
+        width=256,
+        height=256,
         max_iters=100,
     ) -> None:
         self.func_type = func_type
@@ -29,6 +29,14 @@ class Fractal:
         self.max_iters: int = max_iters
 
         self._image_pixels: Optional[np.array] = None
+
+    def get_valid_parameters_from_value(self, value: Union[bytes, bytearray]):
+        default_parameter_value = [-2.00, 0.5, -1.25, 1.25]
+        parameter_list = [
+            ((int(byte_value) / 256) * default_parameter_value[idx])
+            for idx, byte_value in enumerate(list(value)[:4])
+        ]
+        return parameter_list
 
     @property
     def image_pixels(self):
@@ -71,14 +79,13 @@ class Fractal:
                     max_iters,
                 )
                 self.image_pixels = pixels
+                return self.image_pixels
             else:
                 raise AttributeError(f"{func_type} has no implementation yet.")
         else:
             raise ValueError(f"{func_type} does not supported.")
 
-    def burningship_set(
-        self, x_min, x_max, y_min, y_max, width=512, height=512, max_iters=100
-    ):
+    def burningship_set(self, x_min, x_max, y_min, y_max, width, height, max_iters):
         x = np.linspace(x_min, x_max, width)
         y = np.linspace(y_min, y_max, height)
 
@@ -93,12 +100,10 @@ class Fractal:
                         break
                     z = (abs(z.real) + 1j * abs(z.imag)) ** 2 + c
                 else:
-                    pixels[i, j] = 0
+                    pixels[i, j] = max_iters
         return pixels
 
-    def mandelbrot_set(
-        self, x_min, x_max, y_min, y_max, width=512, height=512, max_iters=100
-    ):
+    def mandelbrot_set(self, x_min, x_max, y_min, y_max, width, height, max_iters):
         x = np.linspace(x_min, x_max, width)
         y = np.linspace(y_min, y_max, height)
 
@@ -111,7 +116,7 @@ class Fractal:
                     if abs(z) > 2**2:
                         pixels[i, j] = n
                         break
-                    z = z ** 2 + c
+                    z = z**2 + c
                 else:
                     pixels[i, j] = max_iters
         return pixels

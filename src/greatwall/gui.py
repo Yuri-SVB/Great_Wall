@@ -1,4 +1,8 @@
+from typing import Tuple, Union
+
+import numpy as np
 from PyQt5.QtCore import (
+    QRectF,
     QSignalTransition,
     QSize,
     QState,
@@ -7,10 +11,13 @@ from PyQt5.QtCore import (
     QThread,
     pyqtSignal,
 )
-from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtGui import QBrush, QColor, QIcon, QImage, QPixmap
 from PyQt5.QtWidgets import (
     QApplication,
     QComboBox,
+    QFrame,
+    QGraphicsPixmapItem,
+    QGraphicsScene,
     QGraphicsView,
     QHBoxLayout,
     QLabel,
@@ -24,7 +31,6 @@ from PyQt5.QtWidgets import (
 )
 from resources import constants
 from resources.greatwall import GreatWall
-from resources.knowledge.mnemonic.mnemonic import Mnemonic
 
 
 class GreatWallWorker(QThread):
@@ -48,7 +54,7 @@ class GreatWallWorker(QThread):
                     f"GreatWall initialization doesn't match the current level {self.greatwall.current_level}"
                 )
             elif self._is_initializing and not self.greatwall.current_level:
-                self.greatwall.initialize_state_hashes()
+                self.greatwall.init_state_hashes()
                 self._is_initializing = False
             else:
                 self.greatwall.derive_from_user_choice(self.user_choice)
@@ -68,56 +74,151 @@ class ImageViewer(QGraphicsView):
     def __init__(self, parent):
         super(ImageViewer, self).__init__(parent)
         self._zoom = 0
-        self._scene = QtWidgets.QGraphicsScene(self)
-        self._photo = QtWidgets.QGraphicsPixmapItem()
+        self._empty = True
+        self._qimage = None
+        self._photo = QGraphicsPixmapItem()
+        self._scene = QGraphicsScene(self)
         self._scene.addItem(self._photo)
 
         self.setScene(self._scene)
-        self.setTransformationAnchor(QtWidgets.QGraphicsView.AnchorUnderMouse)
-        self.setResizeAnchor(QtWidgets.QGraphicsView.AnchorUnderMouse)
-        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.setBackgroundBrush(QtGui.QBrush(QtGui.QColor(30, 30, 30)))
-        self.setFrameShape(QtWidgets.QFrame.NoFrame)
+        self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
+        self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setBackgroundBrush(QBrush(QColor(30, 30, 30)))
+        self.setFrameShape(QFrame.NoFrame)
+
+    @classmethod
+    def gray_array_to_Qimage(cls, gray_array, width=100, height=100):
+        """
+        Convert the 2D numpy array `gray` into a 8-bit QImage with a gray
+        colormap. The first dimension represents the vertical image axis.
+        """
+        if len(gray_array.shape) != 2:
+            raise ValueError("gray2QImage can only convert 2D arrays")
+
+        width, height = gray_array.shape
+
+        cls._qimage = QImage(gray_array.data, width, height, QImage.Format_Indexed8)
+        for i in range(max(width, height)):
+            gray_array.setColor(i, QColor(i, i, i).rgb())
+        return cls._qimage
+
+    @classmethod
+    def gray_array_to_rgb_array(cls, gray_array):
+        """
+        Convert the 2D numpy array `gray` after normalizing it into a colored
+        3D numpy array with `Viridis` scheme
+        """
+        # This is a custom color scheme the match matplotlib "Viridis" scheme
+        color_map = {
+            0: [-1e100, 0.0, 68, 1, 84],
+            1: [0.0, 0.05, 68, 1, 84],
+            2: [0.05, 0.1, 72, 20, 103],
+            3: [0.1, 0.15, 72, 37, 118],
+            4: [0.15, 0.2, 69, 55, 129],
+            5: [0.2, 0.25, 64, 70, 136],
+            6: [0.25, 0.3, 57, 85, 140],
+            7: [0.3, 0.35, 51, 99, 141],
+            8: [0.35, 0.4, 45, 113, 142],
+            9: [0.4, 0.45, 40, 125, 142],
+            10: [0.45, 0.5, 35, 138, 141],
+            11: [0.5, 0.55, 31, 150, 139],
+            12: [0.55, 0.6, 32, 163, 134],
+            13: [0.6, 0.65, 41, 175, 127],
+            14: [0.65, 0.7, 61, 188, 116],
+            15: [0.7, 0.75, 86, 198, 103],
+            16: [0.75, 0.8, 117, 208, 84],
+            17: [0.8, 0.85, 149, 216, 64],
+            18: [0.85, 0.9, 186, 222, 40],
+            19: [0.9, 0.95, 221, 227, 24],
+            20: [0.95, 0.1, 253, 231, 37],
+            21: [1.0, 1e100, 253, 231, 37],
+        }
+
+        normalized_array = (gray_array - np.min(gray_array)) / (
+            np.max(gray_array) - np.min(gray_array)
+        )
+
+        rgb_img = np.zeros((*normalized_array.shape, 3), np.uint8, "C")
+        for key in color_map.keys():
+            start, end, *_rgb = color_map[key]
+            boolean_array = np.logical_and(
+                normalized_array >= start, normalized_array <= end
+            )
+            rgb_img[boolean_array] = _rgb
+
+        return rgb_img
+
+    @classmethod
+    def rgb_array_to_Qimage(cls, array, width=100, height=100):
+        """
+        Convert the 3D numpy array `gray` into a 8-bit QImage with a RGB
+        colormap. The first dimension represents the vertical image axis.
+        """
+        if np.ndim(array) == 3:
+            height, width, d = array.shape
+
+            nd = d
+            if nd == 3:  # 3D RGB Image
+                nd = 4
+            if nd == 1:  # 3D Grayscaler Image
+                nd = 3
+
+            img = np.zeros([height, width, nd], np.uint8, "C")
+            img[:, :, :3] = array[:, :, (2, 1, 0)]
+            img[:, :, 3] = 255
+        else:
+            raise ValueError("can only convert 3D arrays")
+
+        cls._qimage = QImage(img.data, img.shape[0], img.shape[1], QImage.Format_RGB32)
+        return cls._qimage
+
+    def hasPhoto(self):
+        return not self._empty
 
     def fitInView(self, scale=True):
-        rect = QtCore.QRectF(self._photo.pixmap().rect())
-        if not rect.isNull():
+        if self.hasPhoto():
+            rect = QRectF(self._photo.pixmap().rect())
             self.setSceneRect(rect)
-            unity = self.transform().mapRect(QtCore.QRectF(0, 0, 1, 1))
+            unity = self.transform().mapRect(QRectF(0, 0, 1, 1))
             self.scale(1 / unity.width(), 1 / unity.height())
-            viewrect = self.viewport().rect()
+
+            viewrect = self.rect()
             scenerect = self.transform().mapRect(rect)
             factor = min(
                 viewrect.width() / scenerect.width(),
                 viewrect.height() / scenerect.height(),
             )
             self.scale(factor, factor)
-            self._zoom = 0
+        self._zoom = 0
 
     def setPhoto(self, pixmap=None):
         self._zoom = 0
         if pixmap and not pixmap.isNull():
-            self.setDragMode(QtWidgets.QGraphicsView.ScrollHandDrag)
+            self._empty = False
+            self.setDragMode(QGraphicsView.ScrollHandDrag)
             self._photo.setPixmap(pixmap)
         else:
-            self.setDragMode(QtWidgets.QGraphicsView.NoDrag)
-            self._photo.setPixmap(QtGui.QPixmap())
+            self._empty = True
+            self.setDragMode(QGraphicsView.NoDrag)
+            self._photo.setPixmap(QPixmap())
         self.fitInView()
 
     def wheelEvent(self, event):
-        if event.angleDelta().y() > 0:
-            factor = 1.25
-            self._zoom += 1
-        else:
-            factor = 0.8
-            self._zoom -= 1
-        if self._zoom > 0:
-            self.scale(factor, factor)
-        elif self._zoom == 0:
-            self.fitInView()
-        else:
-            self._zoom = 0
+        if self.hasPhoto():
+            if event.angleDelta().y() > 0:
+                factor = 1.25
+                self._zoom += 1
+            else:
+                factor = 0.8
+                self._zoom -= 1
+            if self._zoom > 0:
+                self.scale(factor, factor)
+            elif self._zoom == 0:
+                self.fitInView()
+            else:
+                self._zoom = 0
 
 
 class GreatWallGui(QMainWindow):
@@ -134,7 +235,6 @@ class GreatWallGui(QMainWindow):
         self.transitions: list[QSignalTransition] = []
 
         self.greatwall = GreatWall()
-        self.available_tacit_knowledge = ["Fractal", "Formosa", "Shape"]
         self.selected_tacit_knowledge = ""
 
         # General Widgets
@@ -144,6 +244,9 @@ class GreatWallGui(QMainWindow):
         # Input Widgets
         self.tacit_knowledge_label = QLabel(self)
         self.tacit_knowledge_combobox = QComboBox(self)
+
+        self.fractal_function_label = QLabel(self)
+        self.fractal_function_combobox = QComboBox(self)
 
         self.theme_label = QLabel(self)
         self.theme_combobox = QComboBox(self)
@@ -162,6 +265,7 @@ class GreatWallGui(QMainWindow):
 
         # Confirmation Widgets
         self.confirm_label = QLabel(self)
+        self.tacit_knowledge_type_confirm = QLabel(self)
         self.theme_confirm = QLabel(self)
         self.tlp_confirm = QLabel(self)
         self.depth_confirm = QLabel(self)
@@ -175,9 +279,12 @@ class GreatWallGui(QMainWindow):
         self.select_label = QLabel(self)
         self.derivation_spinbox = QSpinBox(self)
         self.level_label = QLabel(self)
-        # Attention to add widgets to this layout, they will be deleted later and can cause an exception
+        # WARNING: Attention to add widgets to this layout, they will be
+        # deleted later and can cause an exception.
         self.derivation_layout = QVBoxLayout()
-        self.selection_buttons: list[QPushButton] = []
+        self.selection_buttons: list[
+            Union[QPushButton, Tuple[QPushButton, QGraphicsView]]
+        ] = []
 
         # Result Widgets
         self.confirm_result_label = QLabel(self)
@@ -202,6 +309,8 @@ class GreatWallGui(QMainWindow):
         self.input_state_widgets = [
             self.tacit_knowledge_label,
             self.tacit_knowledge_combobox,
+            self.fractal_function_label,
+            self.fractal_function_combobox,
             self.theme_label,
             self.theme_combobox,
             self.tlp_label,
@@ -215,6 +324,7 @@ class GreatWallGui(QMainWindow):
         ]
         self.confirmation_widgets = [
             self.confirm_label,
+            self.tacit_knowledge_type_confirm,
             self.theme_confirm,
             self.tlp_confirm,
             self.depth_confirm,
@@ -265,7 +375,9 @@ class GreatWallGui(QMainWindow):
         self.setGeometry(100, 100, 500, 300)
 
         # Hardcode to fast tests
-        # self.password_text.setText("viboniboasmofiasbrchsprorirerugugucavehistmiinciwibowifltuor")
+        # self.password_text.setText(
+        #     "viboniboasmofiasbrchsprorirerugugucavehistmiinciwibowifltuor"
+        # )
 
         self.configure_ui_widgets()
         self.configure_layout()
@@ -275,7 +387,8 @@ class GreatWallGui(QMainWindow):
         next_text = "Next"
         back_text = "Back"
 
-        choose_tacit_knowledge_type = "Tacit knowledge Type"
+        choose_tacit_knowledge_type = "Tacit knowledge type"
+        choose_fractal_function_type = "Fractal function type"
         choose_theme = "Choose Theme"
         choose_tlp = "Choose TLP parameter from 1 to 2016"
         choose_depth = "Choose tree depth from 1 to 256"
@@ -297,6 +410,7 @@ class GreatWallGui(QMainWindow):
 
         # Input Widgets
         self.tacit_knowledge_label.setText(choose_tacit_knowledge_type)
+        self.fractal_function_label.setText(choose_fractal_function_type)
         self.theme_label.setText(choose_theme)
         self.tlp_label.setText(choose_tlp)
         self.depth_label.setText(choose_depth)
@@ -304,11 +418,17 @@ class GreatWallGui(QMainWindow):
         self.password_label.setText(password)
 
         # Set default input values
-        self.tacit_knowledge_combobox.addItems(self.available_tacit_knowledge)
-        self.tacit_knowledge_combobox.setCurrentText(self.available_tacit_knowledge[0])
+        self.tacit_knowledge_combobox.addItems(
+            constants.AVAILABLE_TACIT_KNOWLEDGE_TYPES
+        )
+        self.tacit_knowledge_combobox.setCurrentText(
+            constants.AVAILABLE_TACIT_KNOWLEDGE_TYPES[0]
+        )
         self.tacit_knowledge_combobox.currentTextChanged.connect(
             self.on_change_tacit_knowledge_combobox
         )
+        self.fractal_function_combobox.addItems(constants.FRACTAL_FUNCTIONS)
+        self.fractal_function_combobox.setCurrentText(constants.FRACTAL_FUNCTIONS[0])
         self.theme_combobox.addItems(constants.FORMOSA_THEMES)
         self.theme_combobox.setCurrentText(constants.FORMOSA_THEMES[0])
         self.on_change_tacit_knowledge_combobox()
@@ -341,9 +461,13 @@ class GreatWallGui(QMainWindow):
 
     def on_change_tacit_knowledge_combobox(self):
         self.selected_tacit_knowledge = self.tacit_knowledge_combobox.currentText()
+        self.fractal_function_combobox.setEnabled(
+            self.tacit_knowledge_combobox.currentText() == constants.FRACTAL
+        )
 
     def configure_confirmation_widgets(self):
         confirm_values = "Confirm your values"
+        tacit_knowledge_type_chosen = "Tacit knowledge type\n"
         theme_chosen = "Theme\n"
         tlp_chosen = "TLP parameter\n"
         depth_chosen = "Tree depth\n"
@@ -351,6 +475,9 @@ class GreatWallGui(QMainWindow):
         password_chosen = "Time-Lock Puzzle password\n"
 
         self.confirm_label.setText(confirm_values)
+        self.tacit_knowledge_type_confirm.setText(
+            tacit_knowledge_type_chosen + self.tacit_knowledge_combobox.currentText()
+        )
         self.theme_confirm.setText(
             theme_chosen + str(self.theme_combobox.currentText())
         )
@@ -473,23 +600,36 @@ class GreatWallGui(QMainWindow):
         )
         if self.tacit_knowledge_combobox.currentText() == constants.FRACTAL:
             # Set buttons to Fractal options
-            pass
+            user_options = self.greatwall.get_fractal_query()
+            if len(user_options) == len(self.selection_buttons):
+                for idx, widgets in enumerate(self.selection_buttons[1:]):
+                    button, view = widgets
+                    button.setText(str(idx))
+                    button.setFixedSize(QSize(100, 25))
+                    image = QPixmap.fromImage(
+                        view.rgb_array_to_Qimage(
+                            view.gray_array_to_rgb_array(user_options[idx + 1])
+                        )
+                    )
+                    view.setFixedSize(QSize(100, 100))
+                    view.setPhoto(image)
+
         elif self.tacit_knowledge_combobox.currentText() == constants.FORMOSA:
             # Set buttons to Formosa options
             user_options = self.greatwall.get_li_str_query().split("\n")
             if len(user_options) == len(self.selection_buttons) + 1:
-                [
-                    self.selection_buttons[i].setText(user_options[i])
-                    for i in range(1, len(self.selection_buttons))
-                ]
+                for idx, widgets in enumerate(self.selection_buttons[1:]):
+                    button, _ = widgets
+                    button.setText(user_options[idx + 1])
+
         elif self.tacit_knowledge_combobox.currentText() == constants.SHAPE:
             # Set buttons to Shape options
             user_options = self.greatwall.get_shape_query()
             if len(user_options) == len(self.selection_buttons):
-                offset = QSize(25, 5)
-                for button in self.selection_buttons[1:]:
-                    button_index = self.selection_buttons.index(button)
-                    image = QPixmap(str(user_options[button_index]))
+                offset = QSize(10, 10)
+                for idx, widgets in enumerate(self.selection_buttons[1:]):
+                    button, _ = widgets
+                    image = QPixmap(str(user_options[idx + 1]))
                     icon = QIcon(image)
                     button.setIcon(icon)
                     button.setFixedSize(image.size() + offset)
@@ -506,7 +646,7 @@ class GreatWallGui(QMainWindow):
         pass
 
     def configure_choose_derivation_widgets(self):
-        cancel_text = "0) Previous Step"
+        cancel_text = "Previous Step"
 
         # Clear widgets from list and layout
         self.dependent_derivation_widgets.clear()
@@ -539,15 +679,28 @@ class GreatWallGui(QMainWindow):
         self.dependent_derivation_widgets.append(self.select_label)
         self.dependent_derivation_widgets.append(self.derivation_spinbox)
         for i in range(self.greatwall.tree_arity + 1):
-            button_text = f"{i}) " if i > 0 else cancel_text
-            button = QPushButton(button_text, self)
+            button = QPushButton("" if i > 0 else cancel_text, self)
             button.clicked.connect(lambda state, x=i: self.on_button_click(x))
+            view = ImageViewer(self)
+
             if button not in self.confirm_result_widgets and i == 0:
                 # Button 0 'previous step' must be visible in the last step
                 self.confirm_result_widgets.append(button)
-            self.derivation_layout.addWidget(button)
-            self.dependent_derivation_widgets.append(button)
-            self.selection_buttons.append(button)
+
+            if i == 0:
+                self.derivation_layout.addWidget(button)
+                self.dependent_derivation_widgets.append(button)
+                self.selection_buttons.append((button, view))
+            elif self.tacit_knowledge_combobox.currentText() == constants.FRACTAL:
+                self.derivation_layout.addWidget(view)
+                self.derivation_layout.addWidget(button)
+                self.dependent_derivation_widgets.append(button)
+                self.dependent_derivation_widgets.append(view)
+                self.selection_buttons.append((button, view))
+            else:
+                self.derivation_layout.addWidget(button)
+                self.dependent_derivation_widgets.append(button)
+                self.selection_buttons.append((button, view))
 
     def on_button_click(self, button_number: int):
         self.button_number = button_number
@@ -619,6 +772,9 @@ class GreatWallGui(QMainWindow):
         try:
             themed_success = self.greatwall.set_themed_mnemo(
                 self.theme_combobox.currentText()
+            )
+            self.greatwall.set_fractal_function_type(
+                self.fractal_function_combobox.currentText()
             )
             self.greatwall.set_tlp(self.tlp_spinbox.value())
             self.greatwall.set_depth(self.depth_spinbox.value())
@@ -760,6 +916,30 @@ class GreatWallGui(QMainWindow):
     def on_thread_finish(self):
         if self.greatwall.current_level >= self.greatwall.tree_depth:
             self.finish_output = self.greatwall.finish_output()
+            if self.selected_tacit_knowledge == constants.FRACTAL:
+                formated_fractal = self.greatwall.fractal.update(
+                    func_type=self.greatwall.fractal.func_type,
+                    x_min=self.greatwall.fractal.get_valid_parameters_from_value(
+                        self.finish_output
+                    )[0],
+                    x_max=self.greatwall.fractal.get_valid_parameters_from_value(
+                        self.finish_output
+                    )[1],
+                    y_min=self.greatwall.fractal.get_valid_parameters_from_value(
+                        self.finish_output
+                    )[2],
+                    y_max=self.greatwall.fractal.get_valid_parameters_from_value(
+                        self.finish_output
+                    )[3],
+                )
+
+                image = QPixmap.fromImage(
+                    ImageViewer.rgb_array_to_Qimage(
+                        ImageViewer.gray_array_to_rgb_array(formated_fractal)
+                    )
+                )
+                self.result_hash.setPixmap(image)
+                self.result_hash.resize(image.size())
             if self.selected_tacit_knowledge == constants.FORMOSA:
                 formatted_mnemonic = self.greatwall.mnemo.format_mnemonic(
                     self.greatwall.mnemo.to_mnemonic(self.finish_output)
@@ -770,6 +950,7 @@ class GreatWallGui(QMainWindow):
                 local_finish_output = formatted_mnemonic
                 self.result_hash.setText(local_finish_output)
             if self.selected_tacit_knowledge == constants.SHAPE:
+                print(self.finish_output)
                 image_path = self.greatwall.shaper.draw_regular_shape(
                     self.finish_output
                 )

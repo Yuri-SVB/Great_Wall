@@ -13,8 +13,7 @@ class Shaper:
         self.image = Image.new("RGB", (size, size), "black")
         self.draw = ImageDraw.Draw(self.image)
 
-    @staticmethod
-    def get_first_digit(number: bytes):
+    def get_first_digit(self, number: bytes):
         bytes_1st_digit = int(str(number[0]))
         integer_1st_digit = str(bytes_1st_digit)[0]
         return int(integer_1st_digit)
