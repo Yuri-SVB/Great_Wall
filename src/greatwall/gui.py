@@ -108,9 +108,12 @@ class ImageViewer(QGraphicsView):
     def gray_array_to_rgb_array(cls, gray_array):
         """
         Convert the 2D numpy array `gray` after normalizing it into a colored
-        3D numpy array with `Viridis` scheme
+        3D numpy array with `Viridis` scheme.
+
+        See the following for more details: `https://waldyrious.net/viridis-palette-generator/`
+            and `https://www.kennethmoreland.com/color-advice/`.
         """
-        # This is a custom color scheme the match matplotlib "Viridis" scheme
+
         color_map = {
             0: [-1e100, 0.0, 68, 1, 84],
             1: [0.0, 0.05, 68, 1, 84],

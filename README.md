@@ -1,14 +1,14 @@
 <!-- PROJECT LOGO -->
 <p align="center">
   <a href="https://github.com/Yuri-SVB/Great_Wall">
-	<img alt="Great Wall Logo" src="images/logo.png" height="160" />
+	<img alt="Great Wall Logo" src="docs/background/logo_big.jpg" height="160" />
   </a>
   <h3 align="center">Great Wall</h3>
   <p align="center">Protocol and application for providing Kerckhoffian, 0-trust, deviceless coercion-resistance in self-custody. For details, see <a href="docs/index.md">docs</a>. To understand the protocol, refer to the <a href="docs/background/executive_summary.md">executive summary</a>.
   </p>
    
   <p align="center">
-    <a href="../LICENSE"><img alt="Software License" src="https://img.shields.io/badge/License-MIT-brightgreen.svg?style=flat-square&logo=appveyor"></a>
+    <a href="LICENSE"><img alt="Software License" src="https://img.shields.io/badge/License-MIT-brightgreen.svg?style=flat-square&logo=appveyor"></a>
     <a href="docs/"><img alt="docs" src="https://img.shields.io/badge/Docs-read%20docs-brightgreen.svg?style=flat-square&logo=appveyor"></a>
     <a href="https://www.python.org/"><img alt="python3" src="https://img.shields.io/badge/Python-8+-brightgreen.svg?style=flat-square&logo=appveyor"></a>
     <a href=""><img alt="Maintainer" src="https://img.shields.io/badge/Maintainer-Yuri_S_Villas_Boas-bridghtgreen.svg?style=flat-square&logo=appveyor"></a>
@@ -48,7 +48,7 @@ The following steps will allow an easy memorization of the path demonstrated in 
 
 <!-- About -->
 ## Getting Started
-This section will provide a quick guide to start.
+This section will provide you by a quick guide to start.
 
 ### Using in Beta
 Coming soon. An advanced, knowledgeable, tech-savvy reader, will, at this point, have understood what is to come and can improvise the steps by themselves. In a nutshell, all you have to do is to securely manage[^1] a brute-force resistant `SA0`, true-randomly generate a path vector of `L_i`'s, and memorize them procedurally as explained in the session above. For better effect, user can implement non-trivial **T**ime-**L**ock **P**uzzle, to impose desired time on derivation of `SA3` from `SA0`. To prevent leakage of critical content through Anki, a simple scheme with salt and pepper can be done so to avoid the need to modify Anki, but we'll leave this for a next time.
