@@ -32,4 +32,4 @@ of freeing up their devices from the burden of having an intensive, memory hard,
 to perform it to them.
 
 For further information, check out [our demo](https://mega.nz/file/vfwhRTwZ#sP3hSRthQNssWRdcmD8XRNIeJX7Eq174ImY4eva_Pwo), [our official site](https://linktr.ee/greatwallt3) and 
-our [executive summary / white paper](../background/executive_summary.md).
+our [executive summary / white paper](../white_paper_executive_summary/white_paper_executive_summary.md).
