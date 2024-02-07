@@ -11,22 +11,24 @@ class Fractal:
     def __init__(
         self,
         func_type=constants.BURNING_SHIP,
-        x_min=-2.0,
-        x_max=0.5,
-        y_min=-1.25,
-        y_max=1.25,
-        width=256,
-        height=256,
-        max_iters=100,
+        x_min=None,
+        x_max=None,
+        y_min=None,
+        y_max=None,
+        p_param=None,
+        width=None,
+        height=None,
+        max_iters=None,
     ) -> None:
         self.func_type = func_type
-        self.x_min: float = x_min
-        self.x_max: float = x_max
-        self.y_min: float = y_min
-        self.y_max: float = y_max
-        self.width: int = width
-        self.height: int = height
-        self.max_iters: int = max_iters
+        self.x_min: Optional[float] = x_min
+        self.x_max: Optional[float] = x_max
+        self.y_min: Optional[float] = y_min
+        self.y_max: Optional[float] = y_max
+        self.p_param: Optional[float] = p_param
+        self.width: Optional[int] = width
+        self.height: Optional[int] = height
+        self.max_iters: Optional[int] = max_iters
 
         self._image_pixels: Optional[np.array] = None
 
@@ -53,18 +55,20 @@ class Fractal:
         x_max=None,
         y_min=None,
         y_max=None,
+        p_param=None,
         width=None,
         height=None,
         max_iters=None,
     ):
-        x_min = self.x_min if x_min is None else x_min
-        x_max = self.x_max if x_max is None else x_max
-        y_min = self.y_min if y_min is None else y_min
-        y_max = self.y_max if y_max is None else y_max
-        width = self.width if width is None else width
-        height = self.height if height is None else height
-        max_iters = self.max_iters if max_iters is None else max_iters
-        func_type = self.func_type if func_type is None else func_type
+        self.x_min = x_min
+        self.x_max = x_max
+        self.y_min = y_min
+        self.y_max = y_max
+        self.p_param = p_param
+        self.width = width
+        self.height = height
+        self.max_iters = max_iters
+        self.func_type = func_type
 
         if func_type in constants.FRACTAL_FUNCTIONS:
             if hasattr(self, f"{func_type}_set"):
@@ -74,6 +78,7 @@ class Fractal:
                     x_max,
                     y_min,
                     y_max,
+                    p_param,
                     width,
                     height,
                     max_iters,
@@ -85,7 +90,26 @@ class Fractal:
         else:
             raise ValueError(f"{func_type} does not supported.")
 
-    def burningship_set(self, x_min, x_max, y_min, y_max, width, height, max_iters):
+    def burningship_set(
+        self,
+        x_min=-2.5,
+        x_max=2.0,
+        y_min=-2,
+        y_max=0.8,
+        p_param=2.0,
+        width=250,
+        height=250,
+        max_iters=500,
+    ):
+        x_min = x_min if self.x_min is None else self.x_min
+        x_max = x_max if self.x_max is None else self.x_max
+        y_min = y_min if self.y_min is None else self.y_min
+        y_max = y_max if self.y_max is None else self.y_max
+        p_param = p_param if self.p_param is None else self.p_param
+        width = width if self.width is None else self.width
+        height = height if self.height is None else self.height
+        max_iters = max_iters if self.max_iters is None else self.max_iters
+
         x = np.linspace(x_min, x_max, width)
         y = np.linspace(y_min, y_max, height)
 
@@ -98,12 +122,31 @@ class Fractal:
                     if abs(z) > 2**2:
                         pixels[i, j] = n
                         break
-                    z = (abs(z.real) + 1j * abs(z.imag)) ** 2 + c
+                    z = (abs(z.real) + 1j * abs(z.imag)) ** p_param + c
                 else:
                     pixels[i, j] = max_iters
         return pixels
 
-    def mandelbrot_set(self, x_min, x_max, y_min, y_max, width, height, max_iters):
+    def mandelbrot_set(
+        self,
+        x_min=-2.0,
+        x_max=0.5,
+        y_min=-1.0,
+        y_max=1.0,
+        p_param=2.0,
+        width=250,
+        height=250,
+        max_iters=500,
+    ):
+        x_min = x_min if self.x_min is None else self.x_min
+        x_max = x_max if self.x_max is None else self.x_max
+        y_min = y_min if self.y_min is None else self.y_min
+        y_max = y_max if self.y_max is None else self.y_max
+        p_param = p_param if self.p_param is None else self.p_param
+        width = width if self.width is None else self.width
+        height = height if self.height is None else self.height
+        max_iters = max_iters if self.max_iters is None else self.max_iters
+
         x = np.linspace(x_min, x_max, width)
         y = np.linspace(y_min, y_max, height)
 
@@ -116,7 +159,7 @@ class Fractal:
                     if abs(z) > 2**2:
                         pixels[i, j] = n
                         break
-                    z = z**2 + c
+                    z = z**p_param + c
                 else:
                     pixels[i, j] = max_iters
         return pixels
