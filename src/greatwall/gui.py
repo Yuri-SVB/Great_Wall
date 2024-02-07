@@ -608,13 +608,13 @@ class GreatWallGui(QMainWindow):
                 for idx, widgets in enumerate(self.selection_buttons[1:]):
                     button, view = widgets
                     button.setText(str(idx))
-                    button.setFixedSize(QSize(100, 25))
+                    button.setFixedSize(QSize(200, 25))
                     image = QPixmap.fromImage(
                         view.rgb_array_to_Qimage(
                             view.gray_array_to_rgb_array(user_options[idx + 1])
                         )
                     )
-                    view.setFixedSize(QSize(100, 100))
+                    view.setFixedSize(QSize(200, 200))
                     view.setPhoto(image)
 
         elif self.tacit_knowledge_combobox.currentText() == constants.FORMOSA:
