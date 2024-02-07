@@ -139,19 +139,22 @@ class ImageViewer(QGraphicsView):
             21: [1.0, 1e100, 253, 231, 37],
         }
 
-        normalized_array = (gray_array - np.min(gray_array)) / (
-            np.max(gray_array) - np.min(gray_array)
+        cls._normalized_array = (
+            (gray_array - np.min(gray_array))
+            / (np.max(gray_array) - np.min(gray_array))
+            if np.max(gray_array) - np.min(gray_array)
+            else gray_array - np.min(gray_array)
         )
 
-        rgb_img = np.zeros((*normalized_array.shape, 3), np.uint8, "C")
+        cls._rgb_img = np.zeros((*gray_array.shape, 3), np.uint8, "C")
         for key in color_map.keys():
             start, end, *_rgb = color_map[key]
             boolean_array = np.logical_and(
-                normalized_array >= start, normalized_array <= end
+                cls._normalized_array >= start, cls._normalized_array <= end
             )
-            rgb_img[boolean_array] = _rgb
+            cls._rgb_img[boolean_array] = _rgb
 
-        return rgb_img
+        return cls._rgb_img
 
     @classmethod
     def rgb_array_to_Qimage(cls, array, width=100, height=100):
