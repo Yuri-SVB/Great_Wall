@@ -72,8 +72,8 @@ pip install -r requirements.txt
 cd Great_Wall/src/greatwall/
 python3 gui.py
 ```
-> **_NOTE:_** The previously describe method to run app is not the recommend
-one, but as we still in the cycle of development this is the simplest way
+> **_NOTE:_** The previously described method to run app is not the recommend
+one, but as we still in the development cycle this is the simplest way
 to get things ready :).
 
 ### Using in Beta
