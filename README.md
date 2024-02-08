@@ -21,6 +21,8 @@
 1. [About](#about)
 2. [Demo](#demo)
 3. [Getting Started](#getting-started)
+    * [Dependencies](#dependencies)
+    * [Installation](#installation)
     * [Using in Beta](#using-in-beta)
 4. [Usage](#usage)
 5. [License](#license)
@@ -50,7 +52,7 @@ The following steps will allow an easy memorization of the path demonstrated in 
 ## Getting Started
 This section will provide you by a quick guide to start.
 
-### How to install
+### Dependencies
 This project depends on the following packages:
 1. argon2-cffi = 23.1.0
 2. argon2-cffi-bindings = 21.2.0
@@ -62,6 +64,7 @@ This project depends on the following packages:
 8. PyQt5-Qt5 = 5.15.2
 9. PyQt5-sip = 12.13.0
 
+### Installation
 Follow the following to get your environment ready:
 1. Install system package requirements:
 ```sh
