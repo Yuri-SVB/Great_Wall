@@ -3,14 +3,15 @@ from typing import Optional
 
 from argon2 import low_level
 
-from mnemonic.mnemonic import Mnemonic
-from Shaper import Shaper
+from .knowledge.fractal import Fractal
+from .knowledge.mnemonic.mnemonic import Mnemonic
+from .knowledge.shaper import Shaper
 
 
 class GreatWall:
-    def __init__(self, query_type: str = "Formosa"):
+    def __init__(self, tacit_knowledge_type: str = "Formosa"):
 
-        self.query_type = query_type.lower()
+        self.tacit_knowledge_type = tacit_knowledge_type.lower()
 
         self.is_finished = False
         self.is_canceled = False
@@ -19,6 +20,9 @@ class GreatWall:
         # Formosa
         self.mnemo: Optional[Mnemonic] = None
         self.nbytesform: int = 0
+
+        # Fractal
+        self.fractal = Fractal()
 
         # Shaper
         self.shaper = Shaper()
@@ -38,7 +42,7 @@ class GreatWall:
         self.sa1: bytes = self.sa0
         self.sa2: bytes = self.sa0
         self.sa3: bytes = self.sa0
-        self.states: list[bytes] = [bytes.fromhex("00")] * self.tree_depth
+        self.protocol_states: list[bytes] = [bytes.fromhex("00")] * self.tree_depth
 
         # Initial state
         self.state: bytes = self.sa0
@@ -56,6 +60,9 @@ class GreatWall:
         except ValueError:
             # TODO treat error
             return False
+
+    def set_fractal_function_type(self, func_type: str) -> None:
+        self.fractal.func_type = func_type
 
     def set_tlp(self, tlp: int):
         """Topology of TLP derivation.
@@ -89,20 +96,20 @@ class GreatWall:
         try:
             sa0 = mnemonic.split("\n", 1)[0]
             self.sa0 = bytes(self.mnemo.to_entropy(self.mnemo.expand_password(sa0)))
-            self.init_diagram_values()
+            self.init_protocol_values()
             return True
         except ValueError:
             # TODO treat error
             return False
 
-    def init_diagram_values(self):
+    def init_protocol_values(self):
         # Diagram values
-        self.sa1 = self.sa0  # dummy initialization
-        self.sa2 = self.sa0  # dummy initialization
-        self.sa3 = self.sa0  # dummy initialization
-        self.states = [bytes.fromhex("00")] * self.tree_depth  # dummy initialization
+        self.sa1 = self.sa0
+        self.sa2 = self.sa0
+        self.sa3 = self.sa0
+        self.protocol_states = [bytes.fromhex("00")] * self.tree_depth
 
-    def initialize_state_hashes(self):
+    def init_state_hashes(self):
         self.state = self.sa0
         self.shuffled_bytes = self.sa0  # dummy initialization
         self.current_level = 0
@@ -169,6 +176,20 @@ class GreatWall:
         ]
         random.shuffle(self.shuffled_bytes)
 
+    def get_fractal_query(self) -> list:
+        self.shuffle_bytes()
+        shuffled_fractals = [
+            self.fractal.update(
+                func_type=self.fractal.func_type,
+                p_param=self.fractal.get_valid_parameter_from_value(bytes_sentence),
+            )
+            for bytes_sentence in self.shuffled_bytes
+        ]
+        listr = f"Choose 1, ..., {self.tree_arity} for level {self.current_level}"
+        listr += f"{'' if not self.current_level else ', choose 0 to go back'}\n"
+        shuffled_fractals = [listr] + shuffled_fractals
+        return shuffled_fractals
+
     def get_li_str_query(self) -> str:
         self.shuffle_bytes()
         shuffled_sentences = [
@@ -176,10 +197,9 @@ class GreatWall:
             for bytes_sentence in self.shuffled_bytes
         ]
         listr = f"Choose 1, ..., {self.tree_arity} for level {self.current_level}"
-        return_complement = "" if not self.current_level else ", choose 0 to go back"
-        listr += f"{return_complement}\n"
+        listr += f"{'' if not self.current_level else ', choose 0 to go back'}\n"
         for i in range(len(shuffled_sentences)):
-            listr += f"{str(i + 1)}) {shuffled_sentences[i]}\n"
+            listr += f"{shuffled_sentences[i]}\n"
         return listr
 
     def get_shape_query(self) -> list:
@@ -188,12 +208,8 @@ class GreatWall:
             Shaper().draw_regular_shape(bytes_sentence)
             for bytes_sentence in self.shuffled_bytes
         ]
-        listr = "Choose 1, ..., %d for level %d".format(
-            self.tree_arity, self.current_level
-        )
-        listr += "%s\n".format(
-            "" if not self.current_level else ", choose 0 to go back"
-        )
+        listr = f"Choose 1, ..., {self.tree_arity} for level {self.current_level}"
+        listr += f"{'' if not self.current_level else ', choose 0 to go back'}\n"
         shuffled_shapes = [listr] + shuffled_shapes
         return shuffled_shapes
 
@@ -204,7 +220,7 @@ class GreatWall:
 
     def derive_from_user_choice(self, chosen_input: int):
         if chosen_input:
-            self.states[self.current_level] = self.state
+            self.protocol_states[self.current_level] = self.state
             self.state += bytes(self.shuffled_bytes[chosen_input - 1])
             self.update_with_quick_hash()
             self.current_level += 1
@@ -217,12 +233,4 @@ class GreatWall:
         if self.is_finished:
             self.is_finished = False
         self.current_level -= 1
-        self.state = self.states[self.current_level]
-
-
-def main():
-    return GreatWall()
-
-
-if __name__ == "__main__":
-    main()
+        self.state = self.protocol_states[self.current_level]
