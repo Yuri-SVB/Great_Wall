@@ -32,13 +32,12 @@ class Fractal:
 
         self._image_pixels: Optional[np.array] = None
 
-    def get_valid_parameters_from_value(self, value: Union[bytes, bytearray]):
-        default_parameter_value = [-2.00, 0.5, -1.25, 1.25]
-        parameter_list = [
-            ((int(byte_value) / 256) * default_parameter_value[idx])
-            for idx, byte_value in enumerate(list(value)[:4])
-        ]
-        return parameter_list
+    def get_valid_parameter_from_value(self, value: Union[bytes, bytearray]):
+        parameter = "2."
+        for byte_value in list(value)[:4]:
+            parameter += str(byte_value)
+
+        return float(parameter)
 
     @property
     def image_pixels(self):
@@ -72,18 +71,8 @@ class Fractal:
 
         if func_type in constants.FRACTAL_FUNCTIONS:
             if hasattr(self, f"{func_type}_set"):
-                func = getattr(self, f"{func_type}_set")
-                pixels = func(
-                    x_min,
-                    x_max,
-                    y_min,
-                    y_max,
-                    p_param,
-                    width,
-                    height,
-                    max_iters,
-                )
-                self.image_pixels = pixels
+                fractal_func = getattr(self, f"{func_type}_set")
+                self.image_pixels = fractal_func()
                 return self.image_pixels
             else:
                 raise AttributeError(f"{func_type} has no implementation yet.")
@@ -97,9 +86,9 @@ class Fractal:
         y_min=-2,
         y_max=0.8,
         p_param=2.0,
-        width=250,
-        height=250,
-        max_iters=500,
+        width=500,
+        height=500,
+        max_iters=100,
     ):
         x_min = x_min if self.x_min is None else self.x_min
         x_max = x_max if self.x_max is None else self.x_max
@@ -134,9 +123,9 @@ class Fractal:
         y_min=-1.0,
         y_max=1.0,
         p_param=2.0,
-        width=250,
-        height=250,
-        max_iters=500,
+        width=500,
+        height=500,
+        max_iters=100,
     ):
         x_min = x_min if self.x_min is None else self.x_min
         x_max = x_max if self.x_max is None else self.x_max

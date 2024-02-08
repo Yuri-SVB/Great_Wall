@@ -378,7 +378,7 @@ class GreatWallGui(QMainWindow):
 
     def init_ui(self):
         self.setWindowTitle("Great Wall Sample")
-        self.setGeometry(100, 100, 500, 300)
+        self.setGeometry(100, 100, 500, 500)  # left, top, width, height
 
         # Hardcode to fast tests
         # self.password_text.setText(
@@ -925,18 +925,9 @@ class GreatWallGui(QMainWindow):
             if self.selected_tacit_knowledge == constants.FRACTAL:
                 formated_fractal = self.greatwall.fractal.update(
                     func_type=self.greatwall.fractal.func_type,
-                    x_min=self.greatwall.fractal.get_valid_parameters_from_value(
+                    p_param=self.greatwall.fractal.get_valid_parameter_from_value(
                         self.finish_output
-                    )[0],
-                    x_max=self.greatwall.fractal.get_valid_parameters_from_value(
-                        self.finish_output
-                    )[1],
-                    y_min=self.greatwall.fractal.get_valid_parameters_from_value(
-                        self.finish_output
-                    )[2],
-                    y_max=self.greatwall.fractal.get_valid_parameters_from_value(
-                        self.finish_output
-                    )[3],
+                    ),
                 )
 
                 rgb_array = ImageViewer.gray_array_to_rgb_array(formated_fractal)

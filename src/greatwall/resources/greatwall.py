@@ -181,10 +181,7 @@ class GreatWall:
         shuffled_fractals = [
             self.fractal.update(
                 func_type=self.fractal.func_type,
-                x_min=self.fractal.get_valid_parameters_from_value(bytes_sentence)[0],
-                x_max=self.fractal.get_valid_parameters_from_value(bytes_sentence)[1],
-                y_min=self.fractal.get_valid_parameters_from_value(bytes_sentence)[2],
-                y_max=self.fractal.get_valid_parameters_from_value(bytes_sentence)[3],
+                p_param=self.fractal.get_valid_parameter_from_value(bytes_sentence),
             )
             for bytes_sentence in self.shuffled_bytes
         ]
