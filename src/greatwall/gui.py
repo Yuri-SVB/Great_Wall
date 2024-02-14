@@ -28,6 +28,8 @@ from PyQt5.QtWidgets import (
     QTextEdit,
     QVBoxLayout,
     QWidget,
+    QScrollArea,
+    QWidgetItem,
 )
 from resources import constants
 from resources.greatwall import GreatWall
@@ -91,7 +93,7 @@ class ImageViewer(QGraphicsView):
     @classmethod
     def gray_array_to_Qimage(cls, gray_array, width=100, height=100):
         """
-        Convert the 2D numpy array `gray` into a 8-bit QImage with a gray
+        Convert the 2D numpy array `gray` into an 8-bit QImage with a gray
         colormap. The first dimension represents the vertical image axis.
         """
         if len(gray_array.shape) != 2:
@@ -684,6 +686,9 @@ class GreatWallGui(QMainWindow):
         self.dependent_derivation_widgets.append(self.level_label)
         self.dependent_derivation_widgets.append(self.select_label)
         self.dependent_derivation_widgets.append(self.derivation_spinbox)
+
+        scroll_layout = QVBoxLayout()
+
         for i in range(self.greatwall.tree_arity + 1):
             button = QPushButton("" if i > 0 else cancel_text, self)
             button.clicked.connect(lambda state, x=i: self.on_button_click(x))
@@ -698,8 +703,8 @@ class GreatWallGui(QMainWindow):
                 self.dependent_derivation_widgets.append(button)
                 self.selection_buttons.append((button, view))
             elif self.tacit_knowledge_combobox.currentText() == constants.FRACTAL:
-                self.derivation_layout.addWidget(view)
-                self.derivation_layout.addWidget(button)
+                scroll_layout.addWidget(view)
+                scroll_layout.addWidget(button)
                 self.dependent_derivation_widgets.append(button)
                 self.dependent_derivation_widgets.append(view)
                 self.selection_buttons.append((button, view))
@@ -707,6 +712,16 @@ class GreatWallGui(QMainWindow):
                 self.derivation_layout.addWidget(button)
                 self.dependent_derivation_widgets.append(button)
                 self.selection_buttons.append((button, view))
+
+        if self.tacit_knowledge_combobox.currentText() == constants.FRACTAL:
+            scroll_area = QScrollArea()
+            scroll_area.setWidgetResizable(True)
+            scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+            scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            scroll_area.setWidget(QWidget())
+            scroll_area.widget().setLayout(scroll_layout)
+            scroll_area.setMinimumHeight(self.size().height() - 100)
+            self.derivation_layout.addWidget(scroll_area)
 
     def on_button_click(self, button_number: int):
         self.button_number = button_number
@@ -955,6 +970,7 @@ class GreatWallGui(QMainWindow):
                 self.result_hash.resize(image.size())
 
             self.configure_selection_buttons()
+            self.remove_scroll_area_from_layout()
             self.show_layout_hide_others(self.confirm_result_widgets)
             self.next_button.setEnabled(True)
         else:
@@ -976,6 +992,15 @@ class GreatWallGui(QMainWindow):
         """Close the parent which exit the application. Bye, come again!"""
         print("Closed")
         self.close()
+
+    def remove_scroll_area_from_layout(self):
+        for i in reversed(range(self.derivation_layout.count())):
+            item = self.derivation_layout.itemAt(i)
+            if isinstance(item, QWidgetItem):
+                widget = item.widget()
+                if isinstance(widget, QScrollArea):
+                    self.derivation_layout.removeWidget(widget)
+                    break
 
 
 def main():
