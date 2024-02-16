@@ -10,6 +10,7 @@ from PyQt5.QtCore import (
     Qt,
     QThread,
     pyqtSignal,
+    QEvent
 )
 from PyQt5.QtGui import QBrush, QColor, QIcon, QImage, QPixmap
 from PyQt5.QtWidgets import (
@@ -290,6 +291,7 @@ class GreatWallGui(QMainWindow):
         # WARNING: Attention to add widgets to this layout, they will be
         # deleted later and can cause an exception.
         self.derivation_layout = QVBoxLayout()
+        self.scroll_area = QScrollArea()
         self.selection_buttons: list[
             Union[QPushButton, Tuple[QPushButton, QGraphicsView]]
         ] = []
@@ -443,6 +445,11 @@ class GreatWallGui(QMainWindow):
 
         # Wait Derive Widget
         self.wait_derive_label.setText(wait_derive)
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.scroll_area.viewport().installEventFilter(self)
+        self.scroll_area.setWidget(QWidget())
 
         # Confirmation Widgets
         self.select_label.setText(selection_text)
@@ -693,6 +700,7 @@ class GreatWallGui(QMainWindow):
             button = QPushButton("" if i > 0 else cancel_text, self)
             button.clicked.connect(lambda state, x=i: self.on_button_click(x))
             view = ImageViewer(self)
+            view.installEventFilter(self)
 
             if button not in self.confirm_result_widgets and i == 0:
                 # Button 0 'previous step' must be visible in the last step
@@ -714,14 +722,9 @@ class GreatWallGui(QMainWindow):
                 self.selection_buttons.append((button, view))
 
         if self.tacit_knowledge_combobox.currentText() == constants.FRACTAL:
-            scroll_area = QScrollArea()
-            scroll_area.setWidgetResizable(True)
-            scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-            scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-            scroll_area.setWidget(QWidget())
-            scroll_area.widget().setLayout(scroll_layout)
-            scroll_area.setMinimumHeight(self.size().height() - 100)
-            self.derivation_layout.addWidget(scroll_area)
+            self.scroll_area.widget().setLayout(scroll_layout)
+            self.scroll_area.setMinimumHeight(self.size().height() - 100)
+            self.derivation_layout.addWidget(self.scroll_area)
 
     def on_button_click(self, button_number: int):
         self.button_number = button_number
@@ -1001,6 +1004,17 @@ class GreatWallGui(QMainWindow):
                 if isinstance(widget, QScrollArea):
                     self.derivation_layout.removeWidget(widget)
                     break
+
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.Wheel:
+            if isinstance(obj, QWidget):
+                event.ignore()
+                return True
+            elif isinstance(obj, ImageViewer):
+                obj.wheelEvent(event)
+                return True
+
+        return super().eventFilter(obj, event)
 
 
 def main():
