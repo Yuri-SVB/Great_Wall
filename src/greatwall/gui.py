@@ -35,8 +35,6 @@ from PyQt5.QtWidgets import (
     QTextEdit,
     QVBoxLayout,
     QWidget,
-    QScrollArea,
-    QWidgetItem,
 )
 from resources import constants
 from resources.greatwall import GreatWall
@@ -207,7 +205,7 @@ class ImageViewer(QGraphicsView):
 
     def gray_array_to_Qimage(self, gray_array, width=100, height=100):
         """
-        Convert the 2D numpy array `gray` into an 8-bit QImage with a gray
+        Convert the 2D numpy array `gray` into a 8-bit QImage with a gray
         colormap. The first dimension represents the vertical image axis.
         """
         if len(gray_array.shape) != 2:
@@ -979,13 +977,16 @@ class GreatWallGui(QMainWindow):
             flow_widget.setLayout(flow_layout)
             self.selecting_derivation_options_layout.addLayout(flow_widget)
 
+            self.selecting_derivation_options_layout.addStretch(1)
+
         else:
-            for row in range(self.greatwall.tree_arity + 1):
+            for _ in range(self.greatwall.tree_arity + 1):
                 selection_button = QPushButton(self)
                 self.selecting_derivation_options_layout.addWidget(selection_button)
                 self.selecting_derivation_options_widgets_list.append(selection_button)
 
-        # self.selecting_derivation_options_layout.addStretch(1)
+            self.selecting_derivation_options_layout.addStretch(1)
+
 
     def config_selecting_derivation_widgets(self):
         self.selecting_derivation_current_level_label.setText(
@@ -1269,7 +1270,6 @@ class GreatWallGui(QMainWindow):
             # Config result confirmation widgets
             self.config_result_confirmation_widgets()
 
-
             self.stacked.setCurrentWidget(self.result_confirmation_view)
         else:
             # Config selecting derivation widgets
@@ -1292,15 +1292,6 @@ class GreatWallGui(QMainWindow):
         """Close the parent which exit the application. Bye, come again!"""
         print("Closed")
         self.close()
-
-    def remove_scroll_area_from_layout(self):
-        for i in reversed(range(self.derivation_layout.count())):
-            item = self.derivation_layout.itemAt(i)
-            if isinstance(item, QWidgetItem):
-                widget = item.widget()
-                if isinstance(widget, QScrollArea):
-                    self.derivation_layout.removeWidget(widget)
-                    break
 
 
 def main():
