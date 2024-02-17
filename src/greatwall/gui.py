@@ -987,7 +987,6 @@ class GreatWallGui(QMainWindow):
 
             self.selecting_derivation_options_layout.addStretch(1)
 
-
     def config_selecting_derivation_widgets(self):
         self.selecting_derivation_current_level_label.setText(
             f"Level {self.greatwall.current_level} of {self.greatwall.tree_depth}"
