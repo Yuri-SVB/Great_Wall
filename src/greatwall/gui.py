@@ -194,6 +194,7 @@ class ImageViewer(QGraphicsView):
         self.scene = QGraphicsScene(self)
         self.scene.addItem(self.photo)
 
+        # The following attributes are for internal implementation only.
         self._zoom = 0
 
         # The main purpose of the following attributes are to keep
