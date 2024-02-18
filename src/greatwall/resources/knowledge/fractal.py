@@ -86,8 +86,8 @@ class Fractal:
         y_min=-2,
         y_max=0.8,
         p_param=2.0,
-        width=500,
-        height=500,
+        width=1024,
+        height=1024,
         max_iters=100,
     ):
         x_min = x_min if self.x_min is None else self.x_min
@@ -123,8 +123,8 @@ class Fractal:
         y_min=-1.0,
         y_max=1.0,
         p_param=2.0,
-        width=500,
-        height=500,
+        width=1024,
+        height=1024,
         max_iters=100,
     ):
         x_min = x_min if self.x_min is None else self.x_min
