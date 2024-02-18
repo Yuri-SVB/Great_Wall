@@ -611,6 +611,7 @@ class GreatWallGui(QMainWindow):
             user_options = self.greatwall.get_fractal_query()
             if len(user_options) == len(self.selection_buttons):
                 for idx, widgets in enumerate(self.selection_buttons[1:]):
+                    grid_layout = QGridLayout()
                     button, view = widgets
                     button.setText(str(idx))
                     button.setFixedSize(QSize(200, 25))
@@ -621,6 +622,15 @@ class GreatWallGui(QMainWindow):
                     )
                     view.setFixedSize(QSize(200, 200))
                     view.setPhoto(image)
+                    grid_layout.addWidget(button, idx // 3, idx % 3)
+                    grid_layout.addWidget(view, idx // 3, idx % 3)
+                for i in reversed(range(self.derivation_layout.count())):
+                    if self.derivation_layout.itemAt(i) is not None:
+                        widget = self.derivation_layout.itemAt(i).widget()
+                        self.derivation_layout.removeWidget(widget)
+                        widget.deleteLater()
+                self.derivation_layout.addLayout(grid_layout)
+  
 
         elif self.tacit_knowledge_combobox.currentText() == constants.FORMOSA:
             # Set buttons to Formosa options
