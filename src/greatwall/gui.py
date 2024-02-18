@@ -40,8 +40,8 @@ from resources import constants
 from resources.greatwall import GreatWall
 
 
-class GreatWallWorker(QThread):
-    """Custom Worker class to perform the time-consuming task."""
+class GreatWallThread(QThread):
+    """GreatWall thread class to perform the time-consuming great wall task."""
 
     finished = pyqtSignal()
     canceled = pyqtSignal()
@@ -1120,7 +1120,7 @@ class GreatWallGui(QMainWindow):
             self.config_selecting_derivation_widgets_layout()
 
             # Start the execution in a separate thread
-            self.greatwall_thread = GreatWallWorker(self.greatwall)
+            self.greatwall_thread = GreatWallThread(self.greatwall)
             self.greatwall_thread.finished.connect(self.on_thread_finish)
             self.greatwall_thread.canceled.connect(self.on_thread_cancel)
             self.greatwall_thread.error_occurred.connect(self.on_thread_error)
