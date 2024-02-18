@@ -194,10 +194,11 @@ class ImageViewer(QGraphicsView):
         self.scene = QGraphicsScene(self)
         self.scene.addItem(self.photo)
 
-        # Object required for internal implementation only, they keep
-        # the underline data preserved and not noisy and distorted
-        # when manipulating these data.
         self._zoom = 0
+
+        # The main purpose of the following attributes are to keep
+        # the underline data preserved and not noisy and distorted
+        # when manipulating the underline data.
         self._normalized_array = None
         self._rgb_img = None
         self._qimage = None
