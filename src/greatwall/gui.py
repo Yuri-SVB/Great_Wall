@@ -189,13 +189,20 @@ class ImageViewer(QGraphicsView):
 
     def __init__(self, parent):
         super(ImageViewer, self).__init__(parent)
-        self._zoom = 0
-        self._empty = True
-        self._photo = QGraphicsPixmapItem()
-        self._scene = QGraphicsScene(self)
-        self._scene.addItem(self._photo)
+        self.empty = True
+        self.photo = QGraphicsPixmapItem()
+        self.scene = QGraphicsScene(self)
+        self.scene.addItem(self.photo)
 
-        self.setScene(self._scene)
+        # Object required for internal implementation only, they keep
+        # the underline data preserved and not noisy and distorted
+        # when manipulating these data.
+        self._zoom = 0
+        self._normalized_array = None
+        self._rgb_img = None
+        self._qimage = None
+
+        self.setScene(self.scene)
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -293,11 +300,11 @@ class ImageViewer(QGraphicsView):
         return self._qimage
 
     def hasPhoto(self):
-        return not self._empty
+        return not self.empty
 
     def fitInView(self, scale=True):
         if self.hasPhoto():
-            rect = QRectF(self._photo.pixmap().rect())
+            rect = QRectF(self.photo.pixmap().rect())
             self.setSceneRect(rect)
             unity = self.transform().mapRect(QRectF(0, 0, 1, 1))
             self.scale(1 / unity.width(), 1 / unity.height())
@@ -314,13 +321,13 @@ class ImageViewer(QGraphicsView):
     def setPhoto(self, pixmap=None):
         self._zoom = 0
         if pixmap and not pixmap.isNull():
-            self._empty = False
+            self.empty = False
             self.setDragMode(QGraphicsView.ScrollHandDrag)
-            self._photo.setPixmap(pixmap)
+            self.photo.setPixmap(pixmap)
         else:
-            self._empty = True
+            self.empty = True
             self.setDragMode(QGraphicsView.NoDrag)
-            self._photo.setPixmap(QPixmap())
+            self.photo.setPixmap(QPixmap())
         self.fitInView()
 
     def wheelEvent(self, event):
