@@ -12,7 +12,6 @@ from PyQt5.QtCore import (
     Qt,
     QThread,
     pyqtSignal,
-    QEvent
 )
 from PyQt5.QtGui import QBrush, QColor, QImage, QPixmap
 from PyQt5.QtWidgets import (
@@ -618,7 +617,7 @@ class GreatWallGui(QMainWindow):
         selecting_derivation_widgets_group.setLayout(
             self.selecting_derivation_options_layout
         )
-        
+
         navigation_buttons_layout = QHBoxLayout()
         for widget in self.selecting_navigation_widgets_list:
             navigation_buttons_layout.addWidget(widget)
