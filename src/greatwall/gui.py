@@ -1,8 +1,10 @@
-from typing import Tuple, Union
-
 import numpy as np
 from PyQt5.QtCore import (
+    QEvent,
     QRectF,
+    QMargins,
+    QPoint,
+    QRect,
     QSignalTransition,
     QSize,
     QState,
@@ -10,8 +12,9 @@ from PyQt5.QtCore import (
     Qt,
     QThread,
     pyqtSignal,
+    QEvent
 )
-from PyQt5.QtGui import QBrush, QColor, QIcon, QImage, QPixmap
+from PyQt5.QtGui import QBrush, QColor, QImage, QPixmap
 from PyQt5.QtWidgets import (
     QApplication,
     QComboBox,
@@ -19,17 +22,20 @@ from PyQt5.QtWidgets import (
     QGraphicsPixmapItem,
     QGraphicsScene,
     QGraphicsView,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
+    QLayout,
     QMainWindow,
     QMessageBox,
     QPushButton,
+    QScrollArea,
+    QSizePolicy,
+    QStackedWidget,
     QSpinBox,
     QTextEdit,
     QVBoxLayout,
     QWidget,
-    QScrollArea,
-    QWidgetItem,
 )
 from resources import constants
 from resources.greatwall import GreatWall
@@ -70,14 +76,122 @@ class GreatWallWorker(QThread):
         self.canceled.emit()
 
 
+class FlowLayout(QLayout):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        if parent is not None:
+            self.setContentsMargins(QMargins(0, 0, 0, 0))
+
+        self._item_list = []
+
+    def __del__(self):
+        item = self.takeAt(0)
+        while item:
+            item = self.takeAt(0)
+
+    def addItem(self, item):
+        self._item_list.append(item)
+
+    def count(self):
+        return len(self._item_list)
+
+    def itemAt(self, index):
+        if 0 <= index < len(self._item_list):
+            return self._item_list[index]
+
+        return None
+
+    def takeAt(self, index):
+        if 0 <= index < len(self._item_list):
+            return self._item_list.pop(index)
+
+        return None
+
+    def expandingDirections(self):
+        return Qt.Orientation(0)
+
+    def hasHeightForWidth(self):
+        return True
+
+    def heightForWidth(self, width):
+        height = self._do_layout(QRect(0, 0, width, 0), True)
+        return height
+
+    def setGeometry(self, rect):
+        super(FlowLayout, self).setGeometry(rect)
+        self._do_layout(rect, False)
+
+    def sizeHint(self):
+        return self.minimumSize()
+
+    def minimumSize(self):
+        size = QSize()
+
+        for item in self._item_list:
+            size = size.expandedTo(item.minimumSize())
+
+        size += QSize(
+            2 * self.contentsMargins().top(), 2 * self.contentsMargins().top()
+        )
+        return size
+
+    def _do_layout(self, rect, test_only):
+        # Center the item group vertically, taking into
+        # account the width in the row.
+        row_widths = [0]
+        row = 0
+        for item in self._item_list:
+            wid = item.widget()
+            space_x = self.spacing() + wid.style().layoutSpacing(
+                QSizePolicy.PushButton, QSizePolicy.PushButton, Qt.Horizontal
+            )
+            item_width = item.sizeHint().width() + space_x
+            if row_widths[row] + item_width < rect.right():
+                row_widths[row] += item_width
+            else:
+                row += 1
+                row_widths.append(item_width)
+
+        x = int((rect.width() - row_widths[0]) / 2)
+        y = rect.y()
+        line_height = 0
+        spacing = self.spacing()
+        row = 0
+        for item in self._item_list:
+            style = item.widget().style()
+            layout_spacing_x = style.layoutSpacing(
+                QSizePolicy.PushButton, QSizePolicy.PushButton, Qt.Horizontal
+            )
+            layout_spacing_y = style.layoutSpacing(
+                QSizePolicy.PushButton, QSizePolicy.PushButton, Qt.Vertical
+            )
+            space_x = spacing + layout_spacing_x
+            space_y = spacing + layout_spacing_y
+            next_x = x + item.sizeHint().width() + space_x
+            if next_x - space_x > rect.right() and line_height > 0:
+                row += 1
+                x = int((rect.width() - row_widths[row]) / 2)
+                y = y + line_height + space_y
+                next_x = x + item.sizeHint().width() + space_x
+                line_height = 0
+
+            if not test_only:
+                item.setGeometry(QRect(QPoint(x, y), item.sizeHint()))
+
+            x = next_x
+            line_height = max(line_height, item.sizeHint().height())
+
+        return y + line_height - rect.y()
+
+
 class ImageViewer(QGraphicsView):
-    """Custom image viewer with zoom and pan capability."""
+    """Custom image viewer widget with zoom and pan capability."""
 
     def __init__(self, parent):
         super(ImageViewer, self).__init__(parent)
         self._zoom = 0
         self._empty = True
-        self._qimage = None
         self._photo = QGraphicsPixmapItem()
         self._scene = QGraphicsScene(self)
         self._scene.addItem(self._photo)
@@ -90,10 +204,9 @@ class ImageViewer(QGraphicsView):
         self.setBackgroundBrush(QBrush(QColor(30, 30, 30)))
         self.setFrameShape(QFrame.NoFrame)
 
-    @classmethod
-    def gray_array_to_Qimage(cls, gray_array, width=100, height=100):
+    def gray_array_to_Qimage(self, gray_array, width=100, height=100):
         """
-        Convert the 2D numpy array `gray` into an 8-bit QImage with a gray
+        Convert the 2D numpy array `gray` into a 8-bit QImage with a gray
         colormap. The first dimension represents the vertical image axis.
         """
         if len(gray_array.shape) != 2:
@@ -101,13 +214,12 @@ class ImageViewer(QGraphicsView):
 
         width, height = gray_array.shape
 
-        cls._qimage = QImage(gray_array.data, width, height, QImage.Format_Indexed8)
+        self._qimage = QImage(gray_array.data, width, height, QImage.Format_Indexed8)
         for i in range(max(width, height)):
             gray_array.setColor(i, QColor(i, i, i).rgb())
-        return cls._qimage
+        return self._qimage
 
-    @classmethod
-    def gray_array_to_rgb_array(cls, gray_array):
+    def gray_array_to_rgb_array(self, gray_array):
         """
         Convert the 2D numpy array `gray` after normalizing it into a colored
         3D numpy array with `Viridis` scheme.
@@ -141,25 +253,24 @@ class ImageViewer(QGraphicsView):
             21: [1.0, 1e100, 253, 231, 37],
         }
 
-        cls._normalized_array = (
+        self._normalized_array = (
             (gray_array - np.min(gray_array))
             / (np.max(gray_array) - np.min(gray_array))
             if np.max(gray_array) - np.min(gray_array)
             else gray_array - np.min(gray_array)
         )
 
-        cls._rgb_img = np.zeros((*gray_array.shape, 3), np.uint8, "C")
+        self._rgb_img = np.zeros((*gray_array.shape, 3), np.uint8, "C")
         for key in color_map.keys():
             start, end, *_rgb = color_map[key]
             boolean_array = np.logical_and(
-                cls._normalized_array >= start, cls._normalized_array <= end
+                self._normalized_array >= start, self._normalized_array <= end
             )
-            cls._rgb_img[boolean_array] = _rgb
+            self._rgb_img[boolean_array] = _rgb
 
-        return cls._rgb_img
+        return self._rgb_img
 
-    @classmethod
-    def rgb_array_to_Qimage(cls, array, width=100, height=100):
+    def rgb_array_to_Qimage(self, array, width=100, height=100):
         """
         Convert the 3D numpy array `gray` into a 8-bit QImage with a RGB
         colormap. The first dimension represents the vertical image axis.
@@ -179,8 +290,8 @@ class ImageViewer(QGraphicsView):
         else:
             raise ValueError("can only convert 3D arrays")
 
-        cls._qimage = QImage(img.data, img.shape[0], img.shape[1], QImage.Format_RGB32)
-        return cls._qimage
+        self._qimage = QImage(img.data, img.shape[0], img.shape[1], QImage.Format_RGB32)
+        return self._qimage
 
     def hasPhoto(self):
         return not self._empty
@@ -231,90 +342,104 @@ class ImageViewer(QGraphicsView):
 
 class GreatWallGui(QMainWindow):
     gui_error_signal = pyqtSignal()
-    sm2_is_running = pyqtSignal()
     level_up_signal = pyqtSignal()
     level_down_signal = pyqtSignal()
 
     def __init__(self):
         super().__init__()
-        self.finish_output: bytes = bytes(0000)
+        self.greatwall_finish_result: bytes = bytes(0000)
         self.error_occurred = Exception
-        self.button_number: int = 0
-        self.transitions: list[QSignalTransition] = []
+        self.transitions_list: list[QSignalTransition] = []
 
         self.greatwall = GreatWall()
-        self.selected_tacit_knowledge = ""
 
-        # General Widgets
-        self.back_button = QPushButton(self)
-        self.next_button = QPushButton(self)
+        self.stacked = QStackedWidget()
+        self.setCentralWidget(self.stacked)
 
-        # Input Widgets
+        self.input_view = self.init_input_view()
+        self.stacked.addWidget(self.input_view)
+
+        self.input_confirmation_view = self.init_input_confirmation_view()
+        self.stacked.addWidget(self.input_confirmation_view)
+
+        self.waiting_derivation_view = self.init_waiting_derivation_view()
+        self.stacked.addWidget(self.waiting_derivation_view)
+
+        self.selecting_derivation_view = self.init_selecting_derivation_view()
+        self.stacked.addWidget(self.selecting_derivation_view)
+
+        self.result_confirmation_view = self.init_result_confirmation_view()
+        self.stacked.addWidget(self.result_confirmation_view)
+
+        self.result_view = self.init_result_view()
+        self.stacked.addWidget(self.result_view)
+
+        self.error_view = self.init_error_view()
+        self.stacked.addWidget(self.error_view)
+
+        # Launch UI
+        self.main_states_list: list[QState] = []
+        self.error_states_list: list[QState] = []
+        self.main_gui_state = QStateMachine()
+        self.main_derivation_state = QStateMachine()
+        self.selecting_derivation_states_list: list[QState] = []
+        self.init_main_app_state()
+
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.Wheel:
+            if isinstance(obj, QWidget):
+                return True
+            else:
+                return False
+        else:
+            return super().eventFilter(obj, event)
+
+    def init_input_view(self):
         self.tacit_knowledge_label = QLabel(self)
+        self.tacit_knowledge_label.setText("Tacit knowledge type")
         self.tacit_knowledge_combobox = QComboBox(self)
+        self.tacit_knowledge_combobox.addItems(
+            constants.AVAILABLE_TACIT_KNOWLEDGE_TYPES
+        )
+        self.tacit_knowledge_combobox.setCurrentText(
+            constants.AVAILABLE_TACIT_KNOWLEDGE_TYPES[0]
+        )
+        self.tacit_knowledge_combobox.currentTextChanged.connect(
+            self.on_change_tacit_knowledge_combobox
+        )
 
-        self.fractal_function_label = QLabel(self)
+        self.fractal_function_label = QLabel("Fractal function type", self)
         self.fractal_function_combobox = QComboBox(self)
+        self.fractal_function_combobox.addItems(constants.FRACTAL_FUNCTIONS)
+        self.fractal_function_combobox.setCurrentText(constants.FRACTAL_FUNCTIONS[0])
 
-        self.theme_label = QLabel(self)
+        self.theme_label = QLabel("Choose Theme", self)
         self.theme_combobox = QComboBox(self)
+        self.theme_combobox.addItems(constants.FORMOSA_THEMES)
+        self.theme_combobox.setCurrentText(constants.FORMOSA_THEMES[0])
 
-        self.tlp_label = QLabel(self)
+        self.tlp_label = QLabel("Choose TLP parameter from 1 to 2016", self)
         self.tlp_spinbox = QSpinBox(self)
+        self.config_spinbox(self.tlp_spinbox, 1, 24 * 7 * 4 * 3, 1, 1)
 
-        self.depth_label = QLabel(self)
+        self.depth_label = QLabel("Choose tree depth from 1 to 256", self)
         self.depth_spinbox = QSpinBox(self)
+        self.config_spinbox(self.depth_spinbox, 1, 256, 1, 1)
 
-        self.arity_label = QLabel(self)
+        self.arity_label = QLabel("Choose tree arity from 2 to 256", self)
         self.arity_spinbox = QSpinBox(self)
+        self.config_spinbox(self.arity_spinbox, 1, 256, 1, 2)
 
-        self.password_label = QLabel(self)
+        self.password_label = QLabel("Enter Time-Lock Puzzle password:", self)
         self.password_text = QTextEdit(self)
 
-        # Confirmation Widgets
-        self.confirm_label = QLabel(self)
-        self.tacit_knowledge_type_confirm = QLabel(self)
-        self.theme_confirm = QLabel(self)
-        self.tlp_confirm = QLabel(self)
-        self.depth_confirm = QLabel(self)
-        self.arity_confirm = QLabel(self)
-        self.password_confirm = QLabel(self)
+        # Hardcode to fast tests
+        # self.password_text.setText(
+        #     "viboniboasmofiasbrchsprorirerugugucavehistmiinciwibowifltuor"
+        # )
 
-        # Waiting Derivation Widgets
-        self.wait_derive_label = QLabel(self)
-
-        # Dependent Derivation Widgets
-        self.select_label = QLabel(self)
-        self.derivation_spinbox = QSpinBox(self)
-        self.level_label = QLabel(self)
-        # WARNING: Attention to add widgets to this layout, they will be
-        # deleted later and can cause an exception.
-        self.derivation_layout = QVBoxLayout()
-        self.selection_buttons: list[
-            Union[QPushButton, Tuple[QPushButton, QGraphicsView]]
-        ] = []
-
-        # Result Widgets
-        self.confirm_result_label = QLabel(self)
-        self.result_hash = QLabel(self)
-
-        # Finish Widgets
-        self.finish_output_label = QLabel(self)
-        self.finish_text = QTextEdit(self)
-        self.hide_show_button = QPushButton(self)
-        self.copy_clipboard_button = QPushButton(self)
-
-        # Error widgets
-        self.config_error_label = QLabel(self)
-        self.execution_error_label = QLabel(self)
-        self.unknown_error_label = QLabel(self)
-        self.exception_label = QLabel(self)
-
-        # List of general Widgets
-        self.general_widgets = [self.next_button, self.back_button]
-
-        # Lists of widgets per step
-        self.input_state_widgets = [
+        # Lists of input widgets
+        self.input_state_widgets_list = [
             self.tacit_knowledge_label,
             self.tacit_knowledge_combobox,
             self.fractal_function_label,
@@ -330,174 +455,336 @@ class GreatWallGui(QMainWindow):
             self.password_label,
             self.password_text,
         ]
-        self.confirmation_widgets = [
-            self.confirm_label,
-            self.tacit_knowledge_type_confirm,
-            self.theme_confirm,
-            self.tlp_confirm,
-            self.depth_confirm,
-            self.arity_confirm,
-            self.password_confirm,
-        ]
-        self.wait_derivation_widgets = [self.wait_derive_label]
-        self.dependent_derivation_widgets: list[QWidget] = [
-            self.level_label,
-            self.select_label,
-            self.derivation_spinbox,
-        ]
-        self.confirm_result_widgets: list[QWidget] = [
-            self.level_label,
-            self.confirm_result_label,
-            self.result_hash,
-        ]
-        # Track the length of confirm_result_widgets,
-        # widgets will be added to confirm_result_widgets and should be removed after deletion
-        self.widget_to_remove = len(self.confirm_result_widgets)
-        self.finish_widgets = [
-            self.finish_output_label,
-            self.finish_text,
-            self.hide_show_button,
-            self.copy_clipboard_button,
-        ]
-        self.error_widgets = [
-            self.config_error_label,
-            self.execution_error_label,
-            self.unknown_error_label,
-            self.exception_label,
+
+        self.input_exit_navigation_button = QPushButton("Exit", self)
+        self.input_next_navigation_button = QPushButton("Next", self)
+
+        # Lists of input navigation widgets
+        self.input_navigation_widgets_list = [
+            self.input_exit_navigation_button,
+            self.input_next_navigation_button,
         ]
 
-        # List of widgets lists
-        self.state_widgets: list[list[QWidget]] = []
+        input_widgets_layout = QVBoxLayout()
+        for widget in self.input_state_widgets_list:
+            input_widgets_layout.addWidget(widget)
+        input_widgets_layout.addStretch(1)
+        input_group = QGroupBox()
+        input_group.setLayout(input_widgets_layout)
 
-        # Launch UI
-        self.main_states: list[QState()] = []
-        self.error_states: list[QState()] = []
-        self.main_gui_sm = QStateMachine()
-        self.loop_dynamic_sm = QStateMachine()
-        self.dynamic_states: list[QState()] = []
-        self.init_ui()
-        self.init_main_app_state()
+        navigation_buttons_layout = QHBoxLayout()
+        for widget in self.input_navigation_widgets_list:
+            navigation_buttons_layout.addWidget(widget)
 
-    def init_ui(self):
-        self.setWindowTitle("Great Wall Sample")
-        self.setGeometry(100, 100, 500, 500)  # left, top, width, height
+        input_layout = QVBoxLayout()
+        input_layout.addWidget(input_group)
+        input_layout.addLayout(navigation_buttons_layout)
 
-        # Hardcode to fast tests
-        # self.password_text.setText(
-        #     "viboniboasmofiasbrchsprorirerugugucavehistmiinciwibowifltuor"
-        # )
+        input_view = QWidget()
+        input_view.setLayout(input_layout)
 
-        self.configure_ui_widgets()
-        self.configure_layout()
+        return input_view
 
-    def configure_ui_widgets(self):
-        # Strings variables to easily translate in the future versions
-        next_text = "Next"
-        back_text = "Back"
+    def init_input_confirmation_view(self):
+        self.input_confirmation_label = QLabel(self)
+        self.input_confirmation_tacit_knowledge_type_label = QLabel(self)
+        self.input_confirmation_theme_label = QLabel(self)
+        self.input_confirmation_tlp_label = QLabel(self)
+        self.input_confirmation_depth_label = QLabel(self)
+        self.input_confirmation_arity_label = QLabel(self)
+        self.input_confirmation_password_label = QLabel(self)
 
-        choose_tacit_knowledge_type = "Tacit knowledge type"
-        choose_fractal_function_type = "Fractal function type"
-        choose_theme = "Choose Theme"
-        choose_tlp = "Choose TLP parameter from 1 to 2016"
-        choose_depth = "Choose tree depth from 1 to 256"
-        choose_arity = "Choose tree arity from 2 to 256"
-        password = "Enter Time-Lock Puzzle password:"
-        result_confirm = "Do you confirm this result?"
-        finish_output_message = "This is the result output:"
-        wait_derive = "Wait the derivation to finish\nThis will take some time"
-        config_error_message = "Some configuration might went wrong\n\tDouble check the theme chosen and your password"
-        execution_error_message = "The GreatWall execution might went wrong\n\tPlease double check your dependencies version and try again"
-        unknown_error_message = "Or some unexpected error occurred"
-        hide_show = "Show output"
-        copy_clipboard = "Copy output to clipboard"
-        selection_text = "Select option"
+        # Lists of input confirmation widgets
+        self.input_confirmation_widgets_list = [
+            self.input_confirmation_label,
+            self.input_confirmation_tacit_knowledge_type_label,
+            self.input_confirmation_theme_label,
+            self.input_confirmation_tlp_label,
+            self.input_confirmation_depth_label,
+            self.input_confirmation_arity_label,
+            self.input_confirmation_password_label,
+        ]
 
-        # General Widgets
-        self.back_button.setText(next_text)
-        self.next_button.setText(back_text)
+        self.input_confirmation_back_navigation_button = QPushButton(self)
+        self.input_confirmation_next_navigation_button = QPushButton(self)
 
-        # Input Widgets
-        self.tacit_knowledge_label.setText(choose_tacit_knowledge_type)
-        self.fractal_function_label.setText(choose_fractal_function_type)
-        self.theme_label.setText(choose_theme)
-        self.tlp_label.setText(choose_tlp)
-        self.depth_label.setText(choose_depth)
-        self.arity_label.setText(choose_arity)
-        self.password_label.setText(password)
+        # Lists of input confirmation navigation widgets
+        self.input_confirmation_navigation_widgets_list = [
+            self.input_confirmation_back_navigation_button,
+            self.input_confirmation_next_navigation_button,
+        ]
 
-        # Set default input values
-        self.tacit_knowledge_combobox.addItems(
-            constants.AVAILABLE_TACIT_KNOWLEDGE_TYPES
+        confirmation_widgets_layout = QVBoxLayout()
+        for widget in self.input_confirmation_widgets_list:
+            confirmation_widgets_layout.addWidget(widget)
+        confirmation_widgets_layout.addStretch(1)
+        confirmation_group = QGroupBox()
+        confirmation_group.setLayout(confirmation_widgets_layout)
+
+        navigation_buttons_layout = QHBoxLayout()
+        for widget in self.input_confirmation_navigation_widgets_list:
+            navigation_buttons_layout.addWidget(widget)
+
+        confirmation_layout = QVBoxLayout()
+        confirmation_layout.addWidget(confirmation_group)
+        confirmation_layout.addLayout(navigation_buttons_layout)
+
+        confirmation_view = QWidget()
+        confirmation_view.setLayout(confirmation_layout)
+
+        return confirmation_view
+
+    def init_waiting_derivation_view(self):
+        self.waiting_derivation_label = QLabel(self)
+        self.waiting_derivation_label.setText(
+            "Please, wait until the derivation finish!\n"
+            + "Be patient, this will take some time..."
         )
-        self.tacit_knowledge_combobox.setCurrentText(
-            constants.AVAILABLE_TACIT_KNOWLEDGE_TYPES[0]
+        # self.wait_derivation_bar = QProgressBar()
+
+        # Lists of waiting derivation widgets
+        self.waiting_derivation_widgets_list = [
+            self.waiting_derivation_label,
+            # self.wait_derivation_bar,
+        ]
+
+        self.waiting_reset_navigation_button = QPushButton("Reset", self)
+        self.waiting_next_navigation_button = QPushButton("Next", self)
+        self.waiting_next_navigation_button.setEnabled(False)
+
+        # Lists of waiting derivation navigation widgets
+        self.waiting_navigation_widgets_list = [
+            self.waiting_reset_navigation_button,
+            self.waiting_next_navigation_button,
+        ]
+
+        waiting_derivation_widgets_layout = QVBoxLayout()
+        for widget in self.waiting_derivation_widgets_list:
+            waiting_derivation_widgets_layout.addWidget(widget)
+        waiting_derivation_widgets_layout.addStretch(1)
+        waiting_derivation_group = QGroupBox()
+        waiting_derivation_group.setLayout(waiting_derivation_widgets_layout)
+
+        navigation_buttons_layout = QHBoxLayout()
+        for widget in self.waiting_navigation_widgets_list:
+            navigation_buttons_layout.addWidget(widget)
+
+        waiting_derivation_layout = QVBoxLayout()
+        waiting_derivation_layout.addWidget(waiting_derivation_group)
+        waiting_derivation_layout.addLayout(navigation_buttons_layout)
+
+        waiting_derivation_view = QWidget()
+        waiting_derivation_view.setLayout(waiting_derivation_layout)
+
+        return waiting_derivation_view
+
+    def init_selecting_derivation_view(self):
+        self.selecting_derivation_option_number_selected: int = 0
+        self.selecting_derivation_current_level_label = QLabel(self)
+        self.selecting_derivation_level_label = QLabel(self)
+        self.selecting_derivation_level_spinbox = QSpinBox(self)
+
+        # Lists of selecting derivation header widgets
+        self.selecting_derivation_header_widgets_list = [
+            self.selecting_derivation_current_level_label,
+            self.selecting_derivation_level_label,
+            self.selecting_derivation_level_spinbox,
+        ]
+
+        self.selecting_derivation_options_layout = QVBoxLayout()
+
+        # Lists of selecting derivation options widgets
+        self.selecting_derivation_options_widgets_list = []
+
+        self.selecting_reset_navigation_button = QPushButton("Reset", self)
+        self.selecting_next_navigation_button = QPushButton("Next", self)
+        self.selecting_next_navigation_button.setEnabled(False)
+
+        # Lists of selecting derivation navigation widgets
+        self.selecting_navigation_widgets_list = [
+            self.selecting_reset_navigation_button,
+            self.selecting_next_navigation_button,
+        ]
+
+        selecting_derivation_header_widgets_layout = QVBoxLayout()
+        for widget in self.selecting_derivation_header_widgets_list:
+            selecting_derivation_header_widgets_layout.addWidget(widget)
+        selecting_derivation_header_widgets_group = QGroupBox()
+        selecting_derivation_header_widgets_group.setLayout(
+            selecting_derivation_header_widgets_layout
         )
-        self.tacit_knowledge_combobox.currentTextChanged.connect(
-            self.on_change_tacit_knowledge_combobox
+
+        selecting_derivation_widgets_group = QGroupBox()
+        selecting_derivation_widgets_group.setLayout(
+            self.selecting_derivation_options_layout
         )
-        self.fractal_function_combobox.addItems(constants.FRACTAL_FUNCTIONS)
-        self.fractal_function_combobox.setCurrentText(constants.FRACTAL_FUNCTIONS[0])
-        self.theme_combobox.addItems(constants.FORMOSA_THEMES)
-        self.theme_combobox.setCurrentText(constants.FORMOSA_THEMES[0])
-        self.on_change_tacit_knowledge_combobox()
+        
+        navigation_buttons_layout = QHBoxLayout()
+        for widget in self.selecting_navigation_widgets_list:
+            navigation_buttons_layout.addWidget(widget)
+        selecting_derivation_layout = QVBoxLayout()
+        selecting_derivation_layout.addWidget(selecting_derivation_header_widgets_group)
+        selecting_derivation_layout.addWidget(selecting_derivation_widgets_group)
+        selecting_derivation_layout.addLayout(navigation_buttons_layout)
 
-        # Wait Derive Widget
-        self.wait_derive_label.setText(wait_derive)
+        selecting_derivation_view = QWidget()
+        selecting_derivation_view.setLayout(selecting_derivation_layout)
 
-        # Confirmation Widgets
-        self.select_label.setText(selection_text)
-        self.configure_confirmation_widgets()
+        return selecting_derivation_view
 
-        # Result Widget
-        self.confirm_result_label.setText(result_confirm)
+    def init_result_confirmation_view(self):
+        self.result_confirmation_current_level_label = QLabel(self)
 
-        # Finish Widget
-        self.finish_output_label.setText(finish_output_message)
-        self.hide_show_button.setText(hide_show)
-        self.hide_show_button.clicked.connect(self.on_hide_show_button_click)
-        self.copy_clipboard_button.setText(copy_clipboard)
-        self.copy_clipboard_button.clicked.connect(self.copy_to_clipboard)
+        # Lists of result confirmation header widgets
+        self.result_confirmation_header_widgets_list = [
+            self.result_confirmation_current_level_label,
+        ]
 
-        # Error widget
-        self.config_error_label.setText(config_error_message)
-        self.execution_error_label.setText(execution_error_message)
-        self.unknown_error_label.setText(unknown_error_message)
+        self.result_confirmation_confirm_question_label = QLabel(self)
+        self.result_confirmation_result_hash_label = QLabel(self)
+        self.result_confirmation_previous_step_button = QPushButton(self)
 
-        self.config_spinbox(self.tlp_spinbox, 1, 24 * 7 * 4 * 3, 1, 1)
-        self.config_spinbox(self.depth_spinbox, 1, 256, 1, 1)
-        self.config_spinbox(self.arity_spinbox, 1, 256, 1, 2)
+        # Lists of result confirmation header widgets
+        self.result_confirmation_widgets_list = [
+            self.result_confirmation_confirm_question_label,
+            self.result_confirmation_result_hash_label,
+            self.result_confirmation_previous_step_button,
+        ]
+
+        self.result_confirmation_reset_navigation_button = QPushButton("Reset", self)
+        self.result_confirmation_next_navigation_button = QPushButton("Next", self)
+
+        # Lists of result confirmation navigation widgets
+        self.result_confirmation_navigation_widgets_list = [
+            self.result_confirmation_reset_navigation_button,
+            self.result_confirmation_next_navigation_button,
+        ]
+
+        result_confirmation_header_widgets_layout = QVBoxLayout()
+        for widget in self.result_confirmation_header_widgets_list:
+            result_confirmation_header_widgets_layout.addWidget(widget)
+        result_confirmation_header_widgets_group = QGroupBox()
+        result_confirmation_header_widgets_group.setLayout(
+            result_confirmation_header_widgets_layout
+        )
+
+        result_confirmation_widgets_layout = QVBoxLayout()
+        for widget in self.result_confirmation_widgets_list:
+            if widget == self.result_confirmation_result_hash_label:
+                result_confirmation_widgets_layout.addWidget(
+                    widget, alignment=Qt.AlignCenter
+                )
+            else:
+                result_confirmation_widgets_layout.addWidget(widget)
+        result_confirmation_widgets_layout.addStretch(1)
+        result_confirmation_widgets_group = QGroupBox()
+        result_confirmation_widgets_group.setLayout(result_confirmation_widgets_layout)
+
+        navigation_buttons_layout = QHBoxLayout()
+        for widget in self.result_confirmation_navigation_widgets_list:
+            navigation_buttons_layout.addWidget(widget)
+
+        result_confirmation_layout = QVBoxLayout()
+        result_confirmation_layout.addWidget(result_confirmation_header_widgets_group)
+        result_confirmation_layout.addWidget(result_confirmation_widgets_group)
+        result_confirmation_layout.addLayout(navigation_buttons_layout)
+
+        result_confirmation_view = QWidget()
+        result_confirmation_view.setLayout(result_confirmation_layout)
+
+        return result_confirmation_view
+
+    def init_result_view(self):
+        self.result_finish_message_label = QLabel("This is the result output:", self)
+        self.result_finish_output_text = QTextEdit(self)
+        self.result_show_hide_output_button = QPushButton(self)
+        self.result_copy_output_button = QPushButton("Copy output to clipboard", self)
+
+        self.result_show_hide_output_button.clicked.connect(
+            self.on_hide_show_button_click
+        )
+        self.result_copy_output_button.clicked.connect(self.on_copy_button_click)
+
+        # Lists of result widgets
+        self.result_widgets_list = [
+            self.result_finish_message_label,
+            self.result_finish_output_text,
+            self.result_show_hide_output_button,
+            self.result_copy_output_button,
+        ]
+
+        self.result_reset_navigation_button = QPushButton("Reset", self)
+
+        # Lists of result navigation widgets
+        self.result_navigation_widgets_list = [
+            self.result_reset_navigation_button,
+        ]
+
+        result_widgets_layout = QVBoxLayout()
+        for widget in self.result_widgets_list:
+            result_widgets_layout.addWidget(widget)
+        result_widgets_layout.addStretch(1)
+        result_widgets_group = QGroupBox()
+        result_widgets_group.setLayout(result_widgets_layout)
+
+        navigation_buttons_layout = QHBoxLayout()
+        for widget in self.result_navigation_widgets_list:
+            navigation_buttons_layout.addWidget(widget)
+
+        result_layout = QVBoxLayout()
+        result_layout.addWidget(result_widgets_group)
+        result_layout.addLayout(navigation_buttons_layout)
+
+        result_view = QWidget()
+        result_view.setLayout(result_layout)
+
+        return result_view
+
+    def init_error_view(self):
+        self.error_message_label = QLabel("The following error has been raised:", self)
+        self.error_message_text = QTextEdit(self)
+        self.error_message_text.setReadOnly(True)
+
+        # Lists of result widgets
+        self.error_widgets_list = [
+            self.error_message_label,
+            self.error_message_text,
+        ]
+
+        self.error_reset_navigation_button = QPushButton("Reset", self)
+
+        # Lists of result navigation widgets
+        self.error_navigation_widgets_list = [
+            self.error_reset_navigation_button,
+        ]
+
+        error_widgets_layout = QVBoxLayout()
+        for widget in self.error_widgets_list:
+            error_widgets_layout.addWidget(widget)
+        error_widgets_layout.addStretch(1)
+        error_widgets_group = QGroupBox()
+        error_widgets_group.setLayout(error_widgets_layout)
+
+        navigation_buttons_layout = QHBoxLayout()
+        for widget in self.error_navigation_widgets_list:
+            navigation_buttons_layout.addWidget(widget)
+
+        error_layout = QVBoxLayout()
+        error_layout.addWidget(error_widgets_group)
+        error_layout.addLayout(navigation_buttons_layout)
+
+        error_view = QWidget()
+        error_view.setLayout(error_layout)
+
+        return error_view
 
     def on_change_tacit_knowledge_combobox(self):
-        self.selected_tacit_knowledge = self.tacit_knowledge_combobox.currentText()
         self.fractal_function_combobox.setEnabled(
             self.tacit_knowledge_combobox.currentText() == constants.FRACTAL
         )
 
-    def configure_confirmation_widgets(self):
-        confirm_values = "Confirm your values"
-        tacit_knowledge_type_chosen = "Tacit knowledge type\n"
-        theme_chosen = "Theme\n"
-        tlp_chosen = "TLP parameter\n"
-        depth_chosen = "Tree depth\n"
-        arity_chosen = "Tree arity\n"
-        password_chosen = "Time-Lock Puzzle password\n"
-
-        self.confirm_label.setText(confirm_values)
-        self.tacit_knowledge_type_confirm.setText(
-            tacit_knowledge_type_chosen + self.tacit_knowledge_combobox.currentText()
-        )
-        self.theme_confirm.setText(
-            theme_chosen + str(self.theme_combobox.currentText())
-        )
-        self.tlp_confirm.setText(tlp_chosen + str(self.tlp_spinbox.value()))
-        self.depth_confirm.setText(depth_chosen + str(self.depth_spinbox.value()))
-        self.arity_confirm.setText(arity_chosen + str(self.arity_spinbox.value()))
-        self.password_confirm.setText(
-            password_chosen + self.password_text.toPlainText()
-        )
-
-    @staticmethod
     def config_spinbox(
+        self,
         spinbox: QSpinBox,
         min_value: int,
         max_value: int,
@@ -511,113 +798,224 @@ class GreatWallGui(QMainWindow):
         spinbox.setValue(default_value)
         spinbox.setWrapping(set_wrapping)
 
-    def configure_layout(self):
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
-
-        main_layout = QVBoxLayout()
-        central_widget.setLayout(main_layout)
-
-        # Adding widgets to the main layout
-        [main_layout.addWidget(widget) for widget in self.input_state_widgets]
-        [main_layout.addWidget(widget) for widget in self.confirmation_widgets]
-        [main_layout.addWidget(widget) for widget in self.wait_derivation_widgets]
-        main_layout.addLayout(self.derivation_layout)
-        [main_layout.addWidget(widget) for widget in self.confirm_result_widgets]
-        [main_layout.addWidget(widget) for widget in self.finish_widgets]
-        [main_layout.addWidget(widget) for widget in self.error_widgets]
-        main_layout.addStretch(1)  # Add stretchable space to the end
-
-        # Horizontal layout for buttons
-        general_buttons_layout = QHBoxLayout()
-        general_buttons_layout.addWidget(self.back_button)
-        general_buttons_layout.addWidget(self.next_button)
-
-        # Add the buttons layout to the main layout
-        main_layout.addLayout(general_buttons_layout)
-
     def init_main_app_state(self):
-        closing_app_state = QState()
-        closing_app_state.setObjectName("Quit Application")
+        exit_app_state = QState()
+        exit_app_state.setObjectName("Exit Application")
 
         input_state = QState()
         input_state.setObjectName("User Inputs")
 
-        confirm_state = QState()
-        confirm_state.setObjectName("User Confirm")
+        input_confirmation_state = QState()
+        input_confirmation_state.setObjectName("User Inputs Confirmation")
 
-        dependent_derivation_state = QState()
-        dependent_derivation_state.setObjectName("Dependent Derivation")
+        derivation_state = QState()
+        derivation_state.setObjectName("Derivation")
 
-        output_state = QState()
-        output_state.setObjectName("Output")
+        result_confirmation_state = QState()
+        result_confirmation_state.setObjectName("Result Confirmation")
 
-        gui_error_state = QState()
-        gui_error_state.setObjectName("GUI Error")
+        result_state = QState()
+        result_state.setObjectName("Result")
+
+        error_state = QState()
+        error_state.setObjectName("GUI Error")
 
         # List of states
-        self.error_states = [
-            gui_error_state,
+        self.error_states_list = [
+            error_state,
         ]
-        self.main_states = [
-            closing_app_state,
+        self.main_states_list = [
+            exit_app_state,
             input_state,
-            confirm_state,
-            dependent_derivation_state,
-            output_state,
-        ] + self.error_states
+            input_confirmation_state,
+            derivation_state,
+            result_confirmation_state,
+            result_state,
+            error_state,
+        ]
 
         # Define transitions
-        input_state.addTransition(self.next_button.clicked, confirm_state)
-        input_state.addTransition(self.back_button.clicked, closing_app_state)
-        confirm_state.addTransition(
-            self.next_button.clicked, dependent_derivation_state
+        input_state.addTransition(
+            self.input_next_navigation_button.clicked, input_confirmation_state
         )
-        confirm_state.addTransition(self.back_button.clicked, input_state)
-        dependent_derivation_state.addTransition(self.next_button.clicked, output_state)
-        dependent_derivation_state.addTransition(self.back_button.clicked, input_state)
-        output_state.addTransition(self.next_button.clicked, closing_app_state)
-        output_state.addTransition(self.back_button.clicked, input_state)
-        gui_error_state.addTransition(self.back_button.clicked, input_state)
+        input_state.addTransition(
+            self.input_exit_navigation_button.clicked, exit_app_state
+        )
+        input_confirmation_state.addTransition(
+            self.input_confirmation_next_navigation_button.clicked, derivation_state
+        )
+        input_confirmation_state.addTransition(
+            self.input_confirmation_back_navigation_button.clicked, input_state
+        )
+        # NOTE: The derivation state includes waiting,
+        # selecting and confirming result views.
+        derivation_state.addTransition(
+            self.waiting_next_navigation_button.clicked, result_state
+        )
+        derivation_state.addTransition(
+            self.waiting_reset_navigation_button.clicked, input_state
+        )
+        derivation_state.addTransition(
+            self.selecting_reset_navigation_button.clicked, input_state
+        )
+        derivation_state.addTransition(
+            self.result_confirmation_next_navigation_button.clicked, result_state
+        )
+        derivation_state.addTransition(
+            self.result_confirmation_reset_navigation_button.clicked, input_state
+        )
+        result_state.addTransition(
+            self.result_reset_navigation_button.clicked, input_state
+        )
+        error_state.addTransition(
+            self.error_reset_navigation_button.clicked, input_state
+        )
+
         # Error transitions, add to all states except the error states
-        [
-            each_state.addTransition(self.gui_error_signal, gui_error_state)
-            for each_state in set(self.main_states) - set(self.error_states)
-        ]
+        for state in set(self.main_states_list) - set(self.error_states_list):
+            state.addTransition(self.gui_error_signal, error_state)
 
         # Add states to the state machine
-        [self.main_gui_sm.addState(each_state) for each_state in self.main_states]
+        for state in self.main_states_list:
+            self.main_gui_state.addState(state)
 
         # Set initial state
-        self.main_gui_sm.setInitialState(input_state)
+        self.main_gui_state.setInitialState(input_state)
 
         # Start the state machine
-        self.main_gui_sm.start()
+        self.main_gui_state.start()
 
         # Connect states to methods
-        closing_app_state.entered.connect(self.on_close_app)
+        exit_app_state.entered.connect(self.on_exit_app)
         input_state.entered.connect(self.input_state1_entered)
-        confirm_state.entered.connect(self.confirm_state2_entered)
-        dependent_derivation_state.entered.connect(self.derivation_state3_entered)
-        output_state.entered.connect(self.output_state4_entered)
-        gui_error_state.entered.connect(self.handle_gui_errors)
+        input_confirmation_state.entered.connect(self.confirmation_state2_entered)
+        derivation_state.entered.connect(self.derivation_state3_entered)
+        result_state.entered.connect(self.result_state4_entered)
+        error_state.entered.connect(self.error_state0_entered)
 
-    def configure_selection_buttons(self):
-        self.level_label.setText(
+    def config_input_confirmation_widgets(self):
+        self.input_confirmation_label.setText("Confirm your values")
+        self.input_confirmation_tacit_knowledge_type_label.setText(
+            "Tacit knowledge type\n" + self.tacit_knowledge_combobox.currentText()
+        )
+        self.input_confirmation_theme_label.setText(
+            "Theme\n" + str(self.theme_combobox.currentText())
+        )
+        self.input_confirmation_tlp_label.setText(
+            "TLP parameter\n" + str(self.tlp_spinbox.value())
+        )
+        self.input_confirmation_depth_label.setText(
+            "Tree depth\n" + str(self.depth_spinbox.value())
+        )
+        self.input_confirmation_arity_label.setText(
+            "Tree arity\n" + str(self.arity_spinbox.value())
+        )
+        self.input_confirmation_password_label.setText(
+            "Time-Lock Puzzle password\n" + self.password_text.toPlainText()
+        )
+        self.input_confirmation_back_navigation_button.setText("Back")
+        self.input_confirmation_next_navigation_button.setText("Next")
+
+    def config_selecting_derivation_widgets_layout(self):
+        # Remove previously added selection options to selecting derivation layout
+        for idx in reversed(range(self.selecting_derivation_options_layout.count())):
+            widget = self.selecting_derivation_options_layout.takeAt(idx).widget()
+            if widget is not None:
+                widget.deleteLater()
+        self.selecting_derivation_options_widgets_list.clear()
+
+        if self.tacit_knowledge_combobox.currentText() == constants.FRACTAL:
+            selection_button = QPushButton("Previous Step", self)
+            self.selecting_derivation_options_layout.addWidget(selection_button)
+            self.selecting_derivation_options_widgets_list.append(selection_button)
+
+            scroll_area = QScrollArea()
+            flow_widget = QWidget()
+            flow_layout = FlowLayout()
+            for idx in range(self.greatwall.tree_arity):
+                view = ImageViewer(self)
+                selection_button = QPushButton(str(idx), self)
+
+                selection_box = QVBoxLayout()
+                selection_box.addWidget(view)
+                selection_box.addWidget(selection_button)
+
+                selection_box_widget = QWidget()
+                selection_box_widget.setLayout(selection_box)
+
+                flow_layout.addWidget(selection_box_widget)
+
+                self.selecting_derivation_options_widgets_list.append(
+                    (view, selection_button)
+                )
+
+            # WARNING: We added the flow layout to QWidget to be able to remove it later
+            flow_widget.setLayout(flow_layout)
+
+            scroll_area.setWidgetResizable(True)
+            scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+            scroll_area.viewport().installEventFilter(self)
+            scroll_area.setWidget(flow_widget)
+
+            self.selecting_derivation_options_layout.addWidget(scroll_area)
+
+        elif self.tacit_knowledge_combobox.currentText() == constants.SHAPE:
+            selection_button = QPushButton("Previous Step", self)
+            self.selecting_derivation_options_layout.addWidget(selection_button)
+            self.selecting_derivation_options_widgets_list.append(selection_button)
+
+            flow_widget = QWidget()
+            flow_layout = FlowLayout()
+            for idx in range(self.greatwall.tree_arity):
+                selection_button = QPushButton(self)
+
+                flow_layout.addWidget(selection_button)
+
+                self.selecting_derivation_options_widgets_list.append(selection_button)
+
+            # WARNING: We added the flow layout to QWidget to be able to remove it later
+            flow_widget.setLayout(flow_layout)
+            self.selecting_derivation_options_layout.addLayout(flow_widget)
+
+            self.selecting_derivation_options_layout.addStretch(1)
+
+        else:
+            for _ in range(self.greatwall.tree_arity + 1):
+                selection_button = QPushButton(self)
+                self.selecting_derivation_options_layout.addWidget(selection_button)
+                self.selecting_derivation_options_widgets_list.append(selection_button)
+
+            self.selecting_derivation_options_layout.addStretch(1)
+
+    def config_selecting_derivation_widgets(self):
+        self.selecting_derivation_current_level_label.setText(
             f"Level {self.greatwall.current_level} of {self.greatwall.tree_depth}"
         )
+        self.selecting_derivation_level_label.setText("Select Option:")
+        self.config_spinbox(
+            self.selecting_derivation_level_spinbox, 0, self.greatwall.tree_arity, 1, 0
+        )
+
         if self.tacit_knowledge_combobox.currentText() == constants.FRACTAL:
-            # Set buttons to Fractal options
             user_options = self.greatwall.get_fractal_query()
+
             if len(user_options) == len(self.selection_buttons):
                 for idx, widgets in enumerate(self.selection_buttons[1:]):
                     grid_layout = QGridLayout()
                     button, view = widgets
                     button.setText(str(idx))
                     button.setFixedSize(QSize(200, 25))
+            for idx, widgets in enumerate(
+                self.selecting_derivation_options_widgets_list
+            ):
+                if idx == 0:
+                    selection_button = widgets
+                else:
+                    view, selection_button = widgets
+
                     image = QPixmap.fromImage(
                         view.rgb_array_to_Qimage(
-                            view.gray_array_to_rgb_array(user_options[idx + 1])
+                            view.gray_array_to_rgb_array(user_options[idx])
                         )
                     )
                     view.setFixedSize(QSize(200, 200))
@@ -632,173 +1030,83 @@ class GreatWallGui(QMainWindow):
                 self.derivation_layout.addLayout(grid_layout)
   
 
-        elif self.tacit_knowledge_combobox.currentText() == constants.FORMOSA:
-            # Set buttons to Formosa options
-            user_options = self.greatwall.get_li_str_query().split("\n")
-            if len(user_options) == len(self.selection_buttons) + 1:
-                for idx, widgets in enumerate(self.selection_buttons[1:]):
-                    button, _ = widgets
-                    button.setText(user_options[idx + 1])
+                    selection_button.setText(str(idx))
+                    selection_button.setFixedSize(QSize(200, 25))
 
+                selection_button.clicked.connect(
+                    lambda state, x=idx: self.on_selection_button_click(x)
+                )
         elif self.tacit_knowledge_combobox.currentText() == constants.SHAPE:
-            # Set buttons to Shape options
             user_options = self.greatwall.get_shape_query()
-            if len(user_options) == len(self.selection_buttons):
-                offset = QSize(10, 10)
-                for idx, widgets in enumerate(self.selection_buttons[1:]):
-                    button, _ = widgets
-                    image = QPixmap(str(user_options[idx + 1]))
-                    icon = QIcon(image)
-                    button.setIcon(icon)
-                    button.setFixedSize(image.size() + offset)
-                    button.setIconSize(image.size())
-
-    def copy_to_clipboard(self):
-        if not self.greatwall.is_finished:
-            return
-        clipboard = QApplication.clipboard()
-        clipboard.setText(self.finish_output.hex())
-
-    def configure_waiting_derivation_widgets(self):
-        """Configure any message or effect to be shown while derive"""
-        pass
-
-    def configure_choose_derivation_widgets(self):
-        cancel_text = "Previous Step"
-
-        # Clear widgets from list and layout
-        self.dependent_derivation_widgets.clear()
-        self.selection_buttons.clear()
-        if len(self.confirm_result_widgets) > self.widget_to_remove:
-            self.confirm_result_widgets = self.confirm_result_widgets[
-                : self.widget_to_remove
-            ]
-
-        # Destroy widgets in the layout by setting the parents as None
-        for i in reversed(range(self.derivation_layout.count())):
-            if (
-                self.derivation_layout.itemAt(i) is None
-                or self.derivation_layout.itemAt(i).widget() is None
-                or self.derivation_layout.itemAt(i).widget() == self.level_label
+            for idx, selection_widget in enumerate(
+                self.selecting_derivation_options_widgets_list
             ):
-                continue
-            else:
-                self.derivation_layout.itemAt(i).widget().deleteLater()
-                self.derivation_layout.itemAt(i).widget().setParent(None)
+                if idx == 0:
+                    pass
+                else:
+                    selection_widget.setText(user_options[idx])
 
-        self.config_spinbox(self.derivation_spinbox, 0, self.greatwall.tree_arity, 1, 0)
-        self.derivation_layout.addWidget(self.level_label)
-        level_layout = QHBoxLayout()
-        level_layout.addWidget(self.select_label)
-        level_layout.addWidget(self.derivation_spinbox)
-        level_layout.addStretch(1)
-        self.derivation_layout.addLayout(level_layout)
-        self.dependent_derivation_widgets.append(self.level_label)
-        self.dependent_derivation_widgets.append(self.select_label)
-        self.dependent_derivation_widgets.append(self.derivation_spinbox)
-
-        scroll_layout = QVBoxLayout()
-
-        for i in range(self.greatwall.tree_arity + 1):
-            button = QPushButton("" if i > 0 else cancel_text, self)
-            button.clicked.connect(lambda state, x=i: self.on_button_click(x))
-            view = ImageViewer(self)
-
-            if button not in self.confirm_result_widgets and i == 0:
-                # Button 0 'previous step' must be visible in the last step
-                self.confirm_result_widgets.append(button)
-
-            if i == 0:
-                self.derivation_layout.addWidget(button)
-                self.dependent_derivation_widgets.append(button)
-                self.selection_buttons.append((button, view))
-            elif self.tacit_knowledge_combobox.currentText() == constants.FRACTAL:
-                scroll_layout.addWidget(view)
-                scroll_layout.addWidget(button)
-                self.dependent_derivation_widgets.append(button)
-                self.dependent_derivation_widgets.append(view)
-                self.selection_buttons.append((button, view))
-            else:
-                self.derivation_layout.addWidget(button)
-                self.dependent_derivation_widgets.append(button)
-                self.selection_buttons.append((button, view))
-
-        if self.tacit_knowledge_combobox.currentText() == constants.FRACTAL:
-            scroll_area = QScrollArea()
-            scroll_area.setWidgetResizable(True)
-            scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-            scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-            scroll_area.setWidget(QWidget())
-            scroll_area.widget().setLayout(scroll_layout)
-            scroll_area.setMinimumHeight(self.size().height() - 100)
-            self.derivation_layout.addWidget(scroll_area)
-
-    def on_button_click(self, button_number: int):
-        self.button_number = button_number
-        if button_number:
-            self.level_up_signal.emit()
+                selection_widget.clicked.connect(
+                    lambda state, x=idx: self.on_selection_button_click(x)
+                )
         else:
-            self.level_down_signal.emit()
-
-    def keyPressEvent(self, event):
-        """When enter key is pressed the derivation_spinbox will act as one selection button pressed"""
-        if not self.greatwall:
-            return
-        if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
-            value = self.derivation_spinbox.value()
-            if (
-                value <= len(self.selection_buttons)
-                and self.greatwall.current_level < self.greatwall.tree_depth
+            user_options = self.greatwall.get_li_str_query().split("\n")
+            for idx, selection_widget in enumerate(
+                self.selecting_derivation_options_widgets_list
             ):
-                self.on_button_click(value)
+                if idx == 0:
+                    selection_widget.setText("Previous Step")
+                else:
+                    selection_widget.setText(user_options[idx])
 
-    def show_layout_hide_others(self, widgets_to_show: list):
-        """Hide all widgets and show the given widgets list, also show the general widgets"""
-        self.state_widgets = [
-            self.input_state_widgets,
-            self.confirmation_widgets,
-            self.dependent_derivation_widgets,
-            self.wait_derivation_widgets,
-            self.confirm_result_widgets,
-            self.finish_widgets,
-            self.error_widgets,
-        ]
-        for widgets_to_hide in self.state_widgets:
-            for widget in widgets_to_hide:
-                # Try to hide widget, it may have been deleted causing an exception
-                try:
-                    widget.hide()
-                except RuntimeError:
-                    continue
-        [widget.show() for widget in self.general_widgets]
-        [state_widget.show() for state_widget in widgets_to_show]
+                selection_widget.clicked.connect(
+                    lambda state, x=idx: self.on_selection_button_click(x)
+                )
+
+    def config_result_confirmation_widgets(self):
+        self.result_confirmation_current_level_label.setText(
+            f"Level {self.greatwall.current_level} of {self.greatwall.tree_depth}"
+        )
+        self.result_confirmation_confirm_question_label.setText(
+            "Do you confirm this result?"
+        )
+        self.result_confirmation_previous_step_button.setText("Previous Step")
+        self.result_confirmation_previous_step_button.clicked.connect(
+            lambda state: self.on_selection_button_click(0)
+        )
+
+    def config_result_widgets(self):
+        self.result_show_hide_output_button.setText("Show output")
+
+        self.result_finish_output_text.hide()
+        self.result_finish_output_text.setText(self.greatwall_finish_result.hex())
+        self.result_finish_output_text.setReadOnly(True)
+
+    def error_state0_entered(self):
+        print("Error State Entered")
+
+        exception_message = f"Exception:\n{str(self.error_occurred)}"
+        self.error_message_text.setText(exception_message)
+
+        self.stacked.setCurrentWidget(self.error_view)
 
     def input_state1_entered(self):
         print("SM1 State 1 Entered")
-        self.next_button.setText("Next")
-        self.next_button.setEnabled(True)
-        self.back_button.setText("Exit")
-        self.back_button.setEnabled(True)
-        self.result_hash.clear()
-        self.result_hash.setText("")
-        self.show_layout_hide_others(self.input_state_widgets)
+        self.stacked.setCurrentWidget(self.input_view)
+        # self.result_confirmation_result_hash_label.clear()
+        # self.result_confirmation_result_hash_label.setText("")
         self.reinit_running_greatwall()
 
-    def confirm_state2_entered(self):
+    def confirmation_state2_entered(self):
         print("SM1 State 2 Entered")
-        self.configure_confirmation_widgets()
-        self.show_layout_hide_others(self.confirmation_widgets)
-        next_text = "Next"
-        back_text = "Reset"
-        self.next_button.setText(next_text)
-        self.back_button.setText(back_text)
+
+        # Config input confirmation widgets
+        self.config_input_confirmation_widgets()
+
+        self.stacked.setCurrentWidget(self.input_confirmation_view)
 
     def derivation_state3_entered(self):
         print("SM1 State 3 Entered")
-        next_text = "Next"
-        reset_text = "Reset"
-        self.next_button.setText(next_text)
-        self.back_button.setText(reset_text)
 
         try:
             themed_success = self.greatwall.set_themed_mnemo(
@@ -819,173 +1127,170 @@ class GreatWallGui(QMainWindow):
                 self.gui_error_signal.emit()
                 return
 
-            self.configure_waiting_derivation_widgets()
-            self.configure_choose_derivation_widgets()
-            self.show_layout_hide_others(self.wait_derivation_widgets)
-            self.next_button.setEnabled(False)
+            # Config selecting derivation widgets layout
+            self.config_selecting_derivation_widgets_layout()
 
             # Start the execution in a separate thread
             self.greatwall_thread = GreatWallWorker(self.greatwall)
             self.greatwall_thread.finished.connect(self.on_thread_finish)
             self.greatwall_thread.canceled.connect(self.on_thread_cancel)
             self.greatwall_thread.error_occurred.connect(self.on_thread_error)
-            self.init_loop_dynamic_sm()
+            self.init_selection_derivation_loop()
 
+            self.stacked.setCurrentWidget(self.waiting_derivation_view)
         except Exception as e:
             self.error_occurred = e
             self.gui_error_signal.emit()
 
-    def init_loop_dynamic_sm(self):
-        if self.loop_dynamic_sm.isRunning():
-            self.loop_dynamic_sm.stop()
+    def result_state4_entered(self):
+        print("SM1 State 4 Entered")
+
+        # Config result widgets
+        self.config_result_widgets()
+
+        self.stacked.setCurrentWidget(self.result_view)
+
+    def init_selection_derivation_loop(self):
+        if self.main_derivation_state.isRunning():
+            self.main_derivation_state.stop()
 
         num_states = self.depth_spinbox.value() + 1
 
         # Remove existing states
-        for each_transition in self.transitions:
+        for each_transition in self.transitions_list:
             # Remove the transitions from states
             source_state = each_transition.sourceState()
             if source_state:
                 source_state.removeTransition(each_transition)
 
         # Clear the transitions list after removal
-        self.transitions.clear()
+        self.transitions_list.clear()
 
         # Create and add new states
-        self.dynamic_states.clear()
-        for i in range(num_states):
+        self.selecting_derivation_states_list.clear()
+        for _ in range(num_states):
             state = QState()
-            state.entered.connect(self.loop_state_n_entered)
-            self.loop_dynamic_sm.addState(state)
-            self.dynamic_states.append(state)
+            state.entered.connect(self.selection_derive_state_n_entered)
+            self.main_derivation_state.addState(state)
+            self.selecting_derivation_states_list.append(state)
 
-        # Add transitions between states,
-        # except the first state doesn't transit with level_down_signal
-        # and the last state doesn't transit with level_up_signal
-        for state_index in range(len(self.dynamic_states)):
-            each_state = self.dynamic_states[state_index]
-
-            if state_index < len(self.dynamic_states) - 1:
-                next_state = self.dynamic_states[state_index + 1]
-                transition = QSignalTransition(self.level_up_signal)
-                transition.setTargetState(next_state)
-                each_state.addTransition(transition)
-                self.transitions.append(transition)
-
-            if state_index:
-                previous_state = self.dynamic_states[state_index - 1]
+        # Add transitions between states
+        for idx, state in enumerate(self.selecting_derivation_states_list):
+            # The first state doesn't transit with level_down_signal
+            if idx > 0:
+                previous_state = self.selecting_derivation_states_list[idx - 1]
                 transition = QSignalTransition(self.level_down_signal)
                 transition.setTargetState(previous_state)
-                each_state.addTransition(transition)
-                self.transitions.append(transition)
+                state.addTransition(transition)
+                self.transitions_list.append(transition)
+
+            # The last state doesn't transit with level_up_signal
+            if idx < len(self.selecting_derivation_states_list) - 1:
+                next_state = self.selecting_derivation_states_list[idx + 1]
+                transition = QSignalTransition(self.level_up_signal)
+                transition.setTargetState(next_state)
+                state.addTransition(transition)
+                self.transitions_list.append(transition)
 
         # Start the state machine
-        self.loop_dynamic_sm.setInitialState(self.dynamic_states[0])
-        self.loop_dynamic_sm.start()
-        self.sm2_is_running.emit()
-        self.run_greatwall_thread()
+        self.main_derivation_state.setInitialState(
+            self.selecting_derivation_states_list[0]
+        )
+        self.main_derivation_state.start()
 
-    def run_greatwall_thread(self, user_choice: int = 0):
-        if user_choice >= 0:
-            self.greatwall_thread.user_choice = user_choice
-            self.greatwall_thread.start()
-
-    def output_state4_entered(self):
-        print("SM1 State 4 Entered")
-        next_text = "Next"
-        reset_text = "Reset"
-
-        self.show_layout_hide_others(self.finish_widgets)
-        self.finish_text.hide()
-        self.finish_text.setText(self.finish_output.hex())
-        self.finish_text.setReadOnly(True)
-        self.next_button.setText(next_text)
-        self.next_button.setEnabled(False)
-        self.next_button.hide()
-        self.back_button.setText(reset_text)
-
-    def loop_state_n_entered(self):
+    def selection_derive_state_n_entered(self):
         try:
             print(
                 f"SM2 State Entered at level {self.greatwall.current_level} of {self.greatwall.tree_depth}"
             )
-            self.show_layout_hide_others(self.wait_derivation_widgets)
-            self.next_button.setEnabled(False)
-            self.run_greatwall_thread(self.button_number)
+            self.run_greatwall_thread(self.selecting_derivation_option_number_selected)
         except Exception as e:
             self.error_occurred = e
             self.gui_error_signal.emit()
 
-    def handle_gui_errors(self):
-        print("Error State Entered")
-        next_text = "Next"
-        reset_text = "Reset"
-        exception_message = f"Exception:\n{str(self.error_occurred)}"
-        self.exception_label.setText(exception_message)
-        self.show_layout_hide_others(self.error_widgets)
-        self.next_button.setText(next_text)
-        self.next_button.setEnabled(False)
-        self.next_button.hide()
-        self.back_button.setText(reset_text)
-        self.back_button.setEnabled(True)
-        self.back_button.show()
+    def run_greatwall_thread(self, user_choice):
+        if user_choice >= 0:
+            self.greatwall_thread.user_choice = user_choice
+            self.greatwall_thread.start()
 
     def reinit_running_greatwall(self):
         if hasattr(self, "greatwall_thread") and self.greatwall_thread.isRunning():
             self.greatwall.cancel_execution()
             self.greatwall_thread.cancel()
-        if self.loop_dynamic_sm.isRunning():
-            self.loop_dynamic_sm.stop()
+        if self.main_derivation_state.isRunning():
+            self.main_derivation_state.stop()
 
         self.greatwall.current_level = 0
 
+    def on_selection_button_click(self, selected_option: int):
+        self.selecting_derivation_option_number_selected = selected_option
+        if selected_option:
+            self.level_up_signal.emit()
+        else:
+            self.level_down_signal.emit()
+
     def on_hide_show_button_click(self):
-        self.finish_text.setVisible(not self.finish_text.isVisible())
-        button_text = "Hide" if self.finish_text.isVisible() else "Show"
-        self.hide_show_button.setText(f"{button_text} output")
+        self.result_finish_output_text.setVisible(
+            not self.result_finish_output_text.isVisible()
+        )
+
+        button_text = (
+            "Hide output"
+            if self.result_finish_output_text.isVisible()
+            else "Show output"
+        )
+        self.result_show_hide_output_button.setText(button_text)
+
+    def on_copy_button_click(self):
+        clipboard = QApplication.clipboard()
+        clipboard.setText(self.greatwall_finish_result.hex())
 
     def on_thread_finish(self):
         if self.greatwall.current_level >= self.greatwall.tree_depth:
-            self.finish_output = self.greatwall.finish_output()
-            if self.selected_tacit_knowledge == constants.FRACTAL:
+            self.greatwall_finish_result = self.greatwall.finish_output()
+            if self.tacit_knowledge_combobox.currentText() == constants.FRACTAL:
                 formated_fractal = self.greatwall.fractal.update(
                     func_type=self.greatwall.fractal.func_type,
                     p_param=self.greatwall.fractal.get_valid_parameter_from_value(
-                        self.finish_output
+                        self.greatwall_finish_result
                     ),
                 )
 
-                rgb_array = ImageViewer.gray_array_to_rgb_array(formated_fractal)
-                qimage = ImageViewer.rgb_array_to_Qimage(rgb_array)
+                image = ImageViewer(self)
+
+                rgb_array = image.gray_array_to_rgb_array(formated_fractal)
+                qimage = image.rgb_array_to_Qimage(rgb_array)
                 image = QPixmap.fromImage(qimage)
 
-                self.result_hash.setPixmap(image)
-                self.result_hash.resize(image.size())
-            if self.selected_tacit_knowledge == constants.FORMOSA:
+                self.result_confirmation_result_hash_label.setPixmap(
+                    image.scaled(QSize(256, 256))
+                )
+            if self.tacit_knowledge_combobox.currentText() == constants.FORMOSA:
                 formatted_mnemonic = self.greatwall.mnemo.format_mnemonic(
-                    self.greatwall.mnemo.to_mnemonic(self.finish_output)
+                    self.greatwall.mnemo.to_mnemonic(self.greatwall_finish_result)
                 )
                 formatted_mnemonic = "\n".join(
                     formatted_mnemonic.split("\n")[1 : self.greatwall.tree_arity + 1]
                 )
                 local_finish_output = formatted_mnemonic
-                self.result_hash.setText(local_finish_output)
-            if self.selected_tacit_knowledge == constants.SHAPE:
-                print(self.finish_output)
+                self.result_confirmation_result_hash_label.setText(local_finish_output)
+            if self.tacit_knowledge_combobox.currentText() == constants.SHAPE:
                 image_path = self.greatwall.shaper.draw_regular_shape(
-                    self.finish_output
+                    self.greatwall_finish_result
                 )
                 image = QPixmap(str(image_path))
-                self.result_hash.setPixmap(image)
-                self.result_hash.resize(image.size())
+                self.result_confirmation_result_hash_label.setPixmap(image)
+                self.result_confirmation_result_hash_label.resize(image.size())
 
-            self.configure_selection_buttons()
-            self.remove_scroll_area_from_layout()
-            self.show_layout_hide_others(self.confirm_result_widgets)
-            self.next_button.setEnabled(True)
+            # Config result confirmation widgets
+            self.config_result_confirmation_widgets()
+
+            self.stacked.setCurrentWidget(self.result_confirmation_view)
         else:
-            self.configure_selection_buttons()
-            self.show_layout_hide_others(self.dependent_derivation_widgets)
+            # Config selecting derivation widgets
+            self.config_selecting_derivation_widgets()
+
+            self.stacked.setCurrentWidget(self.selecting_derivation_view)
 
     def on_thread_cancel(self):
         print("Task canceled")
@@ -998,19 +1303,10 @@ class GreatWallGui(QMainWindow):
         error_dialog.setWindowTitle("Thread Error")
         error_dialog.exec_()
 
-    def on_close_app(self):
+    def on_exit_app(self):
         """Close the parent which exit the application. Bye, come again!"""
         print("Closed")
         self.close()
-
-    def remove_scroll_area_from_layout(self):
-        for i in reversed(range(self.derivation_layout.count())):
-            item = self.derivation_layout.itemAt(i)
-            if isinstance(item, QWidgetItem):
-                widget = item.widget()
-                if isinstance(widget, QScrollArea):
-                    self.derivation_layout.removeWidget(widget)
-                    break
 
 
 def main():
