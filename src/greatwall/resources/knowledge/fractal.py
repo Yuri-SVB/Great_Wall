@@ -34,7 +34,7 @@ class Fractal:
 
     def get_valid_parameter_from_value(self, value: Union[bytes, bytearray]):
         real_part = "2." + str(int.from_bytes(bytes(list(value)[0:2]), "big"))[::-1]
-        imaginary_part = "2." + str(int.from_bytes(bytes(list(value)[2:4]), "big"))[::-1]
+        imaginary_part = "0." + str(int.from_bytes(bytes(list(value)[2:4]), "big"))[::-1]
 
         return complex(float(real_part), float(imaginary_part))
 
