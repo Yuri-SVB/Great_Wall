@@ -12,7 +12,6 @@ from PyQt5.QtCore import (
     Qt,
     QThread,
     pyqtSignal,
-    QEvent
 )
 from PyQt5.QtGui import QBrush, QColor, QImage, QPixmap
 from PyQt5.QtWidgets import (
