@@ -88,7 +88,7 @@ class Fractal:
         p_param=2.0,
         width=1024,
         height=1024,
-        max_iters=100,
+        max_iters=22,
     ):
         x_min = x_min if self.x_min is None else self.x_min
         x_max = x_max if self.x_max is None else self.x_max
@@ -108,24 +108,24 @@ class Fractal:
                 c = x[j] + y[i] * 1j
                 z = c
                 for n in range(max_iters):
-                    if abs(z) > 2**2:
+                    if abs(z) > 100:
                         pixels[i, j] = n
                         break
-                    z = (abs(z.real) + 1j * abs(z.imag)) ** p_param + c
+                    z = (abs(z.real) + (1j * abs(z.imag))) ** p_param + c
                 else:
                     pixels[i, j] = max_iters
         return pixels
 
     def mandelbrot_set(
         self,
-        x_min=-2.0,
-        x_max=0.5,
-        y_min=-1.0,
-        y_max=1.0,
+        x_min=-2.2,
+        x_max=1,
+        y_min=-1.2,
+        y_max=1.2,
         p_param=2.0,
         width=1024,
         height=1024,
-        max_iters=100,
+        max_iters=22,
     ):
         x_min = x_min if self.x_min is None else self.x_min
         x_max = x_max if self.x_max is None else self.x_max
@@ -145,7 +145,7 @@ class Fractal:
                 c = x[j] + y[i] * 1j
                 z = c
                 for n in range(max_iters):
-                    if abs(z) > 2**2:
+                    if abs(z) > 100:
                         pixels[i, j] = n
                         break
                     z = z**p_param + c
