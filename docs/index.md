@@ -4,7 +4,7 @@
 	<img alt="Great Wall Logo" src="images/logo_big.jpg" height="160" />
   </a>
   <h3 align="center">Great Wall</h3>
-  <p align="center">Protocol and application for providing Kerckhoffian, 0-trust, deviceless coercion-resistance in self-custody. For details, see <a href="docs/index.md">docs</a>. To understand the protocol, refer to the <a href="white_paper_executive_summary/executive_summary.md">executive summary</a>.
+  <p align="center">Protocol and application for providing Kerckhoffian, 0-trust, deviceless coercion-resistance in self-custody. For details, see <a href="index.md">docs</a>. To understand the protocol, refer to the <a href="white_paper_executive_summary/executive_summary.md">executive summary</a>.
   </p>
    
   <p align="center">
