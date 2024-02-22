@@ -33,11 +33,30 @@ class Fractal:
         self._image_pixels: Optional[np.array] = None
 
     def get_valid_parameter_from_value(self, value: Union[bytes, bytearray]):
-        parameter = "2."
-        for byte_value in list(value)[:4]:
-            parameter += str(byte_value)
+        # NOTE: We inverting the order of digits by operation [::-1] on string,
+        # to minimize Benford's law bias.
+        real_p = (
+            "2."
+            + str(
+                int.from_bytes(
+                    bytes(list(value)[0 : int(len(value) / 2)])
+                    + "real_p".encode(encoding="utf-8"),
+                    "big",
+                )
+            )[::-1]
+        )
+        imaginary_p = (
+            "0."
+            + str(
+                int.from_bytes(
+                    bytes(list(value)[int(len(value) / 2) :])
+                    + "imaginary_p".encode(encoding="utf-8"),
+                    "big",
+                )
+            )[::-1]
+        )
 
-        return float(parameter)
+        return complex(float(real_p), float(imaginary_p))
 
     @property
     def image_pixels(self):
