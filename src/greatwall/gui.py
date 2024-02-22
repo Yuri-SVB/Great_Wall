@@ -190,9 +190,9 @@ class ImageViewer(QGraphicsView):
     def __init__(self, parent):
         super(ImageViewer, self).__init__(parent)
         self.empty = True
-        self.photo = QGraphicsPixmapItem()
+        self.image = QGraphicsPixmapItem()
         self.scene = QGraphicsScene(self)
-        self.scene.addItem(self.photo)
+        self.scene.addItem(self.image)
 
         # The following attributes are for internal implementation only.
         self._zoom = 0
@@ -306,7 +306,7 @@ class ImageViewer(QGraphicsView):
 
     def fitInView(self, scale=True):
         if self.hasPhoto():
-            rect = QRectF(self.photo.pixmap().rect())
+            rect = QRectF(self.image.pixmap().rect())
             self.setSceneRect(rect)
             unity = self.transform().mapRect(QRectF(0, 0, 1, 1))
             self.scale(1 / unity.width(), 1 / unity.height())
@@ -325,11 +325,11 @@ class ImageViewer(QGraphicsView):
         if pixmap and not pixmap.isNull():
             self.empty = False
             self.setDragMode(QGraphicsView.ScrollHandDrag)
-            self.photo.setPixmap(pixmap)
+            self.image.setPixmap(pixmap)
         else:
             self.empty = True
             self.setDragMode(QGraphicsView.NoDrag)
-            self.photo.setPixmap(QPixmap())
+            self.image.setPixmap(QPixmap())
         self.fitInView()
 
     def wheelEvent(self, event):
