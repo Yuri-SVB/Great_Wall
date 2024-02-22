@@ -617,7 +617,7 @@ class GreatWallGui(QMainWindow):
         selecting_derivation_widgets_group.setLayout(
             self.selecting_derivation_options_layout
         )
-        
+
         navigation_buttons_layout = QHBoxLayout()
         for widget in self.selecting_navigation_widgets_list:
             navigation_buttons_layout.addWidget(widget)
@@ -916,10 +916,13 @@ class GreatWallGui(QMainWindow):
         self.input_confirmation_next_navigation_button.setText("Next")
 
     def config_selecting_derivation_widgets_layout(self):
-        # Remove previously added selection options to selecting derivation layout
+        # NOTE: We removing previously added selection options from selecting
+        # derivation layout so they doesn't interfere if we navigate
+        # through levels.
         for idx in reversed(range(self.selecting_derivation_options_layout.count())):
             widget = self.selecting_derivation_options_layout.takeAt(idx).widget()
             if widget is not None:
+                # WARNING: To remove element, it should be of type `QWidget`.
                 widget.deleteLater()
         self.selecting_derivation_options_widgets_list.clear()
 
@@ -933,7 +936,7 @@ class GreatWallGui(QMainWindow):
             flow_layout = FlowLayout()
             for idx in range(self.greatwall.tree_arity):
                 view = ImageViewer(self)
-                selection_button = QPushButton(str(idx), self)
+                selection_button = QPushButton(self)
 
                 selection_box = QVBoxLayout()
                 selection_box.addWidget(view)
@@ -948,7 +951,8 @@ class GreatWallGui(QMainWindow):
                     (view, selection_button)
                 )
 
-            # WARNING: We added the flow layout to QWidget to be able to remove it later
+            # WARNING: We are adding the `FlowLayout` to `QWidget`
+            # to be able to remove it later.
             flow_widget.setLayout(flow_layout)
 
             scroll_area.setWidgetResizable(True)
@@ -972,7 +976,8 @@ class GreatWallGui(QMainWindow):
 
                 self.selecting_derivation_options_widgets_list.append(selection_button)
 
-            # WARNING: We added the flow layout to QWidget to be able to remove it later
+            # WARNING: We are adding the `FlowLayout` to `QWidget`
+            # to be able to remove it later.
             flow_widget.setLayout(flow_layout)
             self.selecting_derivation_options_layout.addLayout(flow_widget)
 

@@ -141,7 +141,10 @@ class GreatWall:
         self.sa3 = self.state
 
     def update_with_long_hash(self):
-        """Update self.level_hash with the hash of the previous self.level_hash taking presumably a long time"""
+        """
+        Update self.level_hash with the hash of the previous self.level_hash
+            taking presumably a long time.
+        """
         for i in range(self.TLP_param):
             print("iteration #", i + 1, " of TLP:")
             self.state = low_level.hash_secret_raw(
@@ -155,7 +158,10 @@ class GreatWall:
             )
 
     def update_with_quick_hash(self):
-        """Update self.level_hash with the hash of the previous self.level_hash taking presumably a quick time"""
+        """
+        Update self.level_hash with the hash of the previous self.level_hash
+            taking presumably a quick time.
+        """
         self.state = low_level.hash_secret_raw(
             secret=self.state,
             salt=self.argon2salt,
@@ -167,7 +173,7 @@ class GreatWall:
         )
 
     def shuffle_arity_idx(self):
-        """Shuffles a section of level_hash bytes"""
+        """Shuffles a section of level_hash bytes."""
         self.shuffled_arity_idx = [
             arity_idx.to_bytes(length=self.nbytesform, byteorder="big")
             for arity_idx in range(self.tree_arity)
