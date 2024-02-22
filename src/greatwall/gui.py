@@ -1002,6 +1002,8 @@ class GreatWallGui(QMainWindow):
             ):
                 if idx == 0:
                     selection_button = widgets
+                    has_previous = False if self.greatwall.current_level == 0 else True
+                    selection_button.setEnabled(has_previous)
                 else:
                     view, selection_button = widgets
 
