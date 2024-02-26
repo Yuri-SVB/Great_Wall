@@ -393,6 +393,25 @@ class GreatWallGui(QMainWindow):
         else:
             return super().eventFilter(obj, event)
 
+    def init_button_minimize(self, widget):
+
+        button = QPushButton(self)
+
+        def adjust_label():
+            widget_visible = widget.isVisible()
+            button_text = ("-" if widget_visible else "+")
+            button.setText(button_text)
+
+        def on_click():
+            widget_visible = widget.isVisible()
+            widget.setVisible(not widget_visible)
+            adjust_label()
+
+        button.clicked.connect(on_click)
+
+        adjust_label()
+        return button
+
     def init_input_view(self):
         self.tacit_knowledge_label = QLabel(self)
         self.tacit_knowledge_label.setText("Tacit knowledge type")
@@ -934,8 +953,10 @@ class GreatWallGui(QMainWindow):
             for idx in range(self.greatwall.tree_arity):
                 view = ImageViewer(self)
                 selection_button = QPushButton(str(idx), self)
+                button_minimize = self.init_button_minimize(view)
 
                 selection_box = QVBoxLayout()
+                selection_box.addWidget(button_minimize)
                 selection_box.addWidget(view)
                 selection_box.addWidget(selection_button)
 
