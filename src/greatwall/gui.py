@@ -337,7 +337,52 @@ class ImageViewer(QGraphicsView):
                 self.fitInView()
             else:
                 self._zoom = 0
+  #Fractal image minimization
+  def minimize_fractal(self, iterations=5):
+      temp = self._image.copy() 
+      for i in range(iterations):
+          temp = cv2.resize(temp, (temp.shape[1]//2, temp.shape[0]//2))
+          temp = cv2.GaussianBlur(temp, (3, 3), 0)
+      self.set_image(temp)
+      
+#Fractal image rearrangement
+ def rearrange_fractal(self, rows, cols):
+     h, w = self._image.shape[:2]
+     tile_h = h // rows
+     tile_w = w // cols
+     tiles = []
+     for i in range(rows):
+         for j in range(cols):
+             tile = self._image[i*tile_h:(i+1)*tile_h, j*tile_w:(j+1)*tile_w]
+             tiles.append(tile)
+    random.shuffle(tiles)
 
+  # Place tiles in shuffled order
+    for i in range(rows):
+        for j in range(cols):
+            tile = tiles[i*cols + j]
+            self._image[i*tile_h:(i+1)*tile_h, j*tile_w:(j+1)*tile_w] = tile
+
+#Collapsing sub-windows
+def create_fractal_splitters(self, rows, cols):
+    splitter = QSplitter(Qt.Vertical)
+    for i in range(rows):
+        row_splitter = QSplitter(Qt.Horizontal)
+        for j in range(cols):
+            view = ImageViewer()
+            view.set_image(self.get_tile(i, j)) 
+            row_splitter.addWidget(view)
+    splitter.addWidget(row_splitter)
+    return splitter
+
+splitter.widget(row).collapse(1) 
+#Auto-collapsing button
+def auto_collapse(self):
+    splitter = self.create_fractal_splitters(...)
+    # Collapse all but last row
+    for i in range(rows-1):
+        splitter.widget(i).collapse(1)
+    self.set_central_widget(splitter)
 
 class GreatWallGui(QMainWindow):
     gui_error_signal = pyqtSignal()
