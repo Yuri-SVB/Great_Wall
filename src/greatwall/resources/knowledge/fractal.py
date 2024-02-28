@@ -15,7 +15,8 @@ class Fractal:
         x_max=None,
         y_min=None,
         y_max=None,
-        p_param=None,
+        real_p=None,
+        imag_p=None,
         width=None,
         height=None,
         max_iters=None,
@@ -25,38 +26,25 @@ class Fractal:
         self.x_max: Optional[float] = x_max
         self.y_min: Optional[float] = y_min
         self.y_max: Optional[float] = y_max
-        self.p_param: Optional[float] = p_param
+        self.real_p: Optional[float] = real_p
+        self.imag_p: Optional[float] = imag_p
         self.width: Optional[int] = width
         self.height: Optional[int] = height
         self.max_iters: Optional[int] = max_iters
 
         self._image_pixels: Optional[np.array] = None
 
-    def get_valid_parameter_from_value(self, value: Union[bytes, bytearray]):
+    def get_valid_real_p_from(self, value: Union[bytes, bytearray]):
         # NOTE: We inverting the order of digits by operation [::-1] on string,
         # to minimize Benford's law bias.
-        real_p = (
-            "2."
-            + str(
-                int.from_bytes(
-                    bytes(list(value)[0 : int(len(value) / 2)])
-                    + "real_p".encode(encoding="utf-8"),
-                    "big",
-                )
-            )[::-1]
-        )
-        imaginary_p = (
-            "0."
-            + str(
-                int.from_bytes(
-                    bytes(list(value)[int(len(value) / 2) :])
-                    + "imaginary_p".encode(encoding="utf-8"),
-                    "big",
-                )
-            )[::-1]
-        )
+        real_p = "2." + str(int.from_bytes(value, "big"))[::-1]
+        return float(real_p)
 
-        return complex(float(real_p), float(imaginary_p))
+    def get_valid_imag_p_from(self, value: Union[bytes, bytearray]):
+        # NOTE: We inverting the order of digits by operation [::-1] on string,
+        # to minimize Benford's law bias.
+        imag_p = "0." + str(int.from_bytes(value, "big"))[::-1]
+        return float(imag_p)
 
     @property
     def image_pixels(self):
@@ -73,7 +61,8 @@ class Fractal:
         x_max=None,
         y_min=None,
         y_max=None,
-        p_param=None,
+        real_p=None,
+        imag_p=None,
         width=None,
         height=None,
         max_iters=None,
@@ -82,7 +71,8 @@ class Fractal:
         self.x_max = x_max
         self.y_min = y_min
         self.y_max = y_max
-        self.p_param = p_param
+        self.real_p = real_p
+        self.imag_p = imag_p
         self.width = width
         self.height = height
         self.max_iters = max_iters
@@ -104,7 +94,8 @@ class Fractal:
         x_max=2.0,
         y_min=-2,
         y_max=0.8,
-        p_param=2.0,
+        real_p=2.0,
+        imag_p=0.0,
         width=1024,
         height=1024,
         max_iters=22,
@@ -113,7 +104,8 @@ class Fractal:
         x_max = x_max if self.x_max is None else self.x_max
         y_min = y_min if self.y_min is None else self.y_min
         y_max = y_max if self.y_max is None else self.y_max
-        p_param = p_param if self.p_param is None else self.p_param
+        real_p = real_p if self.real_p is None else self.real_p
+        imag_p = imag_p if self.imag_p is None else self.imag_p
         width = width if self.width is None else self.width
         height = height if self.height is None else self.height
         max_iters = max_iters if self.max_iters is None else self.max_iters
@@ -130,7 +122,8 @@ class Fractal:
                     if abs(z) > 100:
                         pixels[i, j] = n
                         break
-                    z = (abs(z.real) + (1j * abs(z.imag))) ** p_param + c
+                    exponent = complex(real_p, imag_p)
+                    z = (abs(z.real) + (1j * abs(z.imag))) ** exponent + c
                 else:
                     pixels[i, j] = max_iters
         return pixels
@@ -141,7 +134,8 @@ class Fractal:
         x_max=1,
         y_min=-1.2,
         y_max=1.2,
-        p_param=2.0,
+        real_p=2.0,
+        imag_p=0.0,
         width=1024,
         height=1024,
         max_iters=22,
@@ -150,7 +144,8 @@ class Fractal:
         x_max = x_max if self.x_max is None else self.x_max
         y_min = y_min if self.y_min is None else self.y_min
         y_max = y_max if self.y_max is None else self.y_max
-        p_param = p_param if self.p_param is None else self.p_param
+        real_p = real_p if self.real_p is None else self.real_p
+        imag_p = imag_p if self.imag_p is None else self.imag_p
         width = width if self.width is None else self.width
         height = height if self.height is None else self.height
         max_iters = max_iters if self.max_iters is None else self.max_iters
@@ -167,7 +162,7 @@ class Fractal:
                     if abs(z) > 100:
                         pixels[i, j] = n
                         break
-                    z = z**p_param + c
+                    z = z ** complex(real_p, imag_p) + c
                 else:
                     pixels[i, j] = max_iters
         return pixels

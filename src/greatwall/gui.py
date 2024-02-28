@@ -1239,7 +1239,10 @@ class GreatWallGui(QMainWindow):
             if self.tacit_knowledge_combobox.currentText() == constants.FRACTAL:
                 formated_fractal = self.greatwall.fractal.update(
                     func_type=self.greatwall.fractal.func_type,
-                    p_param=self.greatwall.fractal.get_valid_parameter_from_value(
+                    real_p=self.greatwall.fractal.get_valid_real_p_from(
+                        self.greatwall_finish_result
+                    ),
+                    imag_p=self.greatwall.fractal.get_valid_imag_p_from(
                         self.greatwall_finish_result
                     ),
                 )
