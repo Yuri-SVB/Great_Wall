@@ -617,7 +617,7 @@ class GreatWallGui(QMainWindow):
         selecting_derivation_widgets_group.setLayout(
             self.selecting_derivation_options_layout
         )
-        
+
         navigation_buttons_layout = QHBoxLayout()
         for widget in self.selecting_navigation_widgets_list:
             navigation_buttons_layout.addWidget(widget)
@@ -1002,8 +1002,9 @@ class GreatWallGui(QMainWindow):
             ):
                 if idx == 0:
                     selection_button = widgets
-                    has_previous = False if self.greatwall.current_level == 0 else True
-                    selection_button.setEnabled(has_previous)
+                    selection_button.setEnabled(
+                        False if self.greatwall.current_level == 0 else True
+                    )
                 else:
                     view, selection_button = widgets
 
@@ -1027,7 +1028,10 @@ class GreatWallGui(QMainWindow):
                 self.selecting_derivation_options_widgets_list
             ):
                 if idx == 0:
-                    pass
+                    selection_widget.setText("Previous Step")
+                    selection_widget.setEnabled(
+                        False if self.greatwall.current_level == 0 else True
+                    )
                 else:
                     selection_widget.setText(user_options[idx])
 
@@ -1041,6 +1045,9 @@ class GreatWallGui(QMainWindow):
             ):
                 if idx == 0:
                     selection_widget.setText("Previous Step")
+                    selection_widget.setEnabled(
+                        False if self.greatwall.current_level == 0 else True
+                    )
                 else:
                     selection_widget.setText(user_options[idx])
 
