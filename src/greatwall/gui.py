@@ -13,7 +13,7 @@ from PyQt5.QtCore import (
     QThread,
     pyqtSignal,
 )
-from PyQt5.QtGui import QBrush, QColor, QImage, QPixmap
+from PyQt5.QtGui import QBrush, QColor, QIcon, QImage, QPixmap
 from PyQt5.QtWidgets import (
     QApplication,
     QComboBox,
@@ -933,7 +933,7 @@ class GreatWallGui(QMainWindow):
             flow_layout = FlowLayout()
             for idx in range(self.greatwall.tree_arity):
                 view = ImageViewer(self)
-                selection_button = QPushButton(str(idx), self)
+                selection_button = QPushButton(self)
 
                 selection_box = QVBoxLayout()
                 selection_box.addWidget(view)
@@ -963,20 +963,24 @@ class GreatWallGui(QMainWindow):
             self.selecting_derivation_options_layout.addWidget(selection_button)
             self.selecting_derivation_options_widgets_list.append(selection_button)
 
+            scroll_area = QScrollArea()
             flow_widget = QWidget()
             flow_layout = FlowLayout()
             for idx in range(self.greatwall.tree_arity):
                 selection_button = QPushButton(self)
-
                 flow_layout.addWidget(selection_button)
 
                 self.selecting_derivation_options_widgets_list.append(selection_button)
 
             # WARNING: We added the flow layout to QWidget to be able to remove it later
             flow_widget.setLayout(flow_layout)
-            self.selecting_derivation_options_layout.addLayout(flow_widget)
 
-            self.selecting_derivation_options_layout.addStretch(1)
+            scroll_area.setWidgetResizable(True)
+            scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+            scroll_area.viewport().installEventFilter(self)
+            scroll_area.setWidget(flow_widget)
+
+            self.selecting_derivation_options_layout.addWidget(scroll_area)
 
         else:
             for _ in range(self.greatwall.tree_arity + 1):
@@ -1033,7 +1037,11 @@ class GreatWallGui(QMainWindow):
                         False if self.greatwall.current_level == 0 else True
                     )
                 else:
-                    selection_widget.setText(user_options[idx])
+                    image = QPixmap(str(user_options[idx]))
+                    selection_widget.setIcon(QIcon(image))
+                    selection_widget.setIconSize(image.size())
+
+                    selection_widget.setText(str(idx))
 
                 selection_widget.clicked.connect(
                     lambda state, x=idx: self.on_selection_button_click(x)
