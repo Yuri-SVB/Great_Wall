@@ -1,10 +1,10 @@
 import numpy as np
 from PyQt5.QtCore import (
     QEvent,
-    QRectF,
     QMargins,
     QPoint,
     QRect,
+    QRectF,
     QSignalTransition,
     QSize,
     QState,
@@ -30,13 +30,14 @@ from PyQt5.QtWidgets import (
     QPushButton,
     QScrollArea,
     QSizePolicy,
-    QStackedWidget,
     QSpinBox,
+    QStackedWidget,
     QTextEdit,
     QVBoxLayout,
     QWidget,
 )
 from resources import constants
+from resources.colormaps import color_palettes
 from resources.greatwall import GreatWall
 
 
@@ -203,93 +204,24 @@ class ImageViewer(QGraphicsView):
         self.setBackgroundBrush(QBrush(QColor(30, 30, 30)))
         self.setFrameShape(QFrame.NoFrame)
 
-    def gray_array_to_Qimage(self, gray_array, width=100, height=100):
+    def numpy_2darray_to_Qimage(self, numpy_2darray, colormap):
         """
-        Convert the 2D numpy array `gray` into a 8-bit QImage with a gray
-        colormap. The first dimension represents the vertical image axis.
+        Convert the 2D numpy array into a 3-chanels 8-bit QImage depending on
+            passed `colormap` argument. The first dimension represents the
+            vertical image axis.
         """
-        if len(gray_array.shape) != 2:
-            raise ValueError("gray2QImage can only convert 2D arrays")
+        numpy_2darray = numpy_2darray * 255
+        numpy_2darray = np.require(numpy_2darray, np.uint8, "C")
 
-        width, height = gray_array.shape
-
-        self._qimage = QImage(gray_array.data, width, height, QImage.Format_Indexed8)
-        for i in range(max(width, height)):
-            gray_array.setColor(i, QColor(i, i, i).rgb())
-        return self._qimage
-
-    def gray_array_to_rgb_array(self, gray_array):
-        """
-        Convert the 2D numpy array `gray` after normalizing it into a colored
-        3D numpy array with `Viridis` scheme.
-
-        See the following for more details: `https://waldyrious.net/viridis-palette-generator/`
-            and `https://www.kennethmoreland.com/color-advice/`.
-        """
-
-        color_map = {
-            0: [-1e100, 0.0, 68, 1, 84],
-            1: [0.0, 0.05, 68, 1, 84],
-            2: [0.05, 0.1, 72, 20, 103],
-            3: [0.1, 0.15, 72, 37, 118],
-            4: [0.15, 0.2, 69, 55, 129],
-            5: [0.2, 0.25, 64, 70, 136],
-            6: [0.25, 0.3, 57, 85, 140],
-            7: [0.3, 0.35, 51, 99, 141],
-            8: [0.35, 0.4, 45, 113, 142],
-            9: [0.4, 0.45, 40, 125, 142],
-            10: [0.45, 0.5, 35, 138, 141],
-            11: [0.5, 0.55, 31, 150, 139],
-            12: [0.55, 0.6, 32, 163, 134],
-            13: [0.6, 0.65, 41, 175, 127],
-            14: [0.65, 0.7, 61, 188, 116],
-            15: [0.7, 0.75, 86, 198, 103],
-            16: [0.75, 0.8, 117, 208, 84],
-            17: [0.8, 0.85, 149, 216, 64],
-            18: [0.85, 0.9, 186, 222, 40],
-            19: [0.9, 0.95, 221, 227, 24],
-            20: [0.95, 0.1, 253, 231, 37],
-            21: [1.0, 1e100, 253, 231, 37],
-        }
-
-        self._normalized_array = (
-            (gray_array - np.min(gray_array))
-            / (np.max(gray_array) - np.min(gray_array))
-            if np.max(gray_array) - np.min(gray_array)
-            else gray_array - np.min(gray_array)
-        )
-
-        self._rgb_img = np.zeros((*gray_array.shape, 3), np.uint8, "C")
-        for key in color_map.keys():
-            start, end, *_rgb = color_map[key]
-            boolean_array = np.logical_and(
-                self._normalized_array >= start, self._normalized_array <= end
+        if len(numpy_2darray.shape) != 2:
+            raise ValueError(
+                "Sorry, but we can only convert 2D arrays! Check your input please!"
             )
-            self._rgb_img[boolean_array] = _rgb
+        width, height = numpy_2darray.shape
 
-        return self._rgb_img
+        self._qimage = QImage(numpy_2darray.data, width, height, QImage.Format_Indexed8)
+        self._qimage.setColorTable(colormap)
 
-    def rgb_array_to_Qimage(self, array, width=100, height=100):
-        """
-        Convert the 3D numpy array `gray` into a 8-bit QImage with a RGB
-        colormap. The first dimension represents the vertical image axis.
-        """
-        if np.ndim(array) == 3:
-            height, width, d = array.shape
-
-            nd = d
-            if nd == 3:  # 3D RGB Image
-                nd = 4
-            if nd == 1:  # 3D Grayscaler Image
-                nd = 3
-
-            img = np.zeros([height, width, nd], np.uint8, "C")
-            img[:, :, :3] = array[:, :, (2, 1, 0)]
-            img[:, :, 3] = 255
-        else:
-            raise ValueError("can only convert 3D arrays")
-
-        self._qimage = QImage(img.data, img.shape[0], img.shape[1], QImage.Format_RGB32)
         return self._qimage
 
     def hasPhoto(self):
@@ -412,6 +344,11 @@ class GreatWallGui(QMainWindow):
         self.fractal_function_combobox.addItems(constants.FRACTAL_FUNCTIONS)
         self.fractal_function_combobox.setCurrentText(constants.FRACTAL_FUNCTIONS[0])
 
+        self.fractal_colormap_label = QLabel("Fractal colormap", self)
+        self.fractal_colormap_combobox = QComboBox(self)
+        self.fractal_colormap_combobox.addItems(constants.AVAILABLE_COLOR_PALETTES)
+        self.fractal_colormap_combobox.setCurrentText(constants.AVAILABLE_COLOR_PALETTES[1])
+
         self.theme_label = QLabel("Choose Theme", self)
         self.theme_combobox = QComboBox(self)
         self.theme_combobox.addItems(constants.FORMOSA_THEMES)
@@ -433,9 +370,9 @@ class GreatWallGui(QMainWindow):
         self.password_text = QTextEdit(self)
 
         # Hardcode to fast tests
-        # self.password_text.setText(
-        #     "viboniboasmofiasbrchsprorirerugugucavehistmiinciwibowifltuor"
-        # )
+        self.password_text.setText(
+            "viboniboasmofiasbrchsprorirerugugucavehistmiinciwibowifltuor"
+        )
 
         # Lists of input widgets
         self.input_state_widgets_list = [
@@ -443,6 +380,8 @@ class GreatWallGui(QMainWindow):
             self.tacit_knowledge_combobox,
             self.fractal_function_label,
             self.fractal_function_combobox,
+            self.fractal_colormap_label,
+            self.fractal_colormap_combobox,
             self.theme_label,
             self.theme_combobox,
             self.tlp_label,
@@ -617,7 +556,7 @@ class GreatWallGui(QMainWindow):
         selecting_derivation_widgets_group.setLayout(
             self.selecting_derivation_options_layout
         )
-        
+
         navigation_buttons_layout = QHBoxLayout()
         for widget in self.selecting_navigation_widgets_list:
             navigation_buttons_layout.addWidget(widget)
@@ -779,6 +718,9 @@ class GreatWallGui(QMainWindow):
 
     def on_change_tacit_knowledge_combobox(self):
         self.fractal_function_combobox.setEnabled(
+            self.tacit_knowledge_combobox.currentText() == constants.FRACTAL
+        )
+        self.fractal_colormap_combobox.setEnabled(
             self.tacit_knowledge_combobox.currentText() == constants.FRACTAL
         )
 
@@ -997,6 +939,7 @@ class GreatWallGui(QMainWindow):
 
         if self.tacit_knowledge_combobox.currentText() == constants.FRACTAL:
             user_options = self.greatwall.get_fractal_query()
+            colormap = color_palettes[self.fractal_colormap_combobox.currentText()]
             for idx, widgets in enumerate(
                 self.selecting_derivation_options_widgets_list
             ):
@@ -1006,9 +949,7 @@ class GreatWallGui(QMainWindow):
                     view, selection_button = widgets
 
                     image = QPixmap.fromImage(
-                        view.rgb_array_to_Qimage(
-                            view.gray_array_to_rgb_array(user_options[idx])
-                        )
+                        view.numpy_2darray_to_Qimage(user_options[idx], colormap)
                     )
                     view.setFixedSize(QSize(200, 200))
                     view.setPhoto(image)
@@ -1241,8 +1182,8 @@ class GreatWallGui(QMainWindow):
 
                 image = ImageViewer(self)
 
-                rgb_array = image.gray_array_to_rgb_array(formated_fractal)
-                qimage = image.rgb_array_to_Qimage(rgb_array)
+                colormap = color_palettes[self.fractal_colormap_combobox.currentText()]
+                qimage = image.numpy_2darray_to_Qimage(formated_fractal, colormap)
                 image = QPixmap.fromImage(qimage)
 
                 self.result_confirmation_result_hash_label.setPixmap(
