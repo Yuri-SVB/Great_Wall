@@ -7,7 +7,13 @@ from .. import constants
 
 
 class Fractal:
-    """The class that implement different type of fractal functions."""
+    """
+    The class that implement different type of fractal functions.
+
+    Ref:
+        This implementation took inspiration from the following link:
+            https://realpython.com/mandelbrot-set-python/
+    """
 
     def __init__(
         self,
