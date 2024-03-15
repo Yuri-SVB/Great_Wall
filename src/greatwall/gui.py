@@ -1040,10 +1040,14 @@ class GreatWallGui(QMainWindow):
                     show_hide_button.clicked.connect(
                         lambda
                             state,
+                            flow_layout=flow_layout,
+                            selection_group=selection_group,
                             button=show_hide_button,
                             widget=view,
                         :
                             self.on_selection_show_hide_button_click(
+                                flow_layout,
+                                selection_group,
                                 button,
                                 widget,
                             )
@@ -1249,9 +1253,16 @@ class GreatWallGui(QMainWindow):
 
     def on_selection_show_hide_button_click(
             self,
+            flow_layout,
+            selection_group,
             selection_button,
             selection_view
         ):
+        if selection_view.isVisible():
+            flow_layout.insertItem(-1, selection_group)
+        else:
+            flow_layout.insertItem(0, selection_group)
+
         selection_view.setVisible(not selection_view.isVisible())
 
         button_text = "Hide Image" if selection_view.isVisible() else "Show Image"
