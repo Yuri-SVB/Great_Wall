@@ -35,6 +35,7 @@ from PyQt5.QtWidgets import (
     QTextEdit,
     QVBoxLayout,
     QWidget,
+    QWidgetItem,
 )
 from resources import constants
 from resources.greatwall import GreatWall
@@ -91,6 +92,13 @@ class FlowLayout(QLayout):
 
     def addItem(self, item):
         self._item_list.append(item)
+
+    def insertItem(self, idx, item):
+        self._item_list = [i for i in self._item_list if i.widget() != item]
+        if idx == -1:
+            self._item_list.insert(len(self._item_list), QWidgetItem(item))
+        else:
+            self._item_list.insert(idx, QWidgetItem(item))
 
     def count(self):
         return len(self._item_list)
@@ -433,9 +441,9 @@ class GreatWallGui(QMainWindow):
         self.password_text = QTextEdit(self)
 
         # Hardcode to fast tests
-        # self.password_text.setText(
-        #     "viboniboasmofiasbrchsprorirerugugucavehistmiinciwibowifltuor"
-        # )
+        self.password_text.setText(
+            "viboniboasmofiasbrchsprorirerugugucavehistmiinciwibowifltuor"
+        )
 
         # Lists of input widgets
         self.input_state_widgets_list = [
@@ -617,7 +625,7 @@ class GreatWallGui(QMainWindow):
         selecting_derivation_widgets_group.setLayout(
             self.selecting_derivation_options_layout
         )
-        
+
         navigation_buttons_layout = QHBoxLayout()
         for widget in self.selecting_navigation_widgets_list:
             navigation_buttons_layout.addWidget(widget)
@@ -700,7 +708,7 @@ class GreatWallGui(QMainWindow):
         self.result_copy_output_button = QPushButton("Copy output to clipboard", self)
 
         self.result_show_hide_output_button.clicked.connect(
-            self.on_hide_show_button_click
+            self.on_result_show_hide_button_click
         )
         self.result_copy_output_button.clicked.connect(self.on_copy_button_click)
 
@@ -933,19 +941,30 @@ class GreatWallGui(QMainWindow):
             flow_layout = FlowLayout()
             for idx in range(self.greatwall.tree_arity):
                 view = ImageViewer(self)
-                selection_button = QPushButton(str(idx), self)
+                show_hide_button = QPushButton(self)
+                selection_button = QPushButton(self)
+
+                buttons_box = QHBoxLayout()
+                buttons_box.addWidget(selection_button)
+                buttons_box.addWidget(show_hide_button)
 
                 selection_box = QVBoxLayout()
                 selection_box.addWidget(view)
-                selection_box.addWidget(selection_button)
+                selection_box.addLayout(buttons_box)
 
-                selection_box_widget = QWidget()
-                selection_box_widget.setLayout(selection_box)
+                selection_box_group = QGroupBox()
+                selection_box_group.setLayout(selection_box)
 
-                flow_layout.addWidget(selection_box_widget)
+                flow_layout.addWidget(selection_box_group)
 
                 self.selecting_derivation_options_widgets_list.append(
-                    (view, selection_button)
+                    (
+                        flow_layout,
+                        selection_box_group,
+                        view,
+                        show_hide_button,
+                        selection_button,
+                    )
                 )
 
             # WARNING: We added the flow layout to QWidget to be able to remove it later
@@ -1003,21 +1022,37 @@ class GreatWallGui(QMainWindow):
                 if idx == 0:
                     selection_button = widgets
                 else:
-                    view, selection_button = widgets
+                    flow_layout, selection_group, view, show_hide_button, selection_button = widgets
 
                     image = QPixmap.fromImage(
                         view.rgb_array_to_Qimage(
                             view.gray_array_to_rgb_array(user_options[idx])
                         )
                     )
-                    view.setFixedSize(QSize(200, 200))
+                    view.setFixedSize(QSize(205, 205))
                     view.setPhoto(image)
 
                     selection_button.setText(str(idx))
-                    selection_button.setFixedSize(QSize(200, 25))
+                    selection_button.setFixedSize(QSize(100, 25))
+                    show_hide_button.setText("Hide Image")
+                    show_hide_button.setFixedSize(QSize(100, 25))
+
+                    show_hide_button.clicked.connect(
+                        lambda
+                            state,
+                            button=show_hide_button,
+                            widget=view,
+                        :
+                            self.on_selection_show_hide_button_click(
+                                button,
+                                widget,
+                            )
+                    )
 
                 selection_button.clicked.connect(
-                    lambda state, x=idx: self.on_selection_button_click(x)
+                    lambda state, selection_idx=idx: self.on_selection_button_click(
+                        selection_idx
+                    )
                 )
         elif self.tacit_knowledge_combobox.currentText() == constants.SHAPE:
             user_options = self.greatwall.get_shape_query()
@@ -1212,7 +1247,17 @@ class GreatWallGui(QMainWindow):
         else:
             self.level_down_signal.emit()
 
-    def on_hide_show_button_click(self):
+    def on_selection_show_hide_button_click(
+            self,
+            selection_button,
+            selection_view
+        ):
+        selection_view.setVisible(not selection_view.isVisible())
+
+        button_text = "Hide Image" if selection_view.isVisible() else "Show Image"
+        selection_button.setText(button_text)
+
+    def on_result_show_hide_button_click(self):
         self.result_finish_output_text.setVisible(
             not self.result_finish_output_text.isVisible()
         )
