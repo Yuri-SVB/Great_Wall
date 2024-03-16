@@ -93,13 +93,6 @@ class FlowLayout(QLayout):
     def addItem(self, item):
         self._item_list.append(item)
 
-    def insertItem(self, idx, item):
-        self._item_list = [i for i in self._item_list if i.widget() != item]
-        if idx == -1:
-            self._item_list.insert(len(self._item_list), QWidgetItem(item))
-        else:
-            self._item_list.insert(idx, QWidgetItem(item))
-
     def count(self):
         return len(self._item_list)
 
@@ -108,6 +101,13 @@ class FlowLayout(QLayout):
             return self._item_list[index]
 
         return None
+
+    def insertWidget(self, idx, widget):
+        self._item_list = [i for i in self._item_list if i.widget() != widget]
+        if idx == -1:
+            self._item_list.insert(len(self._item_list), QWidgetItem(widget))
+        else:
+            self._item_list.insert(idx, QWidgetItem(widget))
 
     def takeAt(self, index):
         if 0 <= index < len(self._item_list):
@@ -1261,9 +1261,9 @@ class GreatWallGui(QMainWindow):
         self, flow_layout, selection_group, selection_button, selection_view
     ):
         if selection_view.isVisible():
-            flow_layout.insertItem(-1, selection_group)
+            flow_layout.insertWidget(-1, selection_group)
         else:
-            flow_layout.insertItem(0, selection_group)
+            flow_layout.insertWidget(0, selection_group)
 
         selection_view.setVisible(not selection_view.isVisible())
 
