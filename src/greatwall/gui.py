@@ -1022,7 +1022,13 @@ class GreatWallGui(QMainWindow):
                 if idx == 0:
                     selection_button = widgets
                 else:
-                    flow_layout, selection_group, view, show_hide_button, selection_button = widgets
+                    (
+                        flow_layout,
+                        selection_group,
+                        view,
+                        show_hide_button,
+                        selection_button,
+                    ) = widgets
 
                     image = QPixmap.fromImage(
                         view.rgb_array_to_Qimage(
@@ -1252,12 +1258,8 @@ class GreatWallGui(QMainWindow):
             self.level_down_signal.emit()
 
     def on_selection_show_hide_button_click(
-            self,
-            flow_layout,
-            selection_group,
-            selection_button,
-            selection_view
-        ):
+        self, flow_layout, selection_group, selection_button, selection_view
+    ):
         if selection_view.isVisible():
             flow_layout.insertItem(-1, selection_group)
         else:
