@@ -103,6 +103,14 @@ class FlowLayout(QLayout):
         return None
 
     def insertWidget(self, idx, widget):
+        """Insert widget `widget` at specific index `idx` in the widgets list.
+
+        If the index `idx` equals to -1 this method will add the widget at the
+        end of widgets list.
+
+        If the widget is already exist this method will remove the widget from
+        current position and insert it at the index `idx`.
+        """
         self._item_list = [i for i in self._item_list if i.widget() != widget]
         if idx == -1:
             self._item_list.insert(len(self._item_list), QWidgetItem(widget))
