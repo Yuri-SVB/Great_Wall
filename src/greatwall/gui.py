@@ -1159,19 +1159,23 @@ class GreatWallGui(QMainWindow):
 
         # Add transitions between states
         for idx, state in enumerate(self.selecting_derivation_states_list):
-            # The first state doesn't transit with level_down_signal
+            # The first state doesn't transit with level_down_signal to previous state
             if idx > 0:
                 previous_state = self.selecting_derivation_states_list[idx - 1]
                 transition = QSignalTransition(self.level_down_signal)
                 transition.setTargetState(previous_state)
                 state.addTransition(transition)
                 self.transitions_list.append(transition)
-
-            # The last state doesn't transit with level_up_signal
+            # All states except the last transit with level_up_signal to next state
             if idx < len(self.selecting_derivation_states_list) - 1:
                 next_state = self.selecting_derivation_states_list[idx + 1]
                 transition = QSignalTransition(self.level_up_signal)
                 transition.setTargetState(next_state)
+                state.addTransition(transition)
+                self.transitions_list.append(transition)
+            else:  # The last state transit with level_up_signal to itself
+                transition = QSignalTransition(self.level_up_signal)
+                transition.setTargetState(state)
                 state.addTransition(transition)
                 self.transitions_list.append(transition)
 
