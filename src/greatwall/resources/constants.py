@@ -9,6 +9,28 @@ SHAPE = "Shape"
 AVAILABLE_TACIT_KNOWLEDGE_TYPES = [FRACTAL, FORMOSA, SHAPE]
 
 ###############################################################################
+# Available Color Palettes
+###############################################################################
+
+GRAY_COLORMAP = "Gray Scale Colormap"
+VIRIDIS_COLORMAP = "Viridis Colormap"
+INFERNO_COLORMAP = "Inferno Colormap"
+METALLIC_COLORMAP = "Metallic Colormap"
+PASTELS_COLORMAP = "Pastels Colormap"
+TWILIGHTS_COLORMAP = "Twilights Colormap"
+TWILIGHTS_CIRCULAR_COLORMAP = "Twilights Circular Colormap"
+
+AVAILABLE_COLOR_PALETTES = [
+    GRAY_COLORMAP,
+    VIRIDIS_COLORMAP,
+    INFERNO_COLORMAP,
+    METALLIC_COLORMAP,
+    PASTELS_COLORMAP,
+    TWILIGHTS_COLORMAP,
+    TWILIGHTS_CIRCULAR_COLORMAP,
+]
+
+###############################################################################
 # Formosa Themes
 ###############################################################################
 
