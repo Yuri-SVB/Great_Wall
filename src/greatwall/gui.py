@@ -13,7 +13,7 @@ from PyQt5.QtCore import (
     QThread,
     pyqtSignal,
 )
-from PyQt5.QtGui import QBrush, QColor, QImage, QPixmap
+from PyQt5.QtGui import QBrush, QColor, QIcon, QImage, QPixmap
 from PyQt5.QtWidgets import (
     QApplication,
     QComboBox,
@@ -395,9 +395,9 @@ class GreatWallGui(QMainWindow):
         self.password_text = QTextEdit(self)
 
         # Hardcode to fast tests
-        self.password_text.setText(
-            "viboniboasmofiasbrchsprorirerugugucavehistmiinciwibowifltuor"
-        )
+        #self.password_text.setText(
+        #    "viboniboasmofiasbrchsprorirerugugucavehistmiinciwibowifltuor"
+        #)
 
         # Lists of input widgets
         self.input_state_widgets_list = [
@@ -900,8 +900,8 @@ class GreatWallGui(QMainWindow):
             flow_layout = FlowLayout()
             for idx in range(self.greatwall.tree_arity):
                 view = ImageViewer(self)
-                show_hide_button = QPushButton(self)
                 selection_button = QPushButton(self)
+                show_hide_button = QPushButton(self)
 
                 buttons_box = QHBoxLayout()
                 buttons_box.addWidget(selection_button)
@@ -935,25 +935,31 @@ class GreatWallGui(QMainWindow):
             scroll_area.setWidget(flow_widget)
 
             self.selecting_derivation_options_layout.addWidget(scroll_area)
+
         elif self.tacit_knowledge_combobox.currentText() == constants.SHAPE:
             selection_button = QPushButton("Previous Step", self)
             self.selecting_derivation_options_layout.addWidget(selection_button)
             self.selecting_derivation_options_widgets_list.append(selection_button)
 
+            scroll_area = QScrollArea()
             flow_widget = QWidget()
             flow_layout = FlowLayout()
             for idx in range(self.greatwall.tree_arity):
                 selection_button = QPushButton(self)
-
                 flow_layout.addWidget(selection_button)
 
                 self.selecting_derivation_options_widgets_list.append(selection_button)
 
             # WARNING: We added the flow layout to QWidget to be able to remove it later
             flow_widget.setLayout(flow_layout)
-            self.selecting_derivation_options_layout.addLayout(flow_widget)
 
-            self.selecting_derivation_options_layout.addStretch(1)
+            scroll_area.setWidgetResizable(True)
+            scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+            scroll_area.viewport().installEventFilter(self)
+            scroll_area.setWidget(flow_widget)
+
+            self.selecting_derivation_options_layout.addWidget(scroll_area)
+
         else:
             for _ in range(self.greatwall.tree_arity + 1):
                 selection_button = QPushButton(self)
@@ -979,6 +985,9 @@ class GreatWallGui(QMainWindow):
             ):
                 if idx == 0:
                     selection_button = widgets
+                    selection_button.setEnabled(
+                        False if self.greatwall.current_level == 0 else True
+                    )
                 else:
                     (
                         flow_layout,
@@ -1026,9 +1035,16 @@ class GreatWallGui(QMainWindow):
                 self.selecting_derivation_options_widgets_list
             ):
                 if idx == 0:
-                    pass
+                    selection_widget.setText("Previous Step")
+                    selection_widget.setEnabled(
+                        False if self.greatwall.current_level == 0 else True
+                    )
                 else:
-                    selection_widget.setText(user_options[idx])
+                    image = QPixmap(str(user_options[idx]))
+                    selection_widget.setIcon(QIcon(image))
+                    selection_widget.setIconSize(image.size())
+
+                    selection_widget.setText(str(idx))
 
                 selection_widget.clicked.connect(
                     lambda state, x=idx: self.on_selection_button_click(x)
@@ -1040,6 +1056,9 @@ class GreatWallGui(QMainWindow):
             ):
                 if idx == 0:
                     selection_widget.setText("Previous Step")
+                    selection_widget.setEnabled(
+                        False if self.greatwall.current_level == 0 else True
+                    )
                 else:
                     selection_widget.setText(user_options[idx])
                 if self.greatwall.current_level == 0:
