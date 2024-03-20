@@ -978,7 +978,7 @@ class GreatWallGui(QMainWindow):
 
     def config_selecting_derivation_widgets(self):
         self.selecting_derivation_current_level_label.setText(
-            f"Level {self.greatwall.current_level} of {self.greatwall.tree_depth - 1}"
+            f"Level {self.greatwall.current_level} of {self.greatwall.tree_depth}"
         )
         self.selecting_derivation_level_label.setText("Select Option:")
         self.config_spinbox(
@@ -1196,7 +1196,7 @@ class GreatWallGui(QMainWindow):
     def selection_derive_state_n_entered(self):
         try:
             print(
-                f"SM2 State Entered at level {self.greatwall.current_level} of {self.greatwall.tree_depth - 1}"
+                f"SM2 State Entered at level {self.greatwall.current_level} of {self.greatwall.tree_depth}"
             )
             self.run_greatwall_thread(self.selecting_derivation_option_number_selected)
         except Exception as e:
