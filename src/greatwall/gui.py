@@ -964,7 +964,7 @@ class GreatWallGui(QMainWindow):
 
     def config_selecting_derivation_widgets(self):
         self.selecting_derivation_current_level_label.setText(
-            f"Level {self.greatwall.current_level} of {self.greatwall.tree_depth}"
+            f"Level {self.greatwall.current_level} of {self.greatwall.tree_depth - 1}"
         )
         self.selecting_derivation_level_label.setText("Select Option:")
         self.config_spinbox(
@@ -1042,10 +1042,10 @@ class GreatWallGui(QMainWindow):
                     selection_widget.setText("Previous Step")
                 else:
                     selection_widget.setText(user_options[idx])
-
-                selection_widget.clicked.connect(
-                    lambda state, x=idx: self.on_selection_button_click(x)
-                )
+                if self.greatwall.current_level == 0:
+                    selection_widget.clicked.connect(
+                        lambda state, x=idx: self.on_selection_button_click(x)
+                    )
 
     def config_result_confirmation_widgets(self):
         self.result_confirmation_current_level_label.setText(
@@ -1185,7 +1185,7 @@ class GreatWallGui(QMainWindow):
     def selection_derive_state_n_entered(self):
         try:
             print(
-                f"SM2 State Entered at level {self.greatwall.current_level} of {self.greatwall.tree_depth}"
+                f"SM2 State Entered at level {self.greatwall.current_level} of {self.greatwall.tree_depth - 1}"
             )
             self.run_greatwall_thread(self.selecting_derivation_option_number_selected)
         except Exception as e:
@@ -1243,7 +1243,7 @@ class GreatWallGui(QMainWindow):
         clipboard.setText(self.greatwall_finish_result.hex())
 
     def on_thread_finish(self):
-        if self.greatwall.current_level >= self.greatwall.tree_depth:
+        if self.greatwall.current_level >= self.greatwall.tree_depth - 1:
             self.greatwall_finish_result = self.greatwall.finish_output()
             if self.tacit_knowledge_combobox.currentText() == constants.FRACTAL:
                 formated_fractal = self.greatwall.fractal.update(
