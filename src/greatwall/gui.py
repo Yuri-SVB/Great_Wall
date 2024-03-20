@@ -925,6 +925,9 @@ class GreatWallGui(QMainWindow):
                         selection_button,
                     )
                 )
+                selection_button.clicked.connect(
+                    lambda state, x=idx: self.on_selection_button_click(x)
+                )
 
             # WARNING: We added the flow layout to QWidget to be able to remove it later
             flow_widget.setLayout(flow_layout)
@@ -947,8 +950,10 @@ class GreatWallGui(QMainWindow):
             for idx in range(self.greatwall.tree_arity):
                 selection_button = QPushButton(self)
                 flow_layout.addWidget(selection_button)
-
                 self.selecting_derivation_options_widgets_list.append(selection_button)
+                selection_button.clicked.connect(
+                    lambda state, x=idx: self.on_selection_button_click(x)
+                )
 
             # WARNING: We added the flow layout to QWidget to be able to remove it later
             flow_widget.setLayout(flow_layout)
@@ -961,10 +966,13 @@ class GreatWallGui(QMainWindow):
             self.selecting_derivation_options_layout.addWidget(scroll_area)
 
         else:
-            for _ in range(self.greatwall.tree_arity + 1):
+            for idx in range(self.greatwall.tree_arity + 1):
                 selection_button = QPushButton(self)
                 self.selecting_derivation_options_layout.addWidget(selection_button)
                 self.selecting_derivation_options_widgets_list.append(selection_button)
+                selection_button.clicked.connect(
+                    lambda state, x=idx: self.on_selection_button_click(x)
+                )
 
             self.selecting_derivation_options_layout.addStretch(1)
 
@@ -1024,11 +1032,6 @@ class GreatWallGui(QMainWindow):
                             )
                     )
 
-                selection_button.clicked.connect(
-                    lambda state, selection_idx=idx: self.on_selection_button_click(
-                        selection_idx
-                    )
-                )
         elif self.tacit_knowledge_combobox.currentText() == constants.SHAPE:
             user_options = self.greatwall.get_shape_query()
             for idx, selection_widget in enumerate(
@@ -1046,9 +1049,6 @@ class GreatWallGui(QMainWindow):
 
                     selection_widget.setText(str(idx))
 
-                selection_widget.clicked.connect(
-                    lambda state, x=idx: self.on_selection_button_click(x)
-                )
         else:
             user_options = self.greatwall.get_li_str_query().split("\n")
             for idx, selection_widget in enumerate(
@@ -1061,18 +1061,10 @@ class GreatWallGui(QMainWindow):
                     )
                 else:
                     selection_widget.setText(user_options[idx])
-                if self.greatwall.current_level == 0:
-                    selection_widget.clicked.connect(
-                        lambda state, x=idx: self.on_selection_button_click(x)
-                    )
 
     def config_result_confirmation_widgets(self):
-        self.result_confirmation_current_level_label.setText(
-            f"Level {self.greatwall.current_level} of {self.greatwall.tree_depth}"
-        )
-        self.result_confirmation_confirm_question_label.setText(
-            "Do you confirm this result?"
-        )
+        self.result_confirmation_current_level_label.setText("Derivation Result")
+        self.result_confirmation_confirm_question_label.setText("Do you confirm this result?")
         self.result_confirmation_previous_step_button.setText("Previous Step")
         self.result_confirmation_previous_step_button.clicked.connect(
             lambda state: self.on_selection_button_click(0)
@@ -1262,7 +1254,7 @@ class GreatWallGui(QMainWindow):
         clipboard.setText(self.greatwall_finish_result.hex())
 
     def on_thread_finish(self):
-        if self.greatwall.current_level >= self.greatwall.tree_depth - 1:
+        if self.greatwall.current_level >= self.greatwall.tree_depth:
             self.greatwall_finish_result = self.greatwall.finish_output()
             if self.tacit_knowledge_combobox.currentText() == constants.FRACTAL:
                 formated_fractal = self.greatwall.fractal.update(
