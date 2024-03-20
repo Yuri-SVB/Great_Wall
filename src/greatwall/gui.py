@@ -935,6 +935,7 @@ class GreatWallGui(QMainWindow):
             scroll_area.setWidget(flow_widget)
 
             self.selecting_derivation_options_layout.addWidget(scroll_area)
+
         elif self.tacit_knowledge_combobox.currentText() == constants.SHAPE:
             selection_button = QPushButton("Previous Step", self)
             self.selecting_derivation_options_layout.addWidget(selection_button)
