@@ -1045,6 +1045,7 @@ class GreatWallGui(QMainWindow):
                     )
                     view.setFixedSize(QSize(205, 205))
                     view.setPhoto(image)
+                    view.setVisible(True)
 
                     selection_button.setText(str(idx))
                     selection_button.setFixedSize(QSize(100, 25))
