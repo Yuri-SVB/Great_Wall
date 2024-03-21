@@ -283,16 +283,17 @@ class GreatWall:
     def history_step_next(self, index):
 
         if len(self.saved_path) == self.tree_arity:
-            return
+            return False
 
         if index < 0 or index >= self.tree_arity:
-            return
+            return False
 
         # cannot move forward unless there a saved state to continue from
         saved_index = self.history_path_to_index(self.saved_path)
         saved_state = self.saved_states[saved_index]
         if not saved_state:
-            return
+            return False
 
         self.saved_path.append(index)
+        return True
 
