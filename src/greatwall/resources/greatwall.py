@@ -51,6 +51,7 @@ class GreatWall:
 
         # saved states history
         self.saved_states = {}
+        self.saved_path = []
 
     def cancel_execution(self):
         self.is_canceled = True
@@ -271,4 +272,27 @@ class GreatWall:
             index = index + (tree_size * choice)
 
         return index
+
+    def history_step_back(self):
+
+        if len(self.saved_path) == 0:
+            return
+
+        self.saved_path.pop()
+
+    def history_step_next(self, index):
+
+        if len(self.saved_path) == self.tree_arity:
+            return
+
+        if index < 0 or index >= self.tree_arity:
+            return
+
+        # cannot move forward unless there a saved state to continue from
+        saved_index = self.history_path_to_index(self.saved_path)
+        saved_state = self.saved_states[saved_index]
+        if not saved_state:
+            return
+
+        self.saved_path.append(index)
 
