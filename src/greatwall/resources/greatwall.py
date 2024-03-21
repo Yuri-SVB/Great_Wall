@@ -49,6 +49,9 @@ class GreatWall:
         self.shuffled_bytes: bytes = self.sa0  # dummy initialization
         self.current_level: int = 0
 
+        # saved states history
+        self.saved_states = {}
+
     def cancel_execution(self):
         self.is_canceled = True
 
@@ -234,3 +237,8 @@ class GreatWall:
             self.is_finished = False
         self.current_level -= 1
         self.state = self.protocol_states[self.current_level]
+
+    def history_reset(self):
+
+        self.saved_states = {}
+
