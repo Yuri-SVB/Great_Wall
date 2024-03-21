@@ -58,13 +58,13 @@ class GreatWallThread(QThread):
 
     def run(self):
         try:
-            if self._is_initializing and self.greatwall.current_level:
+            if self._is_initializing and self.greatwall.current_level != 0:
                 raise ValueError(
                     "GreatWall initialization doesn't match the current level {}".format(
                         self.greatwall.current_level,
                     )
                 )
-            elif self._is_initializing and not self.greatwall.current_level:
+            elif self._is_initializing and self.greatwall.current_level == 0:
                 self.greatwall.init_state_hashes()
                 self._is_initializing = False
             else:
@@ -72,13 +72,6 @@ class GreatWallThread(QThread):
 
             if not self._is_canceled:
                 self.finished.emit()
-
-            print(
-                "SM2 at level {} of {}".format(
-                    self.greatwall.current_level,
-                    self.greatwall.tree_depth,
-                )
-            )
 
         except Exception as e:
             self.error_occurred.emit(str(e))
@@ -408,9 +401,9 @@ class GreatWallGui(QMainWindow):
         self.password_text = QTextEdit(self)
 
         # Hardcode to fast tests
-        #self.password_text.setText(
-        #    "viboniboasmofiasbrchsprorirerugugucavehistmiinciwibowifltuor"
-        #)
+        # self.password_text.setText(
+        #     "viboniboasmofiasbrchsprorirerugugucavehistmiinciwibowifltuor"
+        # )
 
         # Lists of input widgets
         self.input_state_widgets_list = [
@@ -861,10 +854,9 @@ class GreatWallGui(QMainWindow):
         for state in self.main_states_list:
             self.main_gui_state.addState(state)
 
-        # Set initial state
+        # Set initial state and start the state machine
+        print("SM1: Starting Initialization...")
         self.main_gui_state.setInitialState(input_state)
-
-        # Start the state machine
         self.main_gui_state.start()
 
         # Connect states to methods
@@ -1108,14 +1100,14 @@ class GreatWallGui(QMainWindow):
         self.stacked.setCurrentWidget(self.error_view)
 
     def input_state1_entered(self):
-        print("SM1 State 1 Entered")
+        print("SM1: Entering State 1")
         self.stacked.setCurrentWidget(self.input_view)
         # self.result_confirmation_result_hash_label.clear()
         # self.result_confirmation_result_hash_label.setText("")
         self.reinit_running_greatwall()
 
     def confirmation_state2_entered(self):
-        print("SM1 State 2 Entered")
+        print("SM1: Entering State 2")
 
         # Config input confirmation widgets
         self.config_input_confirmation_widgets()
@@ -1123,7 +1115,7 @@ class GreatWallGui(QMainWindow):
         self.stacked.setCurrentWidget(self.input_confirmation_view)
 
     def derivation_state3_entered(self):
-        print("SM1 State 3 Entered")
+        print("SM1: Entering State 3")
 
         try:
             themed_success = self.greatwall.set_themed_mnemo(
@@ -1160,7 +1152,7 @@ class GreatWallGui(QMainWindow):
             self.gui_error_signal.emit()
 
     def result_state4_entered(self):
-        print("SM1 State 4 Entered")
+        print("SM1: State 4 Entered")
 
         # Config result widgets
         self.config_result_widgets()
@@ -1185,9 +1177,13 @@ class GreatWallGui(QMainWindow):
 
         # Create and add new states
         self.selecting_derivation_states_list.clear()
-        for _ in range(num_states):
+        for idx in range(num_states):
             state = QState()
-            state.entered.connect(self.selection_derive_state_n_entered)
+            state.entered.connect(
+                lambda state_n=idx: self.selection_derive_state_n_entered(
+                    state_n
+                )
+            )
             self.main_derivation_state.addState(state)
             self.selecting_derivation_states_list.append(state)
 
@@ -1210,13 +1206,19 @@ class GreatWallGui(QMainWindow):
                 self.transitions_list.append(transition)
 
         # Start the state machine
+        print("SM2: Starting Initialization...")
         self.main_derivation_state.setInitialState(
             self.selecting_derivation_states_list[0]
         )
         self.main_derivation_state.start()
 
-    def selection_derive_state_n_entered(self):
+    def selection_derive_state_n_entered(self, state_n):
         try:
+            print(
+                "SM2: Entering State {} of {}".format(
+                    state_n, self.greatwall.tree_depth
+                )
+            )
             self.run_greatwall_thread(self.selecting_derivation_user_choice)
         except Exception as e:
             self.error_occurred = e
