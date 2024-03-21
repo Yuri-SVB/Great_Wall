@@ -242,3 +242,33 @@ class GreatWall:
 
         self.saved_states = {}
 
+    # maps a tree path to an index key for the "self.saved_states" dictionary
+    #
+    # EXAMPLES:
+    # the path [] maps to the index 0, for any tree
+    # the path [1, 2] maps to the index 23, for a tree of arity 3 and depth 4
+    # the path [0, 1, 1] maps to the index 13, for a tree of arity 2 and depth 5
+    def history_path_to_index(self, path):
+
+        def calculate_tree_size(depth):
+            size = 0
+            span = 1
+            while depth > 0:
+                depth = depth - 1
+                size = size + span
+                span = span * self.tree_arity
+            return size
+
+        index = 0
+        depth = self.tree_depth
+        for position in range(0, len(path)):
+            index = index + 1
+            depth = depth - 1
+
+            choice = path[position]
+
+            tree_size = calculate_tree_size(depth)
+            index = index + (tree_size * choice)
+
+        return index
+
