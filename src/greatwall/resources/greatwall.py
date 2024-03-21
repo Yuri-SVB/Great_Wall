@@ -223,6 +223,18 @@ class GreatWall:
         return self.state
 
     def derive_from_user_choice(self, chosen_input: int):
+
+        next_step = chosen_input - 1
+        step_done = self.history_step_next(next_step)
+        if not step_done:
+            return
+
+        # nothing to do if this derivation was already calculated
+        saved_index = self.history_path_to_index(self.saved_path)
+        saved_state = self.saved_states.get(saved_index)
+        if saved_state:
+            return
+
         if chosen_input:
             self.protocol_states[self.current_level] = self.state
             self.state += bytes(self.shuffled_bytes[chosen_input - 1])
