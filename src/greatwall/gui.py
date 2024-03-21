@@ -900,13 +900,16 @@ class GreatWallGui(QMainWindow):
 
         if self.tacit_knowledge_combobox.currentText() == constants.FRACTAL:
             selection_button = QPushButton("Previous Step", self)
+            selection_button.clicked.connect(
+                lambda state: self.on_selection_button_click(0)
+            )
             self.selecting_derivation_options_layout.addWidget(selection_button)
             self.selecting_derivation_options_widgets_list.append(selection_button)
 
             scroll_area = QScrollArea()
             flow_widget = QWidget()
             flow_layout = FlowLayout()
-            for idx in range(self.greatwall.tree_arity):
+            for idx in range(1, self.greatwall.tree_arity + 1):
                 view = ImageViewer(self)
                 selection_button = QPushButton(self)
                 show_hide_button = QPushButton(self)
@@ -965,13 +968,16 @@ class GreatWallGui(QMainWindow):
 
         elif self.tacit_knowledge_combobox.currentText() == constants.SHAPE:
             selection_button = QPushButton("Previous Step", self)
+            selection_button.clicked.connect(
+                lambda state: self.on_selection_button_click(0)
+            )
             self.selecting_derivation_options_layout.addWidget(selection_button)
             self.selecting_derivation_options_widgets_list.append(selection_button)
 
             scroll_area = QScrollArea()
             flow_widget = QWidget()
             flow_layout = FlowLayout()
-            for idx in range(self.greatwall.tree_arity):
+            for idx in range(1, self.greatwall.tree_arity + 1):
                 selection_button = QPushButton(self)
                 selection_button.clicked.connect(
                     lambda state, selection_idx=idx: self.on_selection_button_click(
@@ -1042,6 +1048,7 @@ class GreatWallGui(QMainWindow):
 
                     selection_button.setText(str(idx))
                     selection_button.setFixedSize(QSize(100, 25))
+
                     show_hide_button.setText("Hide Image")
                     show_hide_button.setFixedSize(QSize(100, 25))
 
@@ -1059,7 +1066,6 @@ class GreatWallGui(QMainWindow):
                     image = QPixmap(str(user_options[idx]))
                     selection_widget.setIcon(QIcon(image))
                     selection_widget.setIconSize(image.size())
-
                     selection_widget.setText(str(idx))
 
         else:
