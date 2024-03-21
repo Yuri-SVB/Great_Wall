@@ -290,7 +290,7 @@ class GreatWall:
 
         # cannot move forward unless there a saved state to continue from
         saved_index = self.history_path_to_index(self.saved_path)
-        saved_state = self.saved_states[saved_index]
+        saved_state = self.saved_states.get(saved_index)
         if not saved_state:
             return False
 
