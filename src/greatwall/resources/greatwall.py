@@ -305,7 +305,7 @@ class GreatWall:
 
     def history_step_next(self, index):
 
-        if len(self.saved_path) == self.tree_arity:
+        if len(self.saved_path) == self.tree_depth:
             return False
 
         if index < 0 or index >= self.tree_arity:
