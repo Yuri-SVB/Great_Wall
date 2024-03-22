@@ -114,6 +114,14 @@ class GreatWall:
         self.protocol_states = [bytes.fromhex("00")] * self.tree_depth
 
     def init_state_hashes(self):
+
+        # nothing to do if this derivation was already calculated
+        saved_index = self.history_path_to_index(self.saved_path)
+        saved_state = self.saved_states.get(saved_index)
+        if saved_state:
+            self.state = saved_state
+            return
+
         self.state = self.sa0
         self.shuffled_bytes = self.sa0  # dummy initialization
         self.current_level = 0
