@@ -234,6 +234,11 @@ class GreatWall:
 
     def derive_from_user_choice(self, chosen_input: int):
 
+        # zero indicates a step back
+        if chosen_input == 0:
+            self.return_level()
+            return
+
         next_step = chosen_input - 1
         step_done = self.history_step_next(next_step)
         if not step_done:
@@ -261,6 +266,9 @@ class GreatWall:
             self.is_finished = False
         self.current_level -= 1
         self.state = self.protocol_states[self.current_level]
+
+        self.history_step_back()
+        self.history_state_load()
 
     def history_reset(self):
 
