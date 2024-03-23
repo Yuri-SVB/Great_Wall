@@ -250,6 +250,7 @@ class GreatWall:
             self.state += bytes(self.shuffled_bytes[chosen_input - 1])
             self.update_with_quick_hash()
             self.current_level += 1
+            self.history_state_save()
         else:
             self.return_level()
 
