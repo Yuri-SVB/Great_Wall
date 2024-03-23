@@ -154,8 +154,7 @@ class GreatWall:
         self.update_with_quick_hash()
         self.sa3 = self.state
 
-        saved_index = self.history_path_to_index(self.saved_path)
-        self.saved_states[saved_index] = self.state
+        self.history_state_save()
 
     def update_with_long_hash(self):
         """Update self.level_hash with the hash of the previous self.level_hash taking presumably a long time"""
@@ -319,4 +318,9 @@ class GreatWall:
 
         self.saved_path.append(index)
         return True
+
+    def history_state_save(self):
+
+        saved_index = self.history_path_to_index(self.saved_path)
+        self.saved_states[saved_index] = self.state
 
