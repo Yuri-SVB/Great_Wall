@@ -325,3 +325,13 @@ class GreatWall:
         saved_index = self.history_path_to_index(self.saved_path)
         self.saved_states[saved_index] = self.state
 
+    def history_state_load(self):
+
+        saved_index = self.history_path_to_index(self.saved_path)
+        saved_state = self.saved_states.get(saved_index)
+        if not saved_state:
+            return False
+
+        self.state = saved_state
+        return True
+
