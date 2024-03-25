@@ -50,6 +50,7 @@ class GreatWall:
         self.current_level: int = 0
 
         # saved states history
+        self.saved_fractals = {}
         self.saved_states = {}
         self.saved_path = []
 
@@ -272,6 +273,7 @@ class GreatWall:
 
     def history_reset(self):
 
+        self.saved_fractals = {}
         self.saved_states = {}
 
     # maps a tree path to an index key for the "self.saved_states" dictionary
@@ -342,4 +344,21 @@ class GreatWall:
 
         self.state = saved_state
         return True
+
+    def history_fractal_save(self, fractal, path=None):
+
+        if path is None:
+            path = self.saved_path
+
+        saved_index = self.history_path_to_index(path)
+        self.saved_fractals[saved_index] = fractal
+
+    def history_fractal_load(self, path=None):
+
+        if path is None:
+            path = self.saved_path
+
+        saved_index = self.history_path_to_index(path)
+        saved_fractal = self.saved_fractals.get(saved_index)
+        return saved_fractal
 
