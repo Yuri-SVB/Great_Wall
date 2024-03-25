@@ -1285,7 +1285,7 @@ class GreatWallGui(QMainWindow):
         if self.greatwall.current_level >= self.greatwall.tree_depth:
             self.greatwall_finish_result = self.greatwall.finish_output()
             if self.tacit_knowledge_combobox.currentText() == constants.FRACTAL:
-                formated_fractal = self.greatwall.fractal.update(
+                formatted_fractal = self.greatwall.fractal.update(
                     func_type=self.greatwall.fractal.func_type,
                     p_param=self.greatwall.fractal.get_valid_parameter_from_value(
                         self.greatwall_finish_result
@@ -1295,7 +1295,7 @@ class GreatWallGui(QMainWindow):
                 image = ImageViewer(self)
 
                 colormap = color_palettes[self.fractal_colormap_combobox.currentText()]
-                qimage = image.numpy_2darray_to_Qimage(formated_fractal, colormap)
+                qimage = image.numpy_2darray_to_Qimage(formatted_fractal, colormap)
                 image = QPixmap.fromImage(qimage)
 
                 self.result_confirmation_result_hash_label.setPixmap(

@@ -40,6 +40,7 @@ class Fractal:
         self.max_iters: Optional[int] = max_iters
 
         self._image_pixels: Optional[np.array] = None
+        self._fractal_iteration_cache = {}
 
     def get_valid_parameter_from_value(self, value: Union[bytes, bytearray]):
         parameter = "2."
@@ -133,14 +134,19 @@ class Fractal:
         for i in range(height):
             for j in range(width):
                 c = x[j] + y[i] * 1j
-                z = c
-                for escape_count in range(max_iters):
-                    if abs(z) > escape_radius:
-                        pixels[i, j] = self._smooth_stability(z, escape_count, max_iters)
-                        break
-                    z = (abs(z.real) + (1j * abs(z.imag))) ** p_param + c
+                if (c, p_param) in self._fractal_iteration_cache:
+                    pixels[i, j] = self._fractal_iteration_cache[(c, p_param)]
                 else:
-                    pixels[i, j] = 1
+                    z = c
+                    for escape_count in range(max_iters):
+                        if abs(z) > escape_radius:
+                            pixels[i, j] = self._smooth_stability(z, escape_count, max_iters)
+                            self._fractal_iteration_cache[(c, p_param)] = pixels[i, j]
+                            break
+                        z = (abs(z.real) + (1j * abs(z.imag))) ** p_param + c
+                    else:
+                        pixels[i, j] = 1
+                        self._fractal_iteration_cache[(c, p_param)] = 1
         return pixels
 
     def mandelbrot_set(
@@ -169,15 +175,21 @@ class Fractal:
         y = np.linspace(y_min, y_max, height)
 
         pixels = np.zeros((height, width))
+
         for i in range(height):
             for j in range(width):
                 c = x[j] + y[i] * 1j
-                z = c
-                for escape_count in range(max_iters):
-                    if abs(z) > escape_radius:
-                        pixels[i, j] = self._smooth_stability(z, escape_count, max_iters)
-                        break
-                    z = z**p_param + c
+                if (c, p_param) in self._fractal_iteration_cache:
+                    pixels[i, j] = self._fractal_iteration_cache[(c, p_param)]
                 else:
-                    pixels[i, j] = 1
+                    z = c
+                    for escape_count in range(max_iters):
+                        if abs(z) > escape_radius:
+                            pixels[i, j] = self._smooth_stability(z, escape_count, max_iters)
+                            self._fractal_iteration_cache[(c, p_param)] = pixels[i, j]
+                            break
+                        z = z ** p_param + c
+                    else:
+                        pixels[i, j] = 1
+                        self._fractal_iteration_cache[(c, p_param)] = 1
         return pixels
