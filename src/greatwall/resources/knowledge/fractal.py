@@ -27,6 +27,7 @@ class Fractal:
         height=None,
         escape_radius=None,
         max_iters=None,
+        computed_values=None
     ) -> None:
         self.func_type = func_type
         self.x_min: Optional[float] = x_min
@@ -38,6 +39,7 @@ class Fractal:
         self.height: Optional[int] = height
         self.escape_radius: Optional[int] = escape_radius
         self.max_iters: Optional[int] = max_iters
+        self.computed_values = computed_values
 
         self._image_pixels: Optional[np.array] = None
 
@@ -129,31 +131,38 @@ class Fractal:
         x = np.linspace(x_min, x_max, width)
         y = np.linspace(y_min, y_max, height)
 
+        self.computed_values = {}
+
         pixels = np.zeros((height, width))
         for i in range(height):
             for j in range(width):
                 c = x[j] + y[i] * 1j
-                z = c
-                for escape_count in range(max_iters):
-                    if abs(z) > escape_radius:
-                        pixels[i, j] = self._smooth_stability(z, escape_count, max_iters)
-                        break
-                    z = (abs(z.real) + (1j * abs(z.imag))) ** p_param + c
+                if c in self.computed_values:
+                    pixels[i, j] = self.computed_values[c]
                 else:
-                    pixels[i, j] = 1
+                    z = c
+                    for escape_count in range(max_iters):
+                        if abs(z) > escape_radius:
+                            pixels[i, j] = self._smooth_stability(z, escape_count, max_iters)
+                            self.computed_values[c] = pixels[i, j]
+                            break
+                        z = (abs(z.real) + (1j * abs(z.imag))) ** p_param + c
+                    else:
+                        pixels[i, j] = 1
+                        self.computed_values[c] = 1
         return pixels
 
     def mandelbrot_set(
-        self,
-        x_min=-2.2,
-        x_max=1,
-        y_min=-1.2,
-        y_max=1.2,
-        p_param=2.0,
-        width=1024,
-        height=1024,
-        escape_radius=4,
-        max_iters=30,
+            self,
+            x_min=-2.2,
+            x_max=1,
+            y_min=-1.2,
+            y_max=1.2,
+            p_param=2.0,
+            width=1024,
+            height=1024,
+            escape_radius=4,
+            max_iters=30,
     ):
         x_min = x_min if self.x_min is None else self.x_min
         x_max = x_max if self.x_max is None else self.x_max
@@ -168,16 +177,24 @@ class Fractal:
         x = np.linspace(x_min, x_max, width)
         y = np.linspace(y_min, y_max, height)
 
+        self.computed_values = {}
+
         pixels = np.zeros((height, width))
+
         for i in range(height):
             for j in range(width):
                 c = x[j] + y[i] * 1j
-                z = c
-                for escape_count in range(max_iters):
-                    if abs(z) > escape_radius:
-                        pixels[i, j] = self._smooth_stability(z, escape_count, max_iters)
-                        break
-                    z = z**p_param + c
+                if c in self.computed_values:
+                    pixels[i, j] = self.computed_values[c]
                 else:
-                    pixels[i, j] = 1
+                    z = c
+                    for escape_count in range(max_iters):
+                        if abs(z) > escape_radius:
+                            pixels[i, j] = self._smooth_stability(z, escape_count, max_iters)
+                            self.computed_values[c] = pixels[i, j]
+                            break
+                        z = z ** p_param + c
+                    else:
+                        pixels[i, j] = 1
+                        self.computed_values[c] = 1
         return pixels
