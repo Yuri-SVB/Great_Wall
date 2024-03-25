@@ -978,7 +978,13 @@ class GreatWallGui(QMainWindow):
         )
 
         if self.tacit_knowledge_combobox.currentText() == constants.FRACTAL:
-            user_options = self.greatwall.get_fractal_query()
+
+            user_options = self.greatwall.history_fractal_load()
+
+            if user_options is None:
+                user_options = self.greatwall.get_fractal_query()
+                self.greatwall.history_fractal_save(user_options)
+
             colormap = color_palettes[self.fractal_colormap_combobox.currentText()]
             for idx, widgets in enumerate(
                 self.selecting_derivation_options_widgets_list
@@ -1024,11 +1030,14 @@ class GreatWallGui(QMainWindow):
                             )
                     )
 
-                selection_button.clicked.connect(
-                    lambda state, selection_idx=idx: self.on_selection_button_click(
-                        selection_idx
+                if idx == 0:
+                    selection_button.clicked.connect(self.on_click_button_previous_step)
+                else:
+                    selection_button.clicked.connect(
+                        lambda state, selection_idx=idx: self.on_selection_button_click(
+                            selection_idx
+                        )
                     )
-                )
         elif self.tacit_knowledge_combobox.currentText() == constants.SHAPE:
             user_options = self.greatwall.get_shape_query()
             for idx, selection_widget in enumerate(
@@ -1224,6 +1233,10 @@ class GreatWallGui(QMainWindow):
             self.main_derivation_state.stop()
 
         self.greatwall.current_level = 0
+
+    def on_click_button_previous_step(self):
+        self.greatwall.return_level()
+        self.on_thread_finish()
 
     def on_selection_button_click(self, selected_option: int):
         self.selecting_derivation_option_number_selected = selected_option
