@@ -103,18 +103,28 @@ class Fractal:
         smooth_value = escape_count + 1 - math.log(math.log(abs(z))) / math.log(2)
         stability = smooth_value / max_iters
         return max(0.0, min(stability, 1.0))
+    def _add_to_cache(self, point, pixel_value, iteration_counts):
+        """
+        Add point, pixel value, and iteration counts to the cache.
+
+        Args:
+            point (complex): The complex number representing the point.
+            pixel_value (float): The pixel value corresponding to the point.
+            iteration_counts (list): List of iteration counts for the point.
+        """
+        self._iteration_cache[point] = (pixel_value, iteration_counts)
 
     def burningship_set(
-        self,
-        x_min=-2.5,
-        x_max=2.0,
-        y_min=-2,
-        y_max=0.8,
-        p_param=2.0,
-        width=1024,
-        height=1024,
-        escape_radius=4,
-        max_iters=30,
+            self,
+            x_min=-2.5,
+            x_max=2.0,
+            y_min=-2,
+            y_max=0.8,
+            p_param=2.0,
+            width=1024,
+            height=1024,
+            escape_radius=4,
+            max_iters=30,
     ):
         x_min = x_min if self.x_min is None else self.x_min
         x_max = x_max if self.x_max is None else self.x_max
@@ -133,17 +143,22 @@ class Fractal:
         for i in range(height):
             for j in range(width):
                 c = x[j] + y[i] * 1j
-                z = c
-                for escape_count in range(max_iters):
-                    if abs(z) > escape_radius:
-                        pixels[i, j] = self._smooth_stability(z, escape_count, max_iters)
-                        break
-                    z = (abs(z.real) + (1j * abs(z.imag))) ** p_param + c
+                if c in self._iteration_cache:
+                    pixels[i, j], _ = self._iteration_cache[c]
                 else:
-                    pixels[i, j] = 1
+                    z = c
+                    for escape_count in range(max_iters):
+                        if abs(z) > escape_radius:
+                            pixels[i, j] = self._smooth_stability(z, escape_count, max_iters)
+                            self._iteration_cache[c] = (pixels[i, j], escape_count)
+                            break
+                        z = (abs(z.real) + (1j * abs(z.imag))) ** p_param + c
+                    else:
+                        pixels[i, j] = 1
+                        self._iteration_cache[c] = (pixels[i, j], max_iters)  # Add to cache
         return pixels
 
-    def mandelbrot_set(
+def mandelbrot_set(
         self,
         x_min=-2.2,
         x_max=1,
@@ -154,30 +169,35 @@ class Fractal:
         height=1024,
         escape_radius=4,
         max_iters=30,
-    ):
-        x_min = x_min if self.x_min is None else self.x_min
-        x_max = x_max if self.x_max is None else self.x_max
-        y_min = y_min if self.y_min is None else self.y_min
-        y_max = y_max if self.y_max is None else self.y_max
-        p_param = p_param if self.p_param is None else self.p_param
-        width = width if self.width is None else self.width
-        height = height if self.height is None else self.height
-        escape_radius = escape_radius if self.escape_radius is None else self.escape_radius
-        max_iters = max_iters if self.max_iters is None else self.max_iters
+):
+    x_min = x_min if self.x_min is None else self.x_min
+    x_max = x_max if self.x_max is None else self.x_max
+    y_min = y_min if self.y_min is None else self.y_min
+    y_max = y_max if self.y_max is None else self.y_max
+    p_param = p_param if self.p_param is None else self.p_param
+    width = width if self.width is None else self.width
+    height = height if self.height is None else self.height
+    escape_radius = escape_radius if self.escape_radius is None else self.escape_radius
+    max_iters = max_iters if self.max_iters is None else self.max_iters
 
-        x = np.linspace(x_min, x_max, width)
-        y = np.linspace(y_min, y_max, height)
+    x = np.linspace(x_min, x_max, width)
+    y = np.linspace(y_min, y_max, height)
 
-        pixels = np.zeros((height, width))
-        for i in range(height):
-            for j in range(width):
-                c = x[j] + y[i] * 1j
+    pixels = np.zeros((height, width))
+    for i in range(height):
+        for j in range(width):
+            c = x[j] + y[i] * 1j
+            if c in self._iteration_cache:
+                pixels[i, j], _ = self._iteration_cache[c]
+            else:
                 z = c
                 for escape_count in range(max_iters):
                     if abs(z) > escape_radius:
                         pixels[i, j] = self._smooth_stability(z, escape_count, max_iters)
+                        self._iteration_cache[c] = (pixels[i, j], escape_count)
                         break
                     z = z**p_param + c
                 else:
                     pixels[i, j] = 1
-        return pixels
+                    self._iteration_cache[c] = (pixels[i, j], max_iters)  # Add to cache
+    return pixels
