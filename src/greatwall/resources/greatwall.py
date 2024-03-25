@@ -245,6 +245,8 @@ class GreatWall:
         if not step_done:
             return
 
+        self.current_level += 1
+
         # nothing to do if this derivation was already calculated
         saved_index = self.history_path_to_index(self.saved_path)
         saved_state = self.saved_states.get(saved_index)
@@ -255,7 +257,6 @@ class GreatWall:
             self.protocol_states[self.current_level] = self.state
             self.state += bytes(self.shuffled_bytes[chosen_input - 1])
             self.update_with_quick_hash()
-            self.current_level += 1
             self.history_state_save()
         else:
             self.return_level()
