@@ -275,6 +275,7 @@ class GreatWall:
     def history_reset(self):
 
         self.saved_fractals = {}
+        self.saved_path = []
         self.saved_states = {}
 
     # maps a tree path to an index key for the "self.saved_states" dictionary
