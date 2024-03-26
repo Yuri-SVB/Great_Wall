@@ -9,6 +9,36 @@ def test_navigation_history():
     assert(greatwall.saved_path == [])
     assert(greatwall.saved_states == {})
 
+    greatwall.time_intensive_derivation()
+
+    step_done = greatwall.history_step_next(0)
+    assert(step_done)
+    assert(greatwall.saved_path == [0])
+
+    greatwall.time_intensive_derivation()
+
+    step_done = greatwall.history_step_next(0)
+    assert(step_done)
+    assert(greatwall.saved_path == [0, 0])
+
+    greatwall.time_intensive_derivation()
+
+    step_done = greatwall.history_step_next(0)
+    assert(step_done)
+    assert(greatwall.saved_path == [0, 0, 0])
+
+    greatwall.time_intensive_derivation()
+
+    step_done = greatwall.history_step_next(0)
+    assert(step_done)
+    assert(greatwall.saved_path == [0, 0, 0, 0])
+
+    greatwall.time_intensive_derivation()
+
+    step_done = greatwall.history_step_next(0)
+    assert(not step_done)
+    assert(greatwall.saved_path == [0, 0, 0, 0])
+
 def test_history_path_to_index():
 
     greatwall = GreatWall()
@@ -28,6 +58,4 @@ def test_history_path_to_index():
     greatwall.set_depth(5)
     index = greatwall.history_path_to_index([0, 1, 1])
     assert(index == 13)
-
-
 
