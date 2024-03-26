@@ -39,6 +39,21 @@ def test_navigation_history():
     assert(not step_done)
     assert(greatwall.saved_path == [0, 0, 0, 0])
 
+    greatwall.history_step_back()
+    assert(greatwall.saved_path == [0, 0, 0])
+
+    greatwall.history_step_back()
+    assert(greatwall.saved_path == [0, 0])
+
+    greatwall.history_step_back()
+    assert(greatwall.saved_path == [0])
+
+    greatwall.history_step_back()
+    assert(greatwall.saved_path == [])
+
+    greatwall.history_step_back()
+    assert(greatwall.saved_path == [])
+
 def test_history_path_to_index():
 
     greatwall = GreatWall()
