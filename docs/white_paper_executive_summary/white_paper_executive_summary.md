@@ -17,7 +17,7 @@ As of the moment for writing, the *still* relatively small *(but ever more rapid
       *I do have Bitcoin, but, in order to access it, we would have to first go to that difficult-to-get-address where a certain hardware containing a secret key is located, and / or have to authenticate myself to trusted third parties and prove beyond reasonable doubt I'm not under coercion* --- When that is actually false;
 Finally, there is the following non-passive defense which is, nevertheless obscure:
 5. **Obscurely Cancellable Transaction**: Consists of having a transaction be time-locked, and, before maturity, possible to be reversed. Victim pretends to cooperate with adversary, and, upon release from adversary's custody enacts abortion of transaction done under coercion.
-    
+
 Every case from items 1 to 3 above is but circumstantially true, due only to either insufficient spread of adoption of Bitcoin or insufficient diffusion of knowledge about Bitcoin itself or about techniques and practices to secure it or ignorance by the adversary about the methods in use. Said shortly:
 
 > *All the passive lines of defense cited above are consequence of obscurity and, as such, violate Kerckhoff's principle and grow weaker with the inevitable diffusion of knowledge.*
@@ -33,7 +33,8 @@ The attentive reader may, at this point, pose the argument that *actually deploy
 * **Shared Custody**: Depending on a TTP to either check you for coercion and deny you access to your funds if coercion is detected or suspected or to own physical addresses where physical keys are distributed kills, or, at the very least seriously weakens the premise of **self-custody**. We should also mention...
 * **Questionable Efficacy**: What are the premises that such ceremony for negative proof of coercion has to have to render it mostly effective? Namely: the adversary can always contemplate threatening to kill or brutalize victim to convince TTP to cooperate. What conditions are really sufficient to preclude that? Will those conditions not fall back to two previous problems? In the case of physical distribution of keys: How far apart the remote locations of physical keys have to be from each other to make it unfeasible for a coerced owner visit one by one at gun point during a flash kidnap? Finally, there is the problem of...
 * **Downsides of PBA**: Comparing **K**nowlege-**B**ased **A**uthentication with **P**ossession-**B**ased **A**uthentication becomes easy by starting from the following truism:
-> *One's brain is one's most available and closely guarded hardware.*
+
+    > *One's brain is one's most available and closely guarded hardware.*
 
 Securely physically distributing keys obviously imposes the cost of reliably monitoring its physical security remotely. Then there are the costs associating to setting up, resetting and updating that physical infrastructure ie.: consider the implications of traveling or relocating for such scheme. With that scheme, user makes his property less available to themself depending on their location. Finally, threatening to destroy or render unavailable an external device that is critical for the completion of a protocol, can be used as a negotiation leverage by an adversary to coerce victim into doing *favors of various sorts* or formal transfer of properties that require intensive intervention, like real state. If the only critical 'device' is victim's own brain, and if the latter has an inheritance protocol in place --- more about that later --- the Bitcoin patrimony itself is no longer a surface of coercive attack.
 

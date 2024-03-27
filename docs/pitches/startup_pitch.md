@@ -1,8 +1,6 @@
 # Great Wall startup pitch
 
-Great Wall is an elaborate key derivation scheme that yields a unique combination of information security properties through the exploitation 
-of existing cryptographic techniques together with our proposed concept of **T**KBA or **T**acit 
-[Knowledge-Based Authentication](https://en.wikipedia.org/wiki/Knowledge-based_authentication). The following are our achieved properties:
+Great Wall is an elaborate key derivation scheme that yields a unique combination of information security properties through the exploitation of existing cryptographic techniques together with our proposed concept of **T**KBA or **T**acit [Knowledge-Based Authentication](https://en.wikipedia.org/wiki/Knowledge-based_authentication). The following are our achieved properties:
 
 1. **Self-Custody** --- It's the basic premise of Bitcoin: The owner, and the owner alone is able to perform the protocol of access to their funds;
 2. **Non-Obscurity** --- Another way to enunciate the [**Kerckhoff's Principle**](https://en.wikipedia.org/wiki/Kerckhoffs's_principle), or *The adversary perfectly understands the protocol, and it works nevertheless.* Reasons why it is **critically important** are discussed in the [executive summary / white paper](../white_paper_executive_summary/white_paper_executive_summary.md);
@@ -17,9 +15,7 @@ Our method can be summarized as consisting of two basic components: the decades-
 [memory-hard hashes / key-deriving functions](https://en.wikipedia.org/wiki/Argon2)), and our proposed concept of **T**KBA, or 
 **Tacit** **K**owledge-**B**ased **A**authentication.
 
-The former, TLP, makes sure the scheme takes an arbitrarily long time Delta T of a few hours, days, or even weeks, where such delay is previously 
-setup by the user. Well established cryptographic techniques --- more about that on the [executive summary / white paper](../white_paper_executive_summary/white_paper_executive_summary.md) --- are 
-used to make sure even an adversary with expensive machinery cannot crack this lengthy Delta T into a few minutes.
+The former, TLP, makes sure the scheme takes an arbitrarily long time Delta T of a few hours, days, or even weeks, where such delay is previously setup by the user. Well established cryptographic techniques --- more about that on the [executive summary / white paper](../white_paper_executive_summary/white_paper_executive_summary.md) --- are used to make sure even an adversary with expensive machinery cannot crack this lengthy Delta T into a few minutes.
 
 The latter, TKBA, makes sure the legit user's participation is **strictly necessary** for the completion of the derivation scheme. as a consequence,
 
@@ -27,9 +23,6 @@ The latter, TKBA, makes sure the legit user's participation is **strictly necess
 
 If such Delta T has been setup to be long enough, such coercive operation becomes unfeasible and, hence, user has defended themself against physical robbery.
 
-Monetization is possible through the *secure* outsourcing of TLP by user to the provider of such service. In other words, user pays for the convenience 
-of freeing up their devices from the burden of having an intensive, memory hard, hours-, days- or weeks-long computation by *anonymously* paying a web-service 
-to perform it to them.
+Monetization is possible through the *secure* outsourcing of TLP by user to the provider of such service. In other words, user pays for the convenience of freeing up their devices from the burden of having an intensive, memory hard, hours-, days- or weeks-long computation by *anonymously* paying a web-service to perform it to them.
 
-For further information, check out [our demo](https://mega.nz/file/vfwhRTwZ#sP3hSRthQNssWRdcmD8XRNIeJX7Eq174ImY4eva_Pwo), [our official site](https://linktr.ee/greatwallt3) and 
-our [executive summary / white paper](../white_paper_executive_summary/white_paper_executive_summary.md).
+For further information, check out [our demo](https://mega.nz/file/vfwhRTwZ#sP3hSRthQNssWRdcmD8XRNIeJX7Eq174ImY4eva_Pwo), [our official site](https://linktr.ee/greatwallt3) and our [executive summary / white paper](../white_paper_executive_summary/white_paper_executive_summary.md).
