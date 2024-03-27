@@ -58,17 +58,21 @@ class GreatWallThread(QThread):
 
     def run(self):
         try:
-            if self._is_initializing and self.greatwall.current_level:
+            if self._is_initializing and self.greatwall.current_level != 0:
                 raise ValueError(
-                    f"GreatWall initialization doesn't match the current level {self.greatwall.current_level}"
+                    "GreatWall initialization doesn't match the current level {}".format(
+                        self.greatwall.current_level,
+                    )
                 )
-            elif self._is_initializing and not self.greatwall.current_level:
+            elif self._is_initializing and self.greatwall.current_level == 0:
                 self.greatwall.init_state_hashes()
                 self._is_initializing = False
             else:
                 self.greatwall.derive_from_user_choice(self.user_choice)
+
             if not self._is_canceled:
                 self.finished.emit()
+
         except Exception as e:
             self.error_occurred.emit(str(e))
 
@@ -372,7 +376,9 @@ class GreatWallGui(QMainWindow):
         self.fractal_colormap_label = QLabel("Fractal colormap", self)
         self.fractal_colormap_combobox = QComboBox(self)
         self.fractal_colormap_combobox.addItems(constants.AVAILABLE_COLOR_PALETTES)
-        self.fractal_colormap_combobox.setCurrentText(constants.AVAILABLE_COLOR_PALETTES[1])
+        self.fractal_colormap_combobox.setCurrentText(
+            constants.AVAILABLE_COLOR_PALETTES[1]
+        )
 
         self.theme_label = QLabel("Choose Theme", self)
         self.theme_combobox = QComboBox(self)
@@ -395,9 +401,9 @@ class GreatWallGui(QMainWindow):
         self.password_text = QTextEdit(self)
 
         # Hardcode to fast tests
-        #self.password_text.setText(
-        #    "viboniboasmofiasbrchsprorirerugugucavehistmiinciwibowifltuor"
-        #)
+        # self.password_text.setText(
+        #     "viboniboasmofiasbrchsprorirerugugucavehistmiinciwibowifltuor"
+        # )
 
         # Lists of input widgets
         self.input_state_widgets_list = [
@@ -542,7 +548,7 @@ class GreatWallGui(QMainWindow):
         return waiting_derivation_view
 
     def init_selecting_derivation_view(self):
-        self.selecting_derivation_option_number_selected: int = 0
+        self.selecting_derivation_user_choice: int = 0
         self.selecting_derivation_current_level_label = QLabel(self)
         self.selecting_derivation_level_label = QLabel(self)
         self.selecting_derivation_level_spinbox = QSpinBox(self)
@@ -606,6 +612,9 @@ class GreatWallGui(QMainWindow):
         self.result_confirmation_confirm_question_label = QLabel(self)
         self.result_confirmation_result_hash_label = QLabel(self)
         self.result_confirmation_previous_step_button = QPushButton(self)
+        self.result_confirmation_previous_step_button.clicked.connect(
+            lambda state: self.on_selection_button_click(0)
+        )
 
         # Lists of result confirmation header widgets
         self.result_confirmation_widgets_list = [
@@ -845,10 +854,9 @@ class GreatWallGui(QMainWindow):
         for state in self.main_states_list:
             self.main_gui_state.addState(state)
 
-        # Set initial state
+        # Set initial state and start the state machine
+        print("SM1: Starting Initialization...")
         self.main_gui_state.setInitialState(input_state)
-
-        # Start the state machine
         self.main_gui_state.start()
 
         # Connect states to methods
@@ -892,13 +900,16 @@ class GreatWallGui(QMainWindow):
 
         if self.tacit_knowledge_combobox.currentText() == constants.FRACTAL:
             selection_button = QPushButton("Previous Step", self)
+            selection_button.clicked.connect(
+                lambda state: self.on_selection_button_click(0)
+            )
             self.selecting_derivation_options_layout.addWidget(selection_button)
             self.selecting_derivation_options_widgets_list.append(selection_button)
 
             scroll_area = QScrollArea()
             flow_widget = QWidget()
             flow_layout = FlowLayout()
-            for idx in range(self.greatwall.tree_arity):
+            for idx in range(1, self.greatwall.tree_arity + 1):
                 view = ImageViewer(self)
                 selection_button = QPushButton(self)
                 show_hide_button = QPushButton(self)
@@ -916,10 +927,29 @@ class GreatWallGui(QMainWindow):
 
                 flow_layout.addWidget(selection_box_group)
 
+                selection_button.clicked.connect(
+                    lambda state, selection_idx=idx: self.on_selection_button_click(
+                        selection_idx
+                    )
+                )
+                show_hide_button.clicked.connect(
+                    lambda
+                        state,
+                        flow_layout=flow_layout,
+                        selection_group=selection_box_group,
+                        button=show_hide_button,
+                        widget=view,
+                    :
+                        self.on_selection_show_hide_button_click(
+                            flow_layout,
+                            selection_group,
+                            button,
+                            widget,
+                        )
+                )
+
                 self.selecting_derivation_options_widgets_list.append(
                     (
-                        flow_layout,
-                        selection_box_group,
                         view,
                         show_hide_button,
                         selection_button,
@@ -938,14 +968,23 @@ class GreatWallGui(QMainWindow):
 
         elif self.tacit_knowledge_combobox.currentText() == constants.SHAPE:
             selection_button = QPushButton("Previous Step", self)
+            selection_button.clicked.connect(
+                lambda state: self.on_selection_button_click(0)
+            )
             self.selecting_derivation_options_layout.addWidget(selection_button)
             self.selecting_derivation_options_widgets_list.append(selection_button)
 
             scroll_area = QScrollArea()
             flow_widget = QWidget()
             flow_layout = FlowLayout()
-            for idx in range(self.greatwall.tree_arity):
+            for idx in range(1, self.greatwall.tree_arity + 1):
                 selection_button = QPushButton(self)
+                selection_button.clicked.connect(
+                    lambda state, selection_idx=idx: self.on_selection_button_click(
+                        selection_idx
+                    )
+                )
+
                 flow_layout.addWidget(selection_button)
 
                 self.selecting_derivation_options_widgets_list.append(selection_button)
@@ -961,10 +1000,16 @@ class GreatWallGui(QMainWindow):
             self.selecting_derivation_options_layout.addWidget(scroll_area)
 
         else:
-            for _ in range(self.greatwall.tree_arity + 1):
+            for idx in range(self.greatwall.tree_arity + 1):
                 selection_button = QPushButton(self)
                 self.selecting_derivation_options_layout.addWidget(selection_button)
                 self.selecting_derivation_options_widgets_list.append(selection_button)
+
+                selection_button.clicked.connect(
+                    lambda state, selection_idx=idx: self.on_selection_button_click(
+                        selection_idx
+                    )
+                )
 
             self.selecting_derivation_options_layout.addStretch(1)
 
@@ -996,8 +1041,6 @@ class GreatWallGui(QMainWindow):
                     )
                 else:
                     (
-                        flow_layout,
-                        selection_group,
                         view,
                         show_hide_button,
                         selection_button,
@@ -1008,36 +1051,14 @@ class GreatWallGui(QMainWindow):
                     )
                     view.setFixedSize(QSize(205, 205))
                     view.setPhoto(image)
+                    view.setVisible(True)
 
                     selection_button.setText(str(idx))
                     selection_button.setFixedSize(QSize(100, 25))
+
                     show_hide_button.setText("Hide Image")
                     show_hide_button.setFixedSize(QSize(100, 25))
 
-                    show_hide_button.clicked.connect(
-                        lambda
-                            state,
-                            flow_layout=flow_layout,
-                            selection_group=selection_group,
-                            button=show_hide_button,
-                            widget=view,
-                        :
-                            self.on_selection_show_hide_button_click(
-                                flow_layout,
-                                selection_group,
-                                button,
-                                widget,
-                            )
-                    )
-
-                if idx == 0:
-                    selection_button.clicked.connect(self.on_click_button_previous_step)
-                else:
-                    selection_button.clicked.connect(
-                        lambda state, selection_idx=idx: self.on_selection_button_click(
-                            selection_idx
-                        )
-                    )
         elif self.tacit_knowledge_combobox.currentText() == constants.SHAPE:
             user_options = self.greatwall.get_shape_query()
             for idx, selection_widget in enumerate(
@@ -1052,12 +1073,8 @@ class GreatWallGui(QMainWindow):
                     image = QPixmap(str(user_options[idx]))
                     selection_widget.setIcon(QIcon(image))
                     selection_widget.setIconSize(image.size())
-
                     selection_widget.setText(str(idx))
 
-                selection_widget.clicked.connect(
-                    lambda state, x=idx: self.on_selection_button_click(x)
-                )
         else:
             user_options = self.greatwall.get_li_str_query().split("\n")
             for idx, selection_widget in enumerate(
@@ -1071,10 +1088,6 @@ class GreatWallGui(QMainWindow):
                 else:
                     selection_widget.setText(user_options[idx])
 
-                selection_widget.clicked.connect(
-                    lambda state, x=idx: self.on_selection_button_click(x)
-                )
-
     def config_result_confirmation_widgets(self):
         self.result_confirmation_current_level_label.setText(
             f"Level {self.greatwall.current_level} of {self.greatwall.tree_depth}"
@@ -1083,9 +1096,6 @@ class GreatWallGui(QMainWindow):
             "Do you confirm this result?"
         )
         self.result_confirmation_previous_step_button.setText("Previous Step")
-        self.result_confirmation_previous_step_button.clicked.connect(
-            lambda state: self.on_selection_button_click(0)
-        )
 
     def config_result_widgets(self):
         self.result_show_hide_output_button.setText("Show output")
@@ -1103,14 +1113,14 @@ class GreatWallGui(QMainWindow):
         self.stacked.setCurrentWidget(self.error_view)
 
     def input_state1_entered(self):
-        print("SM1 State 1 Entered")
+        print("SM1: Entering State 1")
         self.stacked.setCurrentWidget(self.input_view)
         # self.result_confirmation_result_hash_label.clear()
         # self.result_confirmation_result_hash_label.setText("")
         self.reinit_running_greatwall()
 
     def confirmation_state2_entered(self):
-        print("SM1 State 2 Entered")
+        print("SM1: Entering State 2")
 
         # Config input confirmation widgets
         self.config_input_confirmation_widgets()
@@ -1118,7 +1128,7 @@ class GreatWallGui(QMainWindow):
         self.stacked.setCurrentWidget(self.input_confirmation_view)
 
     def derivation_state3_entered(self):
-        print("SM1 State 3 Entered")
+        print("SM1: Entering State 3")
 
         try:
             themed_success = self.greatwall.set_themed_mnemo(
@@ -1155,7 +1165,7 @@ class GreatWallGui(QMainWindow):
             self.gui_error_signal.emit()
 
     def result_state4_entered(self):
-        print("SM1 State 4 Entered")
+        print("SM1: State 4 Entered")
 
         # Config result widgets
         self.config_result_widgets()
@@ -1180,22 +1190,18 @@ class GreatWallGui(QMainWindow):
 
         # Create and add new states
         self.selecting_derivation_states_list.clear()
-        for _ in range(num_states):
+        for idx in range(num_states):
             state = QState()
-            state.entered.connect(self.selection_derive_state_n_entered)
+            state.entered.connect(
+                lambda state_n=idx: self.selection_derive_state_n_entered(
+                    state_n
+                )
+            )
             self.main_derivation_state.addState(state)
             self.selecting_derivation_states_list.append(state)
 
         # Add transitions between states
         for idx, state in enumerate(self.selecting_derivation_states_list):
-            # The first state doesn't transit with level_down_signal
-            if idx > 0:
-                previous_state = self.selecting_derivation_states_list[idx - 1]
-                transition = QSignalTransition(self.level_down_signal)
-                transition.setTargetState(previous_state)
-                state.addTransition(transition)
-                self.transitions_list.append(transition)
-
             # The last state doesn't transit with level_up_signal
             if idx < len(self.selecting_derivation_states_list) - 1:
                 next_state = self.selecting_derivation_states_list[idx + 1]
@@ -1204,18 +1210,29 @@ class GreatWallGui(QMainWindow):
                 state.addTransition(transition)
                 self.transitions_list.append(transition)
 
+            # The first state doesn't transit with level_down_signal
+            if idx > 0:
+                previous_state = self.selecting_derivation_states_list[idx - 1]
+                transition = QSignalTransition(self.level_down_signal)
+                transition.setTargetState(previous_state)
+                state.addTransition(transition)
+                self.transitions_list.append(transition)
+
         # Start the state machine
+        print("SM2: Starting Initialization...")
         self.main_derivation_state.setInitialState(
             self.selecting_derivation_states_list[0]
         )
         self.main_derivation_state.start()
 
-    def selection_derive_state_n_entered(self):
+    def selection_derive_state_n_entered(self, state_n):
         try:
             print(
-                f"SM2 State Entered at level {self.greatwall.current_level} of {self.greatwall.tree_depth}"
+                "SM2: Entering State {} of {}".format(
+                    state_n, self.greatwall.tree_depth
+                )
             )
-            self.run_greatwall_thread(self.selecting_derivation_option_number_selected)
+            self.run_greatwall_thread(self.selecting_derivation_user_choice)
         except Exception as e:
             self.error_occurred = e
             self.gui_error_signal.emit()
@@ -1234,12 +1251,8 @@ class GreatWallGui(QMainWindow):
 
         self.greatwall.current_level = 0
 
-    def on_click_button_previous_step(self):
-        self.greatwall.return_level()
-        self.on_thread_finish()
-
     def on_selection_button_click(self, selected_option: int):
-        self.selecting_derivation_option_number_selected = selected_option
+        self.selecting_derivation_user_choice = selected_option
         if selected_option:
             self.level_up_signal.emit()
         else:

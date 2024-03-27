@@ -72,9 +72,7 @@ pip install -r requirements.txt
 cd Great_Wall/src/greatwall/
 python3 gui.py
 ```
-> **_NOTE:_** The previously described method to run app is not the recommend
-one, but as we still in the development cycle this is the simplest way
-to get things ready :).
+> **_NOTE:_** The previously described method to run app is not the recommend one, but as we still in the development cycle this is the simplest way to get things ready :).
 
 ### Using in Beta
 Coming soon. An advanced, knowledgeable, tech-savvy reader, will, at this point, have understood what is to come and can improvise the steps by themselves. In a nutshell, all you have to do is to securely manage[^1] a brute-force resistant `SA0`, true-randomly generate a path vector of `L_i`'s, and memorize them procedurally as explained in the session above. For better effect, user can implement non-trivial **T**ime-**L**ock **P**uzzle, to impose desired time on derivation of `SA3` from `SA0`. To prevent leakage of critical content through Anki, a simple scheme with salt and pepper can be done so to avoid the need to modify Anki, but we'll leave this for a next time.
