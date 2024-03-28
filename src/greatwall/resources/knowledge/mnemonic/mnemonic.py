@@ -409,7 +409,7 @@ class ThemeDict(dict):
         Parameters
         ----------
         sentence : Union[str, list]
-            The words to be searched, they must be a complete sentence
+            The words to be searched. They must be a complete sentence
 
         Returns
         -------

@@ -49,7 +49,7 @@ The following steps will allow an easy memorization of the path demonstrated in 
 
 <!-- About -->
 ## Getting Started
-This section will provide you by a quick guide to start.
+This section will provide you a quick guide to start.
 
 ### Dependencies
 This project depends on the following packages:

@@ -16,7 +16,7 @@ As of the moment for writing, the *still* relatively small *(but ever more rapid
     - **Denial of Easy Access**', as in:
       *I do have Bitcoin, but, in order to access it, we would have to first go to that difficult-to-get-address where a certain hardware containing a secret key is located, and / or have to authenticate myself to trusted third parties and prove beyond reasonable doubt I'm not under coercion* --- When that is actually false;
 Finally, there is the following non-passive defense which is, nevertheless obscure:
-5. **Obscurely Cancellable Transaction**: Consists of having a transaction be time-locked, and, before maturity, possible to be reversed. Victim pretends to cooperate with adversary, and, upon release from adversary's custody enact abortion of a transaction done under coercion.
+5. **Obscurely Cancellable Transaction**: Consists of having a transaction be time-locked, and, before maturity, possible to be reversed. Victim pretends to cooperate with adversary, and, upon release from adversary's custody, enacts abortion of the transaction done under coercion.
 
 Every case from items 1 to 3 above is but circumstantially true, due only to either insufficient spread of adoption of Bitcoin or insufficient diffusion of knowledge about Bitcoin itself or about techniques and practices to secure it or ignorance by the adversary about the methods in use. Said shortly:
 
