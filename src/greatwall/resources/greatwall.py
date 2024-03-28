@@ -177,7 +177,7 @@ class GreatWall:
 
     def get_tacit_knowledge_param_from(self, idx: int, value: Optional[str] = None):
         idx_bytes = idx.to_bytes(length=4, byteorder="big")
-        hashed_knowledge_param = low_level.hash_secret_raw(
+        next_state_hashed_param = low_level.hash_secret_raw(
             secret=self.state + idx_bytes,
             salt=self.argon2salt,
             time_cost=32,
@@ -189,8 +189,8 @@ class GreatWall:
 
         if value is not None:
             value_bytes = value.encode(encoding="utf-8")
-            hashed_knowledge_param = low_level.hash_secret_raw(
-                secret=hashed_knowledge_param + value_bytes,
+            next_state_hashed_param = low_level.hash_secret_raw(
+                secret=next_state_hashed_param + value_bytes,
                 salt=self.argon2salt,
                 time_cost=32,
                 memory_cost=1024,
@@ -199,7 +199,7 @@ class GreatWall:
                 type=low_level.Type.I,
             )
 
-        return hashed_knowledge_param[0 : self.nbytesform]
+        return next_state_hashed_param[0 : self.nbytesform]
 
     def get_fractal_query(self) -> list:
         self._shuffle_arity_indxes()
