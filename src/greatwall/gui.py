@@ -43,7 +43,7 @@ from resources.greatwall import GreatWall
 
 
 class GreatWallThread(QThread):
-    """GreatWall thread class to perform the time-consuming great wall task."""
+    """Great Wall thread class to perform the time-consuming great wall task."""
 
     finished = pyqtSignal()
     canceled = pyqtSignal()

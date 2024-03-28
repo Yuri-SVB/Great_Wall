@@ -1074,7 +1074,7 @@ class TableSelectorTab(BaseTab):
 
         # If no word is selected and the size isn't zero
         #  or a word is selected and the size isn't one
-        #  then it keep going, else it returns
+        #  then it keeps going, else it returns
         if not ((not word and check_size != 0) or (word and check_size != 1)):
             self.set_validation_colored_msg(state)
             return

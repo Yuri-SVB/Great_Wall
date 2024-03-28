@@ -53,7 +53,7 @@ def main():
             run_greatwall_cli()
     else:
         print(
-            f'  (use "main.py GUI" to run the GreatWall application with graphic user interface)\n'
+            f'  (use "main.py GUI" to run the Great Wall application with graphic user interface)\n'
             f'  (or "main.py CLI" to run with command-line interface)'
         )
 

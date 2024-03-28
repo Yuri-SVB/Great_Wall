@@ -20,7 +20,7 @@ class Shaper:
 
     def draw_regular_shape(self, sides: Union[int, bytes, bytearray] = 3):
         if isinstance(sides, bytes) or isinstance(sides, bytearray):
-            # If sides is given as bytes it will get the int of the first digit with an offset of 2
+            # If sides are given as bytes it will get the int of the first digit with an offset of 2
             sides = self.get_first_digit(sides) + 2
         size = self.size
 
@@ -41,7 +41,7 @@ class Shaper:
 
         # Draw the polygon
         self.draw.polygon(vertices, outline="white")
-        # Showing for debugging purpose
+        # shown for debugging purposes
         # self.image.show()
         return self.save_image(sides)
 
