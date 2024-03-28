@@ -28,7 +28,7 @@ class UserInterface:
                 else:
                     self.index_input_is_valid = True
             except ValueError:
-                # Handle the exception
+                # Handle the exception generated
                 print("Please enter an integer")
 
     def prompt_integer(self, text, min_value, max_value):
@@ -52,7 +52,7 @@ class UserInterface:
 
 def main():
     print(
-        f'  (use "main.py CLI" to run the GreatWall application with command-line interface)'
+        f'  (use "main.py CLI" to run the Great Wall application with command-line interface)'
     )
 
 

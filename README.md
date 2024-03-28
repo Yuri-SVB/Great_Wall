@@ -8,12 +8,11 @@
   </p>
    
   <p align="center">
-    <a href="LICENSE"><img alt="Software License" src="https://img.shields.io/badge/License-MIT-brightgreen.svg?style=flat-square&logo=appveyor"></a>
+    <a href="License"><img alt="Software License" src="https://img.shields.io/badge/License-MIT-brightgreen.svg?style=flat-square&logo=appveyor"></a>
     <a href="docs/"><img alt="docs" src="https://img.shields.io/badge/Docs-read%20docs-brightgreen.svg?style=flat-square&logo=appveyor"></a>
     <a href="https://www.python.org/"><img alt="python3" src="https://img.shields.io/badge/Python-8+-brightgreen.svg?style=flat-square&logo=appveyor"></a>
-    <a href=""><img alt="Maintainer" src="https://img.shields.io/badge/Maintainer-Yuri_S_Villas_Boas-bridghtgreen.svg?style=flat-square&logo=appveyor"></a>
+    <a href=""><img alt="Maintainer" src="https://img.shields.io/badge/Maintainer-Yuri_S_Villas_Boas-brightgreen.svg?style=flat-square&logo=appveyor"></a>
   </p>
-</p>
 
 
 <!-- TABLE OF CONTENTS -->
