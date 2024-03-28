@@ -175,7 +175,9 @@ class GreatWall:
         self.shuffled_arity_indxes = [arity_idx for arity_idx in range(self.tree_arity)]
         random.shuffle(self.shuffled_arity_indxes)
 
-    def get_tacit_knowledge_param_from(self, branch_idx: int, value: Optional[str] = None):
+    def get_tacit_knowledge_param_from(
+        self, branch_idx: int, tacit_knowledge_param: Optional[str] = None
+    ):
         branch_idx_bytes = branch_idx.to_bytes(length=4, byteorder="big")
 
         # jth candidate L_(i+1), the state resulting from appending bytes of j
@@ -190,10 +192,10 @@ class GreatWall:
             type=low_level.Type.I,
         )
 
-        if value is not None:
-            value_bytes = value.encode(encoding="utf-8")
+        if tacit_knowledge_param is not None:
+            tacit_knowledge_param_bytes = tacit_knowledge_param.encode(encoding="utf-8")
             next_state_candidate = low_level.hash_secret_raw(
-                secret=next_state_candidate + value_bytes,
+                secret=next_state_candidate + tacit_knowledge_param_bytes,
                 salt=self.argon2salt,
                 time_cost=32,
                 memory_cost=1024,
@@ -238,7 +240,9 @@ class GreatWall:
     def get_shape_query(self) -> list:
         self._shuffle_arity_indxes()
         shuffled_shapes = [
-            self.shaper.draw_regular_shape(self.get_tacit_knowledge_param_from(arity_idx))
+            self.shaper.draw_regular_shape(
+                self.get_tacit_knowledge_param_from(arity_idx)
+            )
             for arity_idx in self.shuffled_arity_indxes
         ]
         listr = f"Choose 1, ..., {self.tree_arity} for level {self.current_level}"
