@@ -49,6 +49,11 @@ class GreatWall:
         self.shuffled_bytes: bytes = self.sa0  # dummy initialization
         self.current_level: int = 0
 
+        # saved states history
+        self.saved_fractals = {}
+        self.saved_states = {}
+        self.saved_path = []
+
     def cancel_execution(self):
         self.is_canceled = True
 
@@ -110,6 +115,14 @@ class GreatWall:
         self.protocol_states = [bytes.fromhex("00")] * self.tree_depth
 
     def init_state_hashes(self):
+
+        # nothing to do if this derivation was already calculated
+        saved_index = self.history_path_to_index(self.saved_path)
+        saved_state = self.saved_states.get(saved_index)
+        if saved_state:
+            self.state = saved_state
+            return
+
         self.state = self.sa0
         self.shuffled_bytes = self.sa0  # dummy initialization
         self.current_level = 0
@@ -141,6 +154,8 @@ class GreatWall:
         print("Deriving SA2 -> SA3")
         self.update_with_quick_hash()
         self.sa3 = self.state
+
+        self.history_state_save()
 
     def update_with_long_hash(self):
         """Update self.level_hash with the hash of the previous self.level_hash taking presumably a long time"""
@@ -219,11 +234,30 @@ class GreatWall:
         return self.state
 
     def derive_from_user_choice(self, chosen_input: int):
+
+        # zero indicates a step back
+        if chosen_input == 0:
+            self.return_level()
+            return
+
+        next_step = chosen_input - 1
+        step_done = self.history_step_next(next_step)
+        if not step_done:
+            return
+
+        self.current_level += 1
+
+        # nothing to do if this derivation was already calculated
+        saved_index = self.history_path_to_index(self.saved_path)
+        saved_state = self.saved_states.get(saved_index)
+        if saved_state:
+            return
+
         if chosen_input:
             self.protocol_states[self.current_level] = self.state
             self.state += bytes(self.shuffled_bytes[chosen_input - 1])
             self.update_with_quick_hash()
-            self.current_level += 1
+            self.history_state_save()
         else:
             self.return_level()
 
@@ -234,3 +268,99 @@ class GreatWall:
             self.is_finished = False
         self.current_level -= 1
         self.state = self.protocol_states[self.current_level]
+
+        self.history_step_back()
+        self.history_state_load()
+
+    def history_reset(self):
+
+        self.saved_fractals = {}
+        self.saved_path = []
+        self.saved_states = {}
+
+    # maps a tree path to an index key for the "self.saved_states" dictionary
+    #
+    # EXAMPLES:
+    # the path [] maps to the index 0, for any tree
+    # the path [1, 2] maps to the index 23, for a tree of arity 3 and depth 4
+    # the path [0, 1, 1] maps to the index 13, for a tree of arity 2 and depth 5
+    def history_path_to_index(self, path):
+
+        def calculate_tree_size(depth):
+            size = 0
+            span = 1
+            while depth > 0:
+                depth = depth - 1
+                size = size + span
+                span = span * self.tree_arity
+            return size
+
+        index = 0
+        depth = self.tree_depth
+        for position in range(0, len(path)):
+            index = index + 1
+            depth = depth - 1
+
+            choice = path[position]
+
+            tree_size = calculate_tree_size(depth)
+            index = index + (tree_size * choice)
+
+        return index
+
+    def history_step_back(self):
+
+        if len(self.saved_path) == 0:
+            return
+
+        self.saved_path.pop()
+
+    def history_step_next(self, index):
+
+        if len(self.saved_path) == self.tree_depth:
+            return False
+
+        if index < 0 or index >= self.tree_arity:
+            return False
+
+        # cannot move forward unless there a saved state to continue from
+        saved_index = self.history_path_to_index(self.saved_path)
+        saved_state = self.saved_states.get(saved_index)
+        if not saved_state:
+            return False
+
+        self.saved_path.append(index)
+        return True
+
+    def history_state_save(self):
+
+        saved_index = self.history_path_to_index(self.saved_path)
+        self.saved_states[saved_index] = self.state
+
+    def history_state_load(self):
+
+        saved_index = self.history_path_to_index(self.saved_path)
+        saved_state = self.saved_states.get(saved_index)
+        if not saved_state:
+            return False
+
+        self.state = saved_state
+        return True
+
+    def history_fractal_save(self, fractal, path=None):
+
+        if path is None:
+            path = self.saved_path
+
+        saved_index = self.history_path_to_index(path)
+        self.saved_fractals[saved_index] = fractal
+
+    def history_fractal_load(self, path=None):
+
+        if path is None:
+            path = self.saved_path
+
+        saved_index = self.history_path_to_index(path)
+        saved_fractal = self.saved_fractals.get(saved_index)
+        return saved_fractal
+

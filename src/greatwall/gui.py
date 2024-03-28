@@ -1023,7 +1023,13 @@ class GreatWallGui(QMainWindow):
         )
 
         if self.tacit_knowledge_combobox.currentText() == constants.FRACTAL:
-            user_options = self.greatwall.get_fractal_query()
+
+            user_options = self.greatwall.history_fractal_load()
+
+            if user_options is None:
+                user_options = self.greatwall.get_fractal_query()
+                self.greatwall.history_fractal_save(user_options)
+
             colormap = color_palettes[self.fractal_colormap_combobox.currentText()]
             for idx, widgets in enumerate(
                 self.selecting_derivation_options_widgets_list
