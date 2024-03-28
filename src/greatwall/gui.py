@@ -1,10 +1,10 @@
 import numpy as np
 from PyQt5.QtCore import (
     QEvent,
-    QRectF,
     QMargins,
     QPoint,
     QRect,
+    QRectF,
     QSignalTransition,
     QSize,
     QState,
@@ -13,7 +13,7 @@ from PyQt5.QtCore import (
     QThread,
     pyqtSignal,
 )
-from PyQt5.QtGui import QBrush, QColor, QImage, QPixmap
+from PyQt5.QtGui import QBrush, QColor, QIcon, QImage, QPixmap
 from PyQt5.QtWidgets import (
     QApplication,
     QComboBox,
@@ -30,18 +30,20 @@ from PyQt5.QtWidgets import (
     QPushButton,
     QScrollArea,
     QSizePolicy,
-    QStackedWidget,
     QSpinBox,
+    QStackedWidget,
     QTextEdit,
     QVBoxLayout,
     QWidget,
+    QWidgetItem,
 )
 from resources import constants
+from resources.colormaps import color_palettes
 from resources.greatwall import GreatWall
 
 
-class GreatWallWorker(QThread):
-    """Custom Worker class to perform the time-consuming task."""
+class GreatWallThread(QThread):
+    """GreatWall thread class to perform the time-consuming great wall task."""
 
     finished = pyqtSignal()
     canceled = pyqtSignal()
@@ -100,6 +102,21 @@ class FlowLayout(QLayout):
             return self._item_list[index]
 
         return None
+
+    def insertWidget(self, idx, widget):
+        """Insert widget `widget` at specific index `idx` in the widgets list.
+
+        If the index `idx` equals to -1 this method will add the widget at the
+        end of widgets list.
+
+        If the widget is already exist this method will remove the widget from
+        current position and insert it at the index `idx`.
+        """
+        self._item_list = [i for i in self._item_list if i.widget() != widget]
+        if idx == -1:
+            self._item_list.insert(len(self._item_list), QWidgetItem(widget))
+        else:
+            self._item_list.insert(idx, QWidgetItem(widget))
 
     def takeAt(self, index):
         if 0 <= index < len(self._item_list):
@@ -189,13 +206,22 @@ class ImageViewer(QGraphicsView):
 
     def __init__(self, parent):
         super(ImageViewer, self).__init__(parent)
-        self._zoom = 0
-        self._empty = True
-        self._photo = QGraphicsPixmapItem()
-        self._scene = QGraphicsScene(self)
-        self._scene.addItem(self._photo)
+        self.empty = True
+        self.image = QGraphicsPixmapItem()
+        self.scene = QGraphicsScene(self)
+        self.scene.addItem(self.image)
 
-        self.setScene(self._scene)
+        # The following attributes are for internal implementation only.
+        self._zoom = 0
+
+        # The main purpose of the following attributes are to keep
+        # the underline data preserved and not noisy and distorted
+        # when manipulating the underline data.
+        self._normalized_array = None
+        self._rgb_img = None
+        self._qimage = None
+
+        self.setScene(self.scene)
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -203,101 +229,32 @@ class ImageViewer(QGraphicsView):
         self.setBackgroundBrush(QBrush(QColor(30, 30, 30)))
         self.setFrameShape(QFrame.NoFrame)
 
-    def gray_array_to_Qimage(self, gray_array, width=100, height=100):
+    def numpy_2darray_to_Qimage(self, numpy_2darray, colormap):
         """
-        Convert the 2D numpy array `gray` into a 8-bit QImage with a gray
-        colormap. The first dimension represents the vertical image axis.
+        Convert the 2D numpy array into a 3-chanels 8-bit QImage depending on
+            passed `colormap` argument. The first dimension represents the
+            vertical image axis.
         """
-        if len(gray_array.shape) != 2:
-            raise ValueError("gray2QImage can only convert 2D arrays")
+        numpy_2darray = numpy_2darray * 255
+        numpy_2darray = np.require(numpy_2darray, np.uint8, "C")
 
-        width, height = gray_array.shape
-
-        self._qimage = QImage(gray_array.data, width, height, QImage.Format_Indexed8)
-        for i in range(max(width, height)):
-            gray_array.setColor(i, QColor(i, i, i).rgb())
-        return self._qimage
-
-    def gray_array_to_rgb_array(self, gray_array):
-        """
-        Convert the 2D numpy array `gray` after normalizing it into a colored
-        3D numpy array with `Viridis` scheme.
-
-        See the following for more details: `https://waldyrious.net/viridis-palette-generator/`
-            and `https://www.kennethmoreland.com/color-advice/`.
-        """
-
-        color_map = {
-            0: [-1e100, 0.0, 68, 1, 84],
-            1: [0.0, 0.05, 68, 1, 84],
-            2: [0.05, 0.1, 72, 20, 103],
-            3: [0.1, 0.15, 72, 37, 118],
-            4: [0.15, 0.2, 69, 55, 129],
-            5: [0.2, 0.25, 64, 70, 136],
-            6: [0.25, 0.3, 57, 85, 140],
-            7: [0.3, 0.35, 51, 99, 141],
-            8: [0.35, 0.4, 45, 113, 142],
-            9: [0.4, 0.45, 40, 125, 142],
-            10: [0.45, 0.5, 35, 138, 141],
-            11: [0.5, 0.55, 31, 150, 139],
-            12: [0.55, 0.6, 32, 163, 134],
-            13: [0.6, 0.65, 41, 175, 127],
-            14: [0.65, 0.7, 61, 188, 116],
-            15: [0.7, 0.75, 86, 198, 103],
-            16: [0.75, 0.8, 117, 208, 84],
-            17: [0.8, 0.85, 149, 216, 64],
-            18: [0.85, 0.9, 186, 222, 40],
-            19: [0.9, 0.95, 221, 227, 24],
-            20: [0.95, 0.1, 253, 231, 37],
-            21: [1.0, 1e100, 253, 231, 37],
-        }
-
-        self._normalized_array = (
-            (gray_array - np.min(gray_array))
-            / (np.max(gray_array) - np.min(gray_array))
-            if np.max(gray_array) - np.min(gray_array)
-            else gray_array - np.min(gray_array)
-        )
-
-        self._rgb_img = np.zeros((*gray_array.shape, 3), np.uint8, "C")
-        for key in color_map.keys():
-            start, end, *_rgb = color_map[key]
-            boolean_array = np.logical_and(
-                self._normalized_array >= start, self._normalized_array <= end
+        if len(numpy_2darray.shape) != 2:
+            raise ValueError(
+                "Sorry, but we can only convert 2D arrays! Check your input please!"
             )
-            self._rgb_img[boolean_array] = _rgb
+        width, height = numpy_2darray.shape
 
-        return self._rgb_img
+        self._qimage = QImage(numpy_2darray.data, width, height, QImage.Format_Indexed8)
+        self._qimage.setColorTable(colormap)
 
-    def rgb_array_to_Qimage(self, array, width=100, height=100):
-        """
-        Convert the 3D numpy array `gray` into a 8-bit QImage with a RGB
-        colormap. The first dimension represents the vertical image axis.
-        """
-        if np.ndim(array) == 3:
-            height, width, d = array.shape
-
-            nd = d
-            if nd == 3:  # 3D RGB Image
-                nd = 4
-            if nd == 1:  # 3D Grayscaler Image
-                nd = 3
-
-            img = np.zeros([height, width, nd], np.uint8, "C")
-            img[:, :, :3] = array[:, :, (2, 1, 0)]
-            img[:, :, 3] = 255
-        else:
-            raise ValueError("can only convert 3D arrays")
-
-        self._qimage = QImage(img.data, img.shape[0], img.shape[1], QImage.Format_RGB32)
         return self._qimage
 
     def hasPhoto(self):
-        return not self._empty
+        return not self.empty
 
     def fitInView(self, scale=True):
         if self.hasPhoto():
-            rect = QRectF(self._photo.pixmap().rect())
+            rect = QRectF(self.image.pixmap().rect())
             self.setSceneRect(rect)
             unity = self.transform().mapRect(QRectF(0, 0, 1, 1))
             self.scale(1 / unity.width(), 1 / unity.height())
@@ -314,13 +271,13 @@ class ImageViewer(QGraphicsView):
     def setPhoto(self, pixmap=None):
         self._zoom = 0
         if pixmap and not pixmap.isNull():
-            self._empty = False
+            self.empty = False
             self.setDragMode(QGraphicsView.ScrollHandDrag)
-            self._photo.setPixmap(pixmap)
+            self.image.setPixmap(pixmap)
         else:
-            self._empty = True
+            self.empty = True
             self.setDragMode(QGraphicsView.NoDrag)
-            self._photo.setPixmap(QPixmap())
+            self.image.setPixmap(QPixmap())
         self.fitInView()
 
     def wheelEvent(self, event):
@@ -412,6 +369,11 @@ class GreatWallGui(QMainWindow):
         self.fractal_function_combobox.addItems(constants.FRACTAL_FUNCTIONS)
         self.fractal_function_combobox.setCurrentText(constants.FRACTAL_FUNCTIONS[0])
 
+        self.fractal_colormap_label = QLabel("Fractal colormap", self)
+        self.fractal_colormap_combobox = QComboBox(self)
+        self.fractal_colormap_combobox.addItems(constants.AVAILABLE_COLOR_PALETTES)
+        self.fractal_colormap_combobox.setCurrentText(constants.AVAILABLE_COLOR_PALETTES[1])
+
         self.theme_label = QLabel("Choose Theme", self)
         self.theme_combobox = QComboBox(self)
         self.theme_combobox.addItems(constants.FORMOSA_THEMES)
@@ -433,9 +395,9 @@ class GreatWallGui(QMainWindow):
         self.password_text = QTextEdit(self)
 
         # Hardcode to fast tests
-        # self.password_text.setText(
-        #     "viboniboasmofiasbrchsprorirerugugucavehistmiinciwibowifltuor"
-        # )
+        #self.password_text.setText(
+        #    "viboniboasmofiasbrchsprorirerugugucavehistmiinciwibowifltuor"
+        #)
 
         # Lists of input widgets
         self.input_state_widgets_list = [
@@ -443,6 +405,8 @@ class GreatWallGui(QMainWindow):
             self.tacit_knowledge_combobox,
             self.fractal_function_label,
             self.fractal_function_combobox,
+            self.fractal_colormap_label,
+            self.fractal_colormap_combobox,
             self.theme_label,
             self.theme_combobox,
             self.tlp_label,
@@ -700,7 +664,7 @@ class GreatWallGui(QMainWindow):
         self.result_copy_output_button = QPushButton("Copy output to clipboard", self)
 
         self.result_show_hide_output_button.clicked.connect(
-            self.on_hide_show_button_click
+            self.on_result_show_hide_button_click
         )
         self.result_copy_output_button.clicked.connect(self.on_copy_button_click)
 
@@ -779,6 +743,9 @@ class GreatWallGui(QMainWindow):
 
     def on_change_tacit_knowledge_combobox(self):
         self.fractal_function_combobox.setEnabled(
+            self.tacit_knowledge_combobox.currentText() == constants.FRACTAL
+        )
+        self.fractal_colormap_combobox.setEnabled(
             self.tacit_knowledge_combobox.currentText() == constants.FRACTAL
         )
 
@@ -937,18 +904,29 @@ class GreatWallGui(QMainWindow):
             for idx in range(self.greatwall.tree_arity):
                 view = ImageViewer(self)
                 selection_button = QPushButton(self)
+                show_hide_button = QPushButton(self)
+
+                buttons_box = QHBoxLayout()
+                buttons_box.addWidget(selection_button)
+                buttons_box.addWidget(show_hide_button)
 
                 selection_box = QVBoxLayout()
                 selection_box.addWidget(view)
-                selection_box.addWidget(selection_button)
+                selection_box.addLayout(buttons_box)
 
-                selection_box_widget = QWidget()
-                selection_box_widget.setLayout(selection_box)
+                selection_box_group = QGroupBox()
+                selection_box_group.setLayout(selection_box)
 
-                flow_layout.addWidget(selection_box_widget)
+                flow_layout.addWidget(selection_box_group)
 
                 self.selecting_derivation_options_widgets_list.append(
-                    (view, selection_button)
+                    (
+                        flow_layout,
+                        selection_box_group,
+                        view,
+                        show_hide_button,
+                        selection_button,
+                    )
                 )
 
             # WARNING: We are adding the `FlowLayout` to `QWidget`
@@ -967,11 +945,11 @@ class GreatWallGui(QMainWindow):
             self.selecting_derivation_options_layout.addWidget(selection_button)
             self.selecting_derivation_options_widgets_list.append(selection_button)
 
+            scroll_area = QScrollArea()
             flow_widget = QWidget()
             flow_layout = FlowLayout()
             for idx in range(self.greatwall.tree_arity):
                 selection_button = QPushButton(self)
-
                 flow_layout.addWidget(selection_button)
 
                 self.selecting_derivation_options_widgets_list.append(selection_button)
@@ -979,9 +957,13 @@ class GreatWallGui(QMainWindow):
             # WARNING: We are adding the `FlowLayout` to `QWidget`
             # to be able to remove it later.
             flow_widget.setLayout(flow_layout)
-            self.selecting_derivation_options_layout.addLayout(flow_widget)
 
-            self.selecting_derivation_options_layout.addStretch(1)
+            scroll_area.setWidgetResizable(True)
+            scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+            scroll_area.viewport().installEventFilter(self)
+            scroll_area.setWidget(flow_widget)
+
+            self.selecting_derivation_options_layout.addWidget(scroll_area)
 
         else:
             for _ in range(self.greatwall.tree_arity + 1):
@@ -1002,27 +984,55 @@ class GreatWallGui(QMainWindow):
 
         if self.tacit_knowledge_combobox.currentText() == constants.FRACTAL:
             user_options = self.greatwall.get_fractal_query()
+            colormap = color_palettes[self.fractal_colormap_combobox.currentText()]
             for idx, widgets in enumerate(
                 self.selecting_derivation_options_widgets_list
             ):
                 if idx == 0:
                     selection_button = widgets
+                    selection_button.setEnabled(
+                        False if self.greatwall.current_level == 0 else True
+                    )
                 else:
-                    view, selection_button = widgets
+                    (
+                        flow_layout,
+                        selection_group,
+                        view,
+                        show_hide_button,
+                        selection_button,
+                    ) = widgets
 
                     image = QPixmap.fromImage(
-                        view.rgb_array_to_Qimage(
-                            view.gray_array_to_rgb_array(user_options[idx])
-                        )
+                        view.numpy_2darray_to_Qimage(user_options[idx], colormap)
                     )
-                    view.setFixedSize(QSize(200, 200))
+                    view.setFixedSize(QSize(205, 205))
                     view.setPhoto(image)
 
                     selection_button.setText(str(idx))
-                    selection_button.setFixedSize(QSize(200, 25))
+                    selection_button.setFixedSize(QSize(100, 25))
+                    show_hide_button.setText("Hide Image")
+                    show_hide_button.setFixedSize(QSize(100, 25))
+
+                    show_hide_button.clicked.connect(
+                        lambda
+                            state,
+                            flow_layout=flow_layout,
+                            selection_group=selection_group,
+                            button=show_hide_button,
+                            widget=view,
+                        :
+                            self.on_selection_show_hide_button_click(
+                                flow_layout,
+                                selection_group,
+                                button,
+                                widget,
+                            )
+                    )
 
                 selection_button.clicked.connect(
-                    lambda state, x=idx: self.on_selection_button_click(x)
+                    lambda state, selection_idx=idx: self.on_selection_button_click(
+                        selection_idx
+                    )
                 )
         elif self.tacit_knowledge_combobox.currentText() == constants.SHAPE:
             user_options = self.greatwall.get_shape_query()
@@ -1030,9 +1040,16 @@ class GreatWallGui(QMainWindow):
                 self.selecting_derivation_options_widgets_list
             ):
                 if idx == 0:
-                    pass
+                    selection_widget.setText("Previous Step")
+                    selection_widget.setEnabled(
+                        False if self.greatwall.current_level == 0 else True
+                    )
                 else:
-                    selection_widget.setText(user_options[idx])
+                    image = QPixmap(str(user_options[idx]))
+                    selection_widget.setIcon(QIcon(image))
+                    selection_widget.setIconSize(image.size())
+
+                    selection_widget.setText(str(idx))
 
                 selection_widget.clicked.connect(
                     lambda state, x=idx: self.on_selection_button_click(x)
@@ -1044,6 +1061,9 @@ class GreatWallGui(QMainWindow):
             ):
                 if idx == 0:
                     selection_widget.setText("Previous Step")
+                    selection_widget.setEnabled(
+                        False if self.greatwall.current_level == 0 else True
+                    )
                 else:
                     selection_widget.setText(user_options[idx])
 
@@ -1119,7 +1139,7 @@ class GreatWallGui(QMainWindow):
             self.config_selecting_derivation_widgets_layout()
 
             # Start the execution in a separate thread
-            self.greatwall_thread = GreatWallWorker(self.greatwall)
+            self.greatwall_thread = GreatWallThread(self.greatwall)
             self.greatwall_thread.finished.connect(self.on_thread_finish)
             self.greatwall_thread.canceled.connect(self.on_thread_cancel)
             self.greatwall_thread.error_occurred.connect(self.on_thread_error)
@@ -1217,7 +1237,20 @@ class GreatWallGui(QMainWindow):
         else:
             self.level_down_signal.emit()
 
-    def on_hide_show_button_click(self):
+    def on_selection_show_hide_button_click(
+        self, flow_layout, selection_group, selection_button, selection_view
+    ):
+        if selection_view.isVisible():
+            flow_layout.insertWidget(-1, selection_group)
+        else:
+            flow_layout.insertWidget(0, selection_group)
+
+        selection_view.setVisible(not selection_view.isVisible())
+
+        button_text = "Hide Image" if selection_view.isVisible() else "Show Image"
+        selection_button.setText(button_text)
+
+    def on_result_show_hide_button_click(self):
         self.result_finish_output_text.setVisible(
             not self.result_finish_output_text.isVisible()
         )
@@ -1249,8 +1282,8 @@ class GreatWallGui(QMainWindow):
 
                 image = ImageViewer(self)
 
-                rgb_array = image.gray_array_to_rgb_array(formated_fractal)
-                qimage = image.rgb_array_to_Qimage(rgb_array)
+                colormap = color_palettes[self.fractal_colormap_combobox.currentText()]
+                qimage = image.numpy_2darray_to_Qimage(formated_fractal, colormap)
                 image = QPixmap.fromImage(qimage)
 
                 self.result_confirmation_result_hash_label.setPixmap(
