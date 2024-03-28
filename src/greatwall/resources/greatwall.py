@@ -175,10 +175,13 @@ class GreatWall:
         self.shuffled_arity_indxes = [arity_idx for arity_idx in range(self.tree_arity)]
         random.shuffle(self.shuffled_arity_indxes)
 
-    def get_tacit_knowledge_param_from(self, idx: int, value: Optional[str] = None):
-        idx_bytes = idx.to_bytes(length=4, byteorder="big")
-        next_state_hashed_param = low_level.hash_secret_raw(
-            secret=self.state + idx_bytes,
+    def get_tacit_knowledge_param_from(self, branch_idx: int, value: Optional[str] = None):
+        branch_idx_bytes = branch_idx.to_bytes(length=4, byteorder="big")
+
+        # jth candidate L_(i+1), the state resulting from appending bytes of j
+        # (here, branch_idx_bytes to current state L_i and hashing it)
+        next_state_candidate = low_level.hash_secret_raw(
+            secret=self.state + branch_idx_bytes,
             salt=self.argon2salt,
             time_cost=32,
             memory_cost=1024,
@@ -189,8 +192,8 @@ class GreatWall:
 
         if value is not None:
             value_bytes = value.encode(encoding="utf-8")
-            next_state_hashed_param = low_level.hash_secret_raw(
-                secret=next_state_hashed_param + value_bytes,
+            next_state_candidate = low_level.hash_secret_raw(
+                secret=next_state_candidate + value_bytes,
                 salt=self.argon2salt,
                 time_cost=32,
                 memory_cost=1024,
@@ -199,7 +202,7 @@ class GreatWall:
                 type=low_level.Type.I,
             )
 
-        return next_state_hashed_param[0 : self.nbytesform]
+        return next_state_candidate[0 : self.nbytesform]
 
     def get_fractal_query(self) -> list:
         self._shuffle_arity_indxes()
