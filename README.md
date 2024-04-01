@@ -23,6 +23,7 @@
     * [Dependencies](#dependencies)
     * [Installation](#installation)
     * [Using in Beta](#using-in-beta)
+    * [Running Test](#running-tests)
 4. [Usage](#usage)
 5. [License](#license)
 6. [Contact](#contact)
@@ -92,3 +93,24 @@ to get things ready :).
 Coming soon. An advanced, knowledgeable, tech-savvy reader, will, at this point, have understood what is to come and can improvise the steps by themselves. In a nutshell, all you have to do is to securely manage[^1] a brute-force resistant `SA0`, true-randomly generate a path vector of `L_i`'s, and memorize them procedurally as explained in the session above. For better effect, user can implement non-trivial **T**ime-**L**ock **P**uzzle, to impose desired time on derivation of `SA3` from `SA0`. To prevent leakage of critical content through Anki, a simple scheme with salt and pepper can be done so to avoid the need to modify Anki, but we'll leave this for a next time.
 
 [^1]: That is, either memorize it, or deterministically derive it from other brute-force resistant secret information, or symmetrically encrypt it with a master key falling back in one of 2 previous cases and manage well the encrypted database.
+
+## Running Tests
+
+To execute unit tests for the project, you can utilize the following command from the root directory:
+
+```bash
+python -m unittest discover -s src/greatwall -p "test_*.py"
+```
+This command uses Python's built-in unittest module to automatically discover and run all unit tests within the specified directory (src/greatwall/) matching the pattern test_*.py.
+
+Make sure to run this command after setting up your environment and dependencies, ensuring that the project is properly configured for testing. Upon execution, the command will locate all test files matching the specified pattern and execute the tests contained within them, providing feedback on the success or failure of each test case.
+
+#### Running Tests in PyCharm
+Right-click anywhere within the test file or on the specific test method you want to run.
+From the context menu, select "Run 'python test in test_gui'"
+PyCharm will execute the selected tests and display the results in the test runner window.
+
+#### Running Tests in Visual Studio Code
+Click on the "Run Test" icon that appears next to the test method you want to run, 
+or press Ctrl+Shift+P (Cmd+Shift+P on macOS) to open the command palette and then select "Python: Run All Tests".
+Visual Studio Code will execute the selected tests and display the results in the integrated test runner.
