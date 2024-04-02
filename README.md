@@ -20,14 +20,9 @@
 ## Table of Contents
 1. [About](#about)
 2. [Demo](#demo)
-3. [Getting Started](#getting-started)
-    * [Dependencies](#dependencies)
-    * [Installation](#installation)
-    * [Using in Beta](#using-in-beta)
-    * [Running Test](#running-tests)
-4. [Usage](#usage)
-5. [License](#license)
-6. [Contact](#contact)
+3. [Documentation](#documentation)
+4. [Contact Us](#contact-us)
+5. [Contributing](#contributing)
 
 
 <!-- About -->
@@ -49,69 +44,20 @@ The following steps will allow an easy memorization of the path demonstrated in 
 9. Just like the seed, all the addresses derived from it are **improper** and, therefore should not be used. One of them, obtained upon loading wallet with the seed in previous item, will be `bc1q3qjatkwlrxvkah0uphr2vj3lqqd73l22n7djl9`. In your favorite blockchain explorer, you can confirm that it's first two transactions were, respectively, receiving 198964 Sats, and then having them removed back (before publication). Obs.: in cases like that, it's advisable to utilize a coinjoin service to preserve privacy.
 
 
-<!-- About -->
-## Getting Started
-This section will provide you by a quick guide to start.
+<!-- Documentation -->
+## Documentation
+Documentation for GreatWall can be found [here](./docs/index.md).
 
-### Dependencies
-This project depends on the following packages:
-1. argon2-cffi = 23.1.0
-2. argon2-cffi-bindings = 21.2.0
-3. cffi = 1.16.0
-4. numpy = 1.25.0
-5. Pillow = 10.1.0
-6. pycparser = 2.21
-7. PyQt5 = 5.15.10
-8. PyQt5-Qt5 = 5.15.2
-9. PyQt5-sip = 12.13.0
 
-### Installation
-Follow the following to get your environment ready:
-1. Install system package requirements:
-```sh
-sudo apt install python3-setuptools python3-virtualenv qtbase5-dev qt5-qmake cmake
-```
-2. Set up a python virtual environment and activate it:
-```sh
-python3 -m venv .venv
-source .venv/bin/activate
-```
-3. Install the requirements:
-```sh
-pip install -r requirements.txt
-```
-4. Now, you can run the app using the following:
+<!-- Contact Us -->
+## Contact Us
+Coming soon...
 
-```sh
-cd Great_Wall/src/greatwall/
-python3 gui.py
-```
-> **_NOTE:_** The previously described method to run app is not the recommend
-one, but as we still in the development cycle this is the simplest way
-to get things ready :).
+We encourage and foster a welcoming and respectful community as we describe in our [code of conduct](./.github/CODE_OF_CONDUCT.md). This is our Pledge to anyone need to be one of our community.
 
-### Using in Beta
-Coming soon. An advanced, knowledgeable, tech-savvy reader, will, at this point, have understood what is to come and can improvise the steps by themselves. In a nutshell, all you have to do is to securely manage[^1] a brute-force resistant `SA0`, true-randomly generate a path vector of `L_i`'s, and memorize them procedurally as explained in the session above. For better effect, user can implement non-trivial **T**ime-**L**ock **P**uzzle, to impose desired time on derivation of `SA3` from `SA0`. To prevent leakage of critical content through Anki, a simple scheme with salt and pepper can be done so to avoid the need to modify Anki, but we'll leave this for a next time.
 
-[^1]: That is, either memorize it, or deterministically derive it from other brute-force resistant secret information, or symmetrically encrypt it with a master key falling back in one of 2 previous cases and manage well the encrypted database.
+<!-- Contributing -->
+## Contributing
+If you'd like to contribute to GreatWall development, please read first our [contributing guide](./.github/CONTRIBUTING.md).
 
-## Running Tests
-
-To execute unit tests for the project, you can utilize the following command from the root directory:
-
-```bash
-python -m unittest discover -s src/greatwall -p "test_*.py"
-```
-This command uses Python's built-in unittest module to automatically discover and run all unit tests within the specified directory (src/greatwall/) matching the pattern test_*.py.
-
-Make sure to run this command after setting up your environment and dependencies, ensuring that the project is properly configured for testing. Upon execution, the command will locate all test files matching the specified pattern and execute the tests contained within them, providing feedback on the success or failure of each test case.
-
-#### Running Tests in PyCharm
-Right-click anywhere within the test file or on the specific test method you want to run.
-From the context menu, select "Run 'python test in test_gui'"
-PyCharm will execute the selected tests and display the results in the test runner window.
-
-#### Running Tests in Visual Studio Code
-Click on the "Run Test" icon that appears next to the test method you want to run, 
-or press Ctrl+Shift+P (Cmd+Shift+P on macOS) to open the command palette and then select "Python: Run All Tests".
-Visual Studio Code will execute the selected tests and display the results in the integrated test runner.
+If you experience problems with GreatWall, you can contribute by [log them on GitHub](https://github.com/Yuri-SVB/Great_Wall/issues). If you want to contribute in code, please fork the code and submit a [pull request](https://github.com/Yuri-SVB/Great_Wall/pulls) in new branch.
