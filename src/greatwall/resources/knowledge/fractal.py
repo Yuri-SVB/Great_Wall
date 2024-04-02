@@ -22,7 +22,8 @@ class Fractal:
         x_max=None,
         y_min=None,
         y_max=None,
-        p_param=None,
+        real_p=None,
+        imag_p=None,
         width=None,
         height=None,
         escape_radius=None,
@@ -33,7 +34,8 @@ class Fractal:
         self.x_max: Optional[float] = x_max
         self.y_min: Optional[float] = y_min
         self.y_max: Optional[float] = y_max
-        self.p_param: Optional[float] = p_param
+        self.real_p: Optional[float] = real_p
+        self.imag_p: Optional[float] = imag_p
         self.width: Optional[int] = width
         self.height: Optional[int] = height
         self.escape_radius: Optional[int] = escape_radius
@@ -41,12 +43,17 @@ class Fractal:
 
         self._image_pixels: Optional[np.array] = None
 
-    def get_valid_parameter_from_value(self, value: Union[bytes, bytearray]):
-        parameter = "2."
-        for byte_value in list(value)[:4]:
-            parameter += str(byte_value)
+    def get_valid_real_p_from(self, value: Union[bytes, bytearray]):
+        # NOTE: We inverting the order of digits by operation [::-1] on string,
+        # to minimize Benford's law bias.
+        real_p = "2." + str(int.from_bytes(value, "big"))[::-1]
+        return float(real_p)
 
-        return float(parameter)
+    def get_valid_imag_p_from(self, value: Union[bytes, bytearray]):
+        # NOTE: We inverting the order of digits by operation [::-1] on string,
+        # to minimize Benford's law bias.
+        imag_p = "0." + str(int.from_bytes(value, "big"))[::-1]
+        return float(imag_p)
 
     @property
     def image_pixels(self):
@@ -63,7 +70,8 @@ class Fractal:
         x_max=None,
         y_min=None,
         y_max=None,
-        p_param=None,
+        real_p=None,
+        imag_p=None,
         width=None,
         height=None,
         escape_radius=None,
@@ -73,7 +81,8 @@ class Fractal:
         self.x_max = x_max
         self.y_min = y_min
         self.y_max = y_max
-        self.p_param = p_param
+        self.real_p = real_p
+        self.imag_p = imag_p
         self.width = width
         self.height = height
         self.escape_radius = escape_radius
@@ -110,7 +119,8 @@ class Fractal:
         x_max=2.0,
         y_min=-2,
         y_max=0.8,
-        p_param=2.0,
+        real_p=2.0,
+        imag_p=0.0,
         width=1024,
         height=1024,
         escape_radius=4,
@@ -120,7 +130,8 @@ class Fractal:
         x_max = x_max if self.x_max is None else self.x_max
         y_min = y_min if self.y_min is None else self.y_min
         y_max = y_max if self.y_max is None else self.y_max
-        p_param = p_param if self.p_param is None else self.p_param
+        real_p = real_p if self.real_p is None else self.real_p
+        imag_p = imag_p if self.imag_p is None else self.imag_p
         width = width if self.width is None else self.width
         height = height if self.height is None else self.height
         escape_radius = escape_radius if self.escape_radius is None else self.escape_radius
@@ -138,7 +149,8 @@ class Fractal:
                     if abs(z) > escape_radius:
                         pixels[i, j] = self._smooth_stability(z, escape_count, max_iters)
                         break
-                    z = (abs(z.real) + (1j * abs(z.imag))) ** p_param + c
+                    exponent = complex(real_p, imag_p)
+                    z = (abs(z.real) + (1j * abs(z.imag))) ** exponent + c
                 else:
                     pixels[i, j] = 1
         return pixels
@@ -149,7 +161,8 @@ class Fractal:
         x_max=1,
         y_min=-1.2,
         y_max=1.2,
-        p_param=2.0,
+        real_p=2.0,
+        imag_p=0.0,
         width=1024,
         height=1024,
         escape_radius=4,
@@ -159,7 +172,8 @@ class Fractal:
         x_max = x_max if self.x_max is None else self.x_max
         y_min = y_min if self.y_min is None else self.y_min
         y_max = y_max if self.y_max is None else self.y_max
-        p_param = p_param if self.p_param is None else self.p_param
+        real_p = real_p if self.real_p is None else self.real_p
+        imag_p = imag_p if self.imag_p is None else self.imag_p
         width = width if self.width is None else self.width
         height = height if self.height is None else self.height
         escape_radius = escape_radius if self.escape_radius is None else self.escape_radius
@@ -177,7 +191,7 @@ class Fractal:
                     if abs(z) > escape_radius:
                         pixels[i, j] = self._smooth_stability(z, escape_count, max_iters)
                         break
-                    z = z**p_param + c
+                    z = z ** complex(real_p, imag_p) + c
                 else:
                     pixels[i, j] = 1
         return pixels

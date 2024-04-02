@@ -891,10 +891,13 @@ class GreatWallGui(QMainWindow):
         self.input_confirmation_next_navigation_button.setText("Next")
 
     def config_selecting_derivation_widgets_layout(self):
-        # Remove previously added selection options to selecting derivation layout
+        # NOTE: We removing previously added selection options from selecting
+        # derivation layout so they doesn't interfere if we navigate
+        # through levels.
         for idx in reversed(range(self.selecting_derivation_options_layout.count())):
             widget = self.selecting_derivation_options_layout.takeAt(idx).widget()
             if widget is not None:
+                # WARNING: To remove element, it should be of type `QWidget`.
                 widget.deleteLater()
         self.selecting_derivation_options_widgets_list.clear()
 
@@ -956,7 +959,8 @@ class GreatWallGui(QMainWindow):
                     )
                 )
 
-            # WARNING: We added the flow layout to QWidget to be able to remove it later
+            # WARNING: We are adding the `FlowLayout` to `QWidget`
+            # to be able to remove it later.
             flow_widget.setLayout(flow_layout)
 
             scroll_area.setWidgetResizable(True)
@@ -989,7 +993,8 @@ class GreatWallGui(QMainWindow):
 
                 self.selecting_derivation_options_widgets_list.append(selection_button)
 
-            # WARNING: We added the flow layout to QWidget to be able to remove it later
+            # WARNING: We are adding the `FlowLayout` to `QWidget`
+            # to be able to remove it later.
             flow_widget.setLayout(flow_layout)
 
             scroll_area.setWidgetResizable(True)
@@ -1287,7 +1292,10 @@ class GreatWallGui(QMainWindow):
             if self.tacit_knowledge_combobox.currentText() == constants.FRACTAL:
                 formated_fractal = self.greatwall.fractal.update(
                     func_type=self.greatwall.fractal.func_type,
-                    p_param=self.greatwall.fractal.get_valid_parameter_from_value(
+                    real_p=self.greatwall.fractal.get_valid_real_p_from(
+                        self.greatwall_finish_result
+                    ),
+                    imag_p=self.greatwall.fractal.get_valid_imag_p_from(
                         self.greatwall_finish_result
                     ),
                 )
