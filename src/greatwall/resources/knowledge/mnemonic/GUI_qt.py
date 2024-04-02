@@ -559,8 +559,10 @@ class TableSelectorTab(BaseTab):
         self.reset_button.clicked.connect(self.reset_selection)
         valid_message = "Selected phrase\nso far is compatible"
         self.sel_valid_phrase_label.setText(valid_message)
+        
+        #Sets a border with the widht of 1 pixel for this label
         self.sel_valid_phrase_label.setStyleSheet(
-            "background-color: " + self.check_color
+            "background-color: " + self.check_color + " ;" + " border: 1px solid gray;"
         )
         warning_message = "Very careful\nwith prying eyes"
         self.warning_label.setText('<font color="red"> ' + warning_message + "</font>")
@@ -938,6 +940,8 @@ class TableSelectorTab(BaseTab):
                             col_init + 1 + column,
                         )
                         word_widget.setAlignment(Qt.AlignLeft)
+                        #Sets a border with the widht of 1 pixel for this label
+                        word_widget.setStyleSheet("border: 1px solid gray;")
                         word_widget.show()
 
     def keyReleaseEvent(self, event: "QKeyEvent"):

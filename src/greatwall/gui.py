@@ -41,7 +41,6 @@ from resources import constants
 from resources.colormaps import color_palettes
 from resources.greatwall import GreatWall
 
-
 class GreatWallThread(QThread):
     """Great Wall thread class to perform the time-consuming great wall task."""
 
@@ -249,7 +248,7 @@ class ImageViewer(QGraphicsView):
         width, height = numpy_2darray.shape
 
         self._qimage = QImage(numpy_2darray.data, width, height, QImage.Format_Indexed8)
-        self._qimage.setColorTable(colormap)
+        self._qimage.setColorTable(colormap) 
 
         return self._qimage
 
@@ -312,7 +311,6 @@ class GreatWallGui(QMainWindow):
         self.transitions_list: list[QSignalTransition] = []
 
         self.greatwall = GreatWall()
-
         self.stacked = QStackedWidget()
         self.setCentralWidget(self.stacked)
 
@@ -336,6 +334,24 @@ class GreatWallGui(QMainWindow):
 
         self.error_view = self.init_error_view()
         self.stacked.addWidget(self.error_view)
+        
+        #Configures a box and fills it with the given color 
+        self.setStyleSheet( 
+            """
+            QGroupBox { 
+                background-color: #81B29A; 
+                border: 2px solid #cccccc; 
+                border-radius: 5px; 
+                padding: 10px; 
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                subcontrol-position: top left; 
+                left: 10px; 
+                padding: 0 3px; 
+            }
+            """
+        )
 
         # Launch UI
         self.main_states_list: list[QState] = []
@@ -344,6 +360,7 @@ class GreatWallGui(QMainWindow):
         self.main_derivation_state = QStateMachine()
         self.selecting_derivation_states_list: list[QState] = []
         self.init_main_app_state()
+        
 
     def eventFilter(self, obj, event):
         if event.type() == QEvent.Wheel:
@@ -372,7 +389,7 @@ class GreatWallGui(QMainWindow):
         self.fractal_function_combobox = QComboBox(self)
         self.fractal_function_combobox.addItems(constants.FRACTAL_FUNCTIONS)
         self.fractal_function_combobox.setCurrentText(constants.FRACTAL_FUNCTIONS[0])
-
+        
         self.fractal_colormap_label = QLabel("Fractal colormap", self)
         self.fractal_colormap_combobox = QComboBox(self)
         self.fractal_colormap_combobox.addItems(constants.AVAILABLE_COLOR_PALETTES)
@@ -393,7 +410,7 @@ class GreatWallGui(QMainWindow):
         self.depth_spinbox = QSpinBox(self)
         self.config_spinbox(self.depth_spinbox, 1, 256, 1, 1)
 
-        self.arity_label = QLabel("Choose tree arity from 2 to 256", self)
+        self.arity_label = QLabel("Choose tree arity from 2 to 256", self) 
         self.arity_spinbox = QSpinBox(self)
         self.config_spinbox(self.arity_spinbox, 1, 256, 1, 2)
 
@@ -401,9 +418,9 @@ class GreatWallGui(QMainWindow):
         self.password_text = QTextEdit(self)
 
         # Hardcode to fast tests
-        # self.password_text.setText(
-        #     "viboniboasmofiasbrchsprorirerugugucavehistmiinciwibowifltuor"
-        # )
+        self.password_text.setText(
+            "viboniboasmofiasbrchsprorirerugugucavehistmiinciwibowifltuor"
+        )
 
         # Lists of input widgets
         self.input_state_widgets_list = [
@@ -869,24 +886,49 @@ class GreatWallGui(QMainWindow):
 
     def config_input_confirmation_widgets(self):
         self.input_confirmation_label.setText("Confirm your values")
+        
+        #Creates a border with the width of 1 pixel for this label
+        self.input_confirmation_label.setStyleSheet("border: 1px solid white")
+        
+        #Creates a border with the width of 1 pixel for this label
         self.input_confirmation_tacit_knowledge_type_label.setText(
             "Tacit knowledge type\n" + self.tacit_knowledge_combobox.currentText()
         )
+        self.input_confirmation_tacit_knowledge_type_label.setStyleSheet("border: 1px solid white; background-color: #A9D6E5") 
+        
         self.input_confirmation_theme_label.setText(
             "Theme\n" + str(self.theme_combobox.currentText())
         )
+        
+        #Creates a border with the width of 1 pixel for this label
+        self.input_confirmation_theme_label.setStyleSheet("border: 1px solid white; background-color: #A9D6E5;") 
+        
         self.input_confirmation_tlp_label.setText(
             "TLP parameter\n" + str(self.tlp_spinbox.value())
         )
+        
+        #Creates a border with the width of 1 pixel for this label
+        self.input_confirmation_tlp_label.setStyleSheet("border: 1px solid white; background-color: #A9D6E5;")
+        
         self.input_confirmation_depth_label.setText(
             "Tree depth\n" + str(self.depth_spinbox.value())
         )
+        
+       #Creates a border with the width of 1 pixel for this label
+        self.input_confirmation_depth_label.setStyleSheet("border: 1px solid white; background-color: #A9D6E5;")
+        
         self.input_confirmation_arity_label.setText(
             "Tree arity\n" + str(self.arity_spinbox.value())
         )
+        
+        #Creates a border with the width of 1 pixel for this label
+        self.input_confirmation_arity_label.setStyleSheet("border: 1px solid white; background-color: #A9D6E5;") 
+        
         self.input_confirmation_password_label.setText(
             "Time-Lock Puzzle password\n" + self.password_text.toPlainText()
         )
+        self.input_confirmation_password_label.setStyleSheet("border: 1px solid white; background-color: #A9D6E5;") 
+        
         self.input_confirmation_back_navigation_button.setText("Back")
         self.input_confirmation_next_navigation_button.setText("Next")
 
