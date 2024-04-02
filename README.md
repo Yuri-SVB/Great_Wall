@@ -11,9 +11,8 @@
     <a href="LICENSE"><img alt="Software License" src="https://img.shields.io/badge/License-MIT-brightgreen.svg?style=flat-square&logo=appveyor"></a>
     <a href="docs/"><img alt="docs" src="https://img.shields.io/badge/Docs-read%20docs-brightgreen.svg?style=flat-square&logo=appveyor"></a>
     <a href="https://www.python.org/"><img alt="python3" src="https://img.shields.io/badge/Python-8+-brightgreen.svg?style=flat-square&logo=appveyor"></a>
-    <a href=""><img alt="Maintainer" src="https://img.shields.io/badge/Maintainer-Yuri_S_Villas_Boas-bridghtgreen.svg?style=flat-square&logo=appveyor"></a>
+    <a href=""><img alt="Maintainer" src="https://img.shields.io/badge/Maintainer-Yuri_S_Villas_Boas-brightgreen.svg?style=flat-square&logo=appveyor"></a>
   </p>
-</p>
 
 
 <!-- TABLE OF CONTENTS -->
@@ -51,7 +50,7 @@ The following steps will allow an easy memorization of the path demonstrated in 
 
 <!-- About -->
 ## Getting Started
-This section will provide you by a quick guide to start.
+This section will provide you a quick guide to start.
 
 ### Dependencies
 This project depends on the following packages:

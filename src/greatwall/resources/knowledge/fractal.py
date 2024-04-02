@@ -8,10 +8,10 @@ from .. import constants
 
 class Fractal:
     """
-    The class that implement different type of fractal functions.
+    The class that implements different types of fractal functions.
 
     Ref:
-        This implementation took inspiration from the following link:
+        This implementation is inspired by the following link:
             https://realpython.com/mandelbrot-set-python/
     """
 
@@ -96,8 +96,8 @@ class Fractal:
             using a smoothing logarithms formula.
 
         Args:
-            z (complex): The complex number that produced the excape count.
-            escape_count (int): The escapt count that needs to be smoothed.
+            z (complex): The complex number that produced the escape count.
+            escape_count (int): The escape count that needs to be smoothed.
             max_iters (int): The maximum number of iterations.
         """
         smooth_value = escape_count + 1 - math.log(math.log(abs(z))) / math.log(2)

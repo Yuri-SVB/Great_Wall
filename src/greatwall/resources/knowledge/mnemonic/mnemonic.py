@@ -83,7 +83,7 @@ class ThemeDict(dict):
     def __setitem__(self, key, value):
         """
         Overloads __setitem__ from dict to set ThemeDict type when the set item is a dict
-        Work as dict.__setitem__ in all other ways
+        Works as dict.__setitem__ in all other ways
         """
         (
             dict.__setitem__(self, key, ThemeDict(value))
@@ -409,7 +409,7 @@ class ThemeDict(dict):
         Parameters
         ----------
         sentence : Union[str, list]
-            The words to be searched, must be a complete sentence
+            The words to be searched. They must be a complete sentence
 
         Returns
         -------
@@ -789,7 +789,7 @@ class Mnemonic(object):
             error_message = "The number of words must be a multiple of %d, but it is %d"
             raise ValueError(error_message % (phrase_size, words_size))
 
-        # Look up all the words in the list and construct the
+        # Looks up all the words in the list and construct the
         # concatenation of the original entropy and the checksum.
 
         # Determining strength of the password
@@ -954,7 +954,7 @@ class Mnemonic(object):
                 return matches[0]
             else:
                 # exact match not found.
-                # this is not a validation routine, just return the input
+                # this is not a validation routine, just returns the input
                 return prefix
 
     def expand(self, mnemonic: Union[str, list[str]]) -> str:

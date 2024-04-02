@@ -16,7 +16,7 @@ As of the moment for writing, the *still* relatively small *(but ever more rapid
     - **Denial of Easy Access**', as in:
       *I do have Bitcoin, but, in order to access it, we would have to first go to that difficult-to-get-address where a certain hardware containing a secret key is located, and / or have to authenticate myself to trusted third parties and prove beyond reasonable doubt I'm not under coercion* --- When that is actually false;
 Finally, there is the following non-passive defense which is, nevertheless obscure:
-5. **Obscurely Cancellable Transaction**: Consists of having a transaction be time-locked, and, before maturity, possible to be reversed. Victim pretends to cooperate with adversary, and, upon release from adversary's custody enacts abortion of transaction done under coercion.
+5. **Obscurely Cancellable Transaction**: Consists of having a transaction be time-locked, and, before maturity, possible to be reversed. Victim pretends to cooperate with adversary, and, upon release from adversary's custody, enacts abortion of the transaction done under coercion.
 
 Every case from items 1 to 3 above is but circumstantially true, due only to either insufficient spread of adoption of Bitcoin or insufficient diffusion of knowledge about Bitcoin itself or about techniques and practices to secure it or ignorance by the adversary about the methods in use. Said shortly:
 
@@ -63,7 +63,7 @@ Without further ado, let's dive into this protocol:
 
 ## TKBA --- The Logical Property to Seek:
 
-Our proposed protocol has two main components: the first stems from the premise also adopted by existing solutions (some even previously mentioned) that *imposing a requirement of time to the adversary's coercion reders it much harder and riskier for them.* To that end, we resort to the long consacrated and [ever evolving](https://eprint.iacr.org/2019/635.pdf) concept [firstly introduced by Rivest, Shamir and Wagner of **T**ime-**L**ock **P**uzzles](https://people.csail.mit.edu/rivest/pubs/RSW96.pdf).
+Our proposed protocol has two main components: the first stems from the premise also adopted by existing solutions (some even previously mentioned) that *imposing a requirement of time to the adversary's coercion reders it much harder and riskier for them.* To that end, we resort to the long consecrated and [ever evolving](https://eprint.iacr.org/2019/635.pdf) concept [firstly introduced by Rivest, Shamir and Wagner of **T**ime-**L**ock **P**uzzles](https://people.csail.mit.edu/rivest/pubs/RSW96.pdf).
 
 The second main component is **T**acit **K**nowlege-**B**ased **A**uthentication. As the name indicates, it's a scheme to encode an *authenticating* piece of information that end user is able to memorize (aka *know*) but is nevertheless unable to express (hence *[tacit](https://en.wikipedia.org/wiki/Tacit_knowledge)*). There are abundant ways to achieve that and the recent surge of development of AI-based image synthesis definitely makes the claim even easier: any comparative nuances in images or sounds that are evident enough to perceive and memorize but subtle enough to accurately describe in words would work as *Tacit Authenticating Knowledge*.
 
@@ -80,11 +80,11 @@ Much like Bitcoin itself Great Wall is an original recombination of preexisting 
 7. Take user's choice of palette's item, map it into bits, append it into state;
 8. Hash current state into next one;
 9. If target number of iterations have been performed, terminate loop; else go back to step 6;
-10. Deterministically derive KA from state.
+10. Deterministically derive KA from the state.
 
 ## Monetization
 
-The simplest monetization venue is given by the TLP and is given the following nuanced fact in which these puzzles are based:
+The simplest monetization venue is given by the TLP, and is given the following nuanced fact in which these puzzles are based:
 
 > *Due to hard constraints directly consequence of physics (...), a disproportionately higher investment in hardware can but marginally improve performance in serial, memory-hard computation when compared to ordinary hardware.*
 
@@ -112,8 +112,8 @@ In summary:
    
    e. Alternatively to the anonymity defense described in previous item, it could be possible to develop an homomorphic scheme that allows TLP solver to compute an encryption of SA2 without seeing SA2 proper, improving from anonymity to actual confidentiality;
    
-2. **Non-Obscurity** --- Understanding how the protocol works doesn't change how tacit knowledge from second phase of protocol is. By design, owner is still impeded from transmitting it to adversary; who, ...
-3. **Coercion-Resistance** --- ... unless able to keep their victim under coercion for the entire duration of the protocol, can, at most, obtain SA3 but not KA. Target number of loop iterations is set so that brute-force guessing derivation path is unfeasible;
+2. **Non-Obscurity** --- Understanding how the protocol works doesn't change how tacit knowledge from the second phase of the protocol is. By design, owner is still impeded from transmitting it to adversary; who, ...
+3. **Coercion-Resistance** --- ... unless able to keep their victim under coercion for the entire duration of the protocol, can, at most, obtain SA3 but not KA. Target number of loop iterations is set so that brute-force guessing the derivation path is unfeasible;
 4. **Devicelessness** --- All user has to keep is the **brain memory** of SA0 and Tacit Authenticating Knowledge;
 5. **No Unintended Negative Incentives** --- By design, there is no critical external device the adversary can threaten to destroy. Killing victim at any point offers adversary no advantage;
 6. **Monetization** --- Covered in previous section.
@@ -137,7 +137,7 @@ Below are further considerations worth mentioning:
    
 4. **Devices** --- Modifying the protocol to have it include devices that are critical for its execution would, as argued, undermine part of its properties, as previously explained, notedly:
 
-   a. **No Leverage to Attackers** --- An adversary could use threat of destruction of critical devices as a way to coerce victim into enacting formal legal property transfers that require lenghty intervention like vehicles or real-estate;
+   a. **No Leverage to Attackers** --- An adversary could use threat of destruction of critical devices as a way to coerce victim into enacting formal legal property transfers that require lengthy intervention like vehicles or real-estate;
 
    b. **Device Independence** --- Overall problems associated to PBA will then manifest, namely: risk of malfunctioning, loss or destruction of device. Availability and efficacy of protocol will, then, vary according to owner's geography in case device is separated from user;
 
@@ -151,7 +151,7 @@ b. **Avoid Forgetting** --- Have such device store SA0;
 
 5. **Lower-Hanging Fruits** --- Business analysis indicates that, as it usually is the case in a general context, though the lower-tier market (chronic inflation- and violence-afflicted third world populations) is much larger the higher-tier market (Bitcoin 'whales' and custodians of otherwise valuable corporate secrets) is more profitable, so should be prioritized by the first-movers. Speaking of which...
 
-6. **First-Mover Advantage** --- Newcoming users gain from adhering to the provider with largest consumer base because blending in a larger consumer base means higher anonymity. This translates to defense against business-replication through network-lock-in. In other words, likewise with social networks, the first given player to consolidate dominance in the market tends to keep it due to network effect. There a few ways to enhance that effect, but those will be left outside of the scope of this document for strategic reasons.
+6. **First-Mover Advantage** --- Newcoming users gain from adhering to the provider with largest consumer base because blending in a larger consumer base means higher anonymity. This translates to defense against business-replication through network-lock-in. In other words, likewise with social networks, the first given player to consolidate dominance in the market tends to keep it due to the network effect. There a few ways to enhance that effect, but those will be left outside of the scope of this document for strategic reasons.
 
 ## References
 
