@@ -117,8 +117,8 @@ class GreatWall:
     def init_state_hashes(self):
 
         # nothing to do if this derivation was already calculated
-        saved_index = self.history_path_to_index(self.saved_path)
-        saved_state = self.saved_states.get(saved_index)
+        saved_key = self.history_path_to_key(self.saved_path)
+        saved_state = self.saved_states.get(saved_key)
         if saved_state:
             self.state = saved_state
             return
@@ -248,8 +248,8 @@ class GreatWall:
         self.current_level += 1
 
         # nothing to do if this derivation was already calculated
-        saved_index = self.history_path_to_index(self.saved_path)
-        saved_state = self.saved_states.get(saved_index)
+        saved_key = self.history_path_to_key(self.saved_path)
+        saved_state = self.saved_states.get(saved_key)
         if saved_state:
             return
 
@@ -308,6 +308,12 @@ class GreatWall:
 
         return index
 
+    def history_path_to_key(self, path):
+
+        COMMA_SEPARATOR = ","
+        key = COMMA_SEPARATOR.join(map(str,path))
+        return key
+
     def history_step_back(self):
 
         if len(self.saved_path) == 0:
@@ -324,8 +330,8 @@ class GreatWall:
             return False
 
         # cannot move forward unless there a saved state to continue from
-        saved_index = self.history_path_to_index(self.saved_path)
-        saved_state = self.saved_states.get(saved_index)
+        saved_key = self.history_path_to_key(self.saved_path)
+        saved_state = self.saved_states.get(saved_key)
         if not saved_state:
             return False
 
@@ -334,13 +340,13 @@ class GreatWall:
 
     def history_state_save(self):
 
-        saved_index = self.history_path_to_index(self.saved_path)
-        self.saved_states[saved_index] = self.state
+        saved_key = self.history_path_to_key(self.saved_path)
+        self.saved_states[saved_key] = self.state
 
     def history_state_load(self):
 
-        saved_index = self.history_path_to_index(self.saved_path)
-        saved_state = self.saved_states.get(saved_index)
+        saved_key = self.history_path_to_key(self.saved_path)
+        saved_state = self.saved_states.get(saved_key)
         if not saved_state:
             return False
 
@@ -352,15 +358,15 @@ class GreatWall:
         if path is None:
             path = self.saved_path
 
-        saved_index = self.history_path_to_index(path)
-        self.saved_fractals[saved_index] = fractal
+        saved_key = self.history_path_to_key(path)
+        self.saved_fractals[saved_key] = fractal
 
     def history_fractal_load(self, path=None):
 
         if path is None:
             path = self.saved_path
 
-        saved_index = self.history_path_to_index(path)
-        saved_fractal = self.saved_fractals.get(saved_index)
+        saved_key = self.history_path_to_key(path)
+        saved_fractal = self.saved_fractals.get(saved_key)
         return saved_fractal
 
