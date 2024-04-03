@@ -15,7 +15,7 @@ def run_greatwall_cli():
         1,
         24 * 7 * 4 * 3,
     )
-    greatwall.set_tlp(cli.index_input_int)
+    greatwall.set_tlp_param(cli.index_input_int)
     # Topology of iterative derivation
     cli.prompt_integer(
         "Choose tree depth --- # of iterative procedural memory choices needed", 1, 256

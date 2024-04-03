@@ -385,9 +385,9 @@ class GreatWallGui(QMainWindow):
         self.theme_combobox.addItems(constants.FORMOSA_THEMES)
         self.theme_combobox.setCurrentText(constants.FORMOSA_THEMES[0])
 
-        self.tlp_label = QLabel("Choose TLP parameter from 1 to 2016", self)
-        self.tlp_spinbox = QSpinBox(self)
-        self.config_spinbox(self.tlp_spinbox, 1, 24 * 7 * 4 * 3, 1, 1)
+        self.tlp_param_label = QLabel("Choose TLP parameter from 1 to 2016", self)
+        self.tlp_param_spinbox = QSpinBox(self)
+        self.config_spinbox(self.tlp_param_spinbox, 1, 24 * 7 * 4 * 3, 1, 1)
 
         self.depth_label = QLabel("Choose tree depth from 1 to 256", self)
         self.depth_spinbox = QSpinBox(self)
@@ -415,8 +415,8 @@ class GreatWallGui(QMainWindow):
             self.fractal_colormap_combobox,
             self.theme_label,
             self.theme_combobox,
-            self.tlp_label,
-            self.tlp_spinbox,
+            self.tlp_param_label,
+            self.tlp_param_spinbox,
             self.depth_label,
             self.depth_spinbox,
             self.arity_label,
@@ -876,7 +876,7 @@ class GreatWallGui(QMainWindow):
             "Theme\n" + str(self.theme_combobox.currentText())
         )
         self.input_confirmation_tlp_label.setText(
-            "TLP parameter\n" + str(self.tlp_spinbox.value())
+            "TLP parameter\n" + str(self.tlp_param_spinbox.value())
         )
         self.input_confirmation_depth_label.setText(
             "Tree depth\n" + str(self.depth_spinbox.value())
@@ -1136,7 +1136,9 @@ class GreatWallGui(QMainWindow):
             self.greatwall.set_fractal_function_type(
                 self.fractal_function_combobox.currentText()
             )
-            self.greatwall.set_tlp(self.tlp_spinbox.value())
+            self.greatwall.set_tlp_param(
+                self.tlp_param_spinbox.value()
+            )
             self.greatwall.set_depth(self.depth_spinbox.value())
             self.greatwall.set_arity(self.arity_spinbox.value())
             password_success = self.greatwall.set_sa0(self.password_text.toPlainText())
