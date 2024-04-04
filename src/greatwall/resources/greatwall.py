@@ -51,6 +51,7 @@ class GreatWall:
             return False
 
     def set_fractal_function_type(self, func_type: str) -> None:
+        """Set the type of chosen fractal set."""
         self.fractal.func_type = func_type
 
     def set_tlp_param(self, iter_num: int):
@@ -132,10 +133,7 @@ class GreatWall:
         self.sa3 = self.state
 
     def update_with_long_hash(self):
-        """
-        Update self.level_hash with the hash of the previous self.level_hash
-            taking presumably a long time.
-        """
+        """ Update the state with the its hash taking presumably a long time."""
         for i in range(self.tlp_param):
             print("iteration #", i + 1, " of TLP:")
             self.state = low_level.hash_secret_raw(
@@ -149,10 +147,7 @@ class GreatWall:
             )
 
     def update_with_quick_hash(self):
-        """
-        Update self.level_hash with the hash of the previous self.level_hash
-            taking presumably a quick time.
-        """
+        """ Update the state with the its hash taking presumably a quick time."""
         self.state = low_level.hash_secret_raw(
             secret=self.state,
             salt=self.ARGON2_SALT,
@@ -168,7 +163,7 @@ class GreatWall:
         self.shuffled_arity_indxes = [arity_idx for arity_idx in range(self.tree_arity)]
         random.shuffle(self.shuffled_arity_indxes)
 
-    def get_tacit_knowledge_param_from(
+    def _get_tacit_knowledge_param_from(
         self, branch_idx: int, tacit_knowledge_param: Optional[str] = None
     ):
         branch_idx_bytes = branch_idx.to_bytes(length=4, byteorder="big")
@@ -205,10 +200,10 @@ class GreatWall:
             self.fractal.update(
                 func_type=self.fractal.func_type,
                 real_p=self.fractal.get_valid_real_p_from(
-                    self.get_tacit_knowledge_param_from(arity_idx, "real_p")
+                    self._get_tacit_knowledge_param_from(arity_idx, "real_p")
                 ),
                 imag_p=self.fractal.get_valid_imag_p_from(
-                    self.get_tacit_knowledge_param_from(arity_idx, "imag_p")
+                    self._get_tacit_knowledge_param_from(arity_idx, "imag_p")
                 ),
             )
             for arity_idx in self.shuffled_arity_indxes
@@ -221,7 +216,7 @@ class GreatWall:
     def get_li_str_query(self) -> str:
         self._shuffle_arity_indxes()
         shuffled_sentences = [
-            self.mnemo.to_mnemonic(self.get_tacit_knowledge_param_from(arity_idx))
+            self.mnemo.to_mnemonic(self._get_tacit_knowledge_param_from(arity_idx))
             for arity_idx in self.shuffled_arity_indxes
         ]
         listr = f"Choose 1, ..., {self.tree_arity} for level {self.current_level}"
@@ -234,7 +229,7 @@ class GreatWall:
         self._shuffle_arity_indxes()
         shuffled_shapes = [
             self.shaper.draw_regular_shape(
-                self.get_tacit_knowledge_param_from(arity_idx)
+                self._get_tacit_knowledge_param_from(arity_idx)
             )
             for arity_idx in self.shuffled_arity_indxes
         ]
