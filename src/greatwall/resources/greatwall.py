@@ -137,8 +137,9 @@ class GreatWall:
         self.update_with_quick_hash()
         self.sa3 = self.state
 
-    def _derivation_path_to_index(self, derivation_path):
-        pass
+    def _derivation_path_to_key(self, derivation_path):
+        key = " -> ".join(str(node) for node in derivation_path)
+        return key
 
     def update_with_long_hash(self):
         """ Update the state with the its hash taking presumably a long time."""
@@ -265,11 +266,13 @@ class GreatWall:
             self.current_level += 1
             self._derivation_path.append(chosen_input)
 
-            if self._derivation_path in self._saved_states.keys():
-                self.state = self._saved_states[self._derivation_path]
+            path = self._derivation_path_to_key(self._derivation_path)
+            if path in self._saved_states.keys():
+                self.state = self._saved_states[path]
             else:
                 self.state += bytes(self.shuffled_arity_indxes[chosen_input - 1])
                 self.update_with_quick_hash()
+                self._saved_states[path] = self.state
         else:
             self.return_level()
 
@@ -281,7 +284,8 @@ class GreatWall:
 
         self.current_level -= 1
         self._derivation_path.pop()
-        self.state = self._saved_states[self._derivation_path]
+        path = self._derivation_path_to_key(self._derivation_path)
+        self.state = self._saved_states[path]
 
     def cancel_execution(self):
         self.is_canceled = True
