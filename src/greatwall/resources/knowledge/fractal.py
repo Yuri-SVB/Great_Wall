@@ -3,7 +3,7 @@ from typing import Optional, Union
 
 import numpy as np
 
-from .. import constants
+from ..helpers import constants
 
 
 class Fractal:

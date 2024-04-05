@@ -8,6 +8,27 @@ from .knowledge.mnemonic.mnemonic import Mnemonic
 from .knowledge.shaper import Shaper
 
 
+class DerivationPath(list):
+    """A representation of the tree-like derivation key."""
+
+    def __contains__(self, item):
+        return item in " -> ".join(str(node) for node in self)
+
+    def __eq__(self, other):
+        return " -> ".join(str(node) for node in self) == other
+
+    def __hash__(self):
+        return hash(" -> ".join(str(node) for node in self))
+
+    def __str__(self):
+        if len(self) > 1:
+            return " -> ".join(str(node) for node in self)
+        elif len(self) == 1:
+            return "".join(str(node) for node in self)
+        else:
+            return ""
+
+
 class GreatWall:
     ARGON2_SALT: bytes = bytes("00000000000000000000000000000000", "utf-8")
     NUM_BYTES_FORM: int = 4
@@ -17,7 +38,7 @@ class GreatWall:
         self.is_canceled: bool = False
         self.is_initialized: bool = False
 
-        self._derivation_path: list = []
+        self._derivation_path: DerivationPath = DerivationPath()
         self._saved_states: dict = {}
         self._saved_fractals = {}
 
@@ -108,7 +129,7 @@ class GreatWall:
         self.state = self.sa0
         self.current_level = 0
 
-        self._derivation_path = []
+        self._derivation_path = DerivationPath()
         self._saved_states = {}
         self._saved_fractals = {}
 
@@ -139,16 +160,7 @@ class GreatWall:
         self.update_with_quick_hash()
         self.sa3 = self.state
 
-        path = self._derivation_path_to_key(self._derivation_path)
-        self._saved_states[path] = self.state
-
-    def _derivation_path_to_key(self, derivation_path):
-        if len(derivation_path) > 1:
-            return " -> ".join(str(node) for node in derivation_path)
-        elif len(derivation_path) == 1:
-            return "".join(str(node) for node in derivation_path)
-        else:
-            return ""
+        self._saved_states[self._derivation_path] = self.state
 
     def update_with_long_hash(self):
         """ Update the state with the its hash taking presumably a long time."""
@@ -214,9 +226,8 @@ class GreatWall:
         return next_state_candidate[0 : self.NUM_BYTES_FORM]
 
     def get_fractal_query(self) -> list:
-        path = self._derivation_path_to_key(self._derivation_path)
-        if path in self._saved_fractals:
-            return self._saved_fractals[path]
+        if self._derivation_path in self._saved_fractals:
+            return self._saved_fractals[self._derivation_path]
         else:
             self._shuffle_arity_indxes()
             shuffled_fractals = [
@@ -234,7 +245,7 @@ class GreatWall:
             listr = f"Choose 1, ..., {self.tree_arity} for level {self.current_level}"
             listr += f"{'' if not self.current_level else ', choose 0 to go back'}\n"
             shuffled_fractals = [listr] + shuffled_fractals
-            self._saved_fractals[path] = shuffled_fractals
+            self._saved_fractals[self._derivation_path] = shuffled_fractals
             return shuffled_fractals
 
     def get_li_str_query(self) -> str:
@@ -279,16 +290,17 @@ class GreatWall:
         if chosen_input > 0:
             self.current_level += 1
             self._derivation_path.append(chosen_input)
+            print(list(self._saved_states.keys()), self._derivation_path)
 
-            path = self._derivation_path_to_key(self._derivation_path)
-            if path in self._saved_states:
-                self.state = self._saved_states[path]
+            if self._derivation_path in self._saved_states.keys():
+                self.state = self._saved_states[self._derivation_path]
             else:
                 self.state += bytes(self.shuffled_arity_indxes[chosen_input - 1])
                 self.update_with_quick_hash()
-                self._saved_states[path] = self.state
+                self._saved_states[self._derivation_path] = self.state
         else:
             self.return_level()
+            print(self._derivation_path)
 
     def return_level(self):
         if not self.current_level:
@@ -299,8 +311,7 @@ class GreatWall:
         self.current_level -= 1
         self._derivation_path.pop()
 
-        path = self._derivation_path_to_key(self._derivation_path)
-        self.state = self._saved_states[path]
+        self.state = self._saved_states[self._derivation_path]
 
     def cancel_execution(self):
         self.is_canceled = True
