@@ -13,9 +13,12 @@ class GreatWall:
     NUM_BYTES_FORM: int = 4
 
     def __init__(self):
-        self.is_finished = False
-        self.is_canceled = False
-        self.is_initialized = False
+        self.is_finished: bool = False
+        self.is_canceled: bool = False
+        self.is_initialized: bool = False
+
+        self._derivation_path: list = []
+        self._saved_states: dict = {}
 
         # Palettes
         self.mnemo: Optional[Mnemonic] = None
@@ -37,7 +40,6 @@ class GreatWall:
         self.sa3: bytes = self.sa0
 
         self.state: bytes = self.sa0
-        self.protocol_states = [bytes.fromhex("00")] * self.tree_depth
 
         self.current_level: int = 0
         self.shuffled_arity_indxes: list[int] = []
@@ -105,6 +107,9 @@ class GreatWall:
         self.state = self.sa0
         self.current_level = 0
 
+        self._derivation_path = []
+        self._saved_states = {}
+
         # Actual work
         self.time_intensive_derivation()
         self.is_initialized = True
@@ -131,6 +136,9 @@ class GreatWall:
         print("Deriving SA2 -> SA3")
         self.update_with_quick_hash()
         self.sa3 = self.state
+
+    def _derivation_path_to_index(self, derivation_path):
+        pass
 
     def update_with_long_hash(self):
         """ Update the state with the its hash taking presumably a long time."""
@@ -166,6 +174,7 @@ class GreatWall:
     def _get_tacit_knowledge_param_from(
         self, branch_idx: int, tacit_knowledge_param: Optional[str] = None
     ):
+        """Get a valid tacit knowledge param from provided arguments."""
         branch_idx_bytes = branch_idx.to_bytes(length=4, byteorder="big")
 
         # jth candidate L_(i+1), the state resulting from appending bytes of j
@@ -244,11 +253,23 @@ class GreatWall:
         return self.state
 
     def derive_from_user_choice(self, chosen_input: int):
-        if chosen_input:
-            self.protocol_states[self.current_level] = self.state
-            self.state += bytes(self.shuffled_arity_indxes[chosen_input - 1])
-            self.update_with_quick_hash()
+        """Drive the protocol state depending on the user choice.
+
+        Args:
+            chosen_input (int): The index of the user choice; If this argument
+                is 0, this method will go back one level. If this argument is
+                greater than 0, this method will update the state depending on
+                this choice.
+        """
+        if chosen_input > 0:
             self.current_level += 1
+            self._derivation_path.append(chosen_input)
+
+            if self._derivation_path in self._saved_states.keys():
+                self.state = self._saved_states[self._derivation_path]
+            else:
+                self.state += bytes(self.shuffled_arity_indxes[chosen_input - 1])
+                self.update_with_quick_hash()
         else:
             self.return_level()
 
@@ -257,8 +278,10 @@ class GreatWall:
             return
         if self.is_finished:
             self.is_finished = False
+
         self.current_level -= 1
-        self.state = self.protocol_states[self.current_level]
+        self._derivation_path.pop()
+        self.state = self._saved_states[self._derivation_path]
 
     def cancel_execution(self):
         self.is_canceled = True
