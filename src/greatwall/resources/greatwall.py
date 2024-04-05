@@ -2,13 +2,16 @@ import random
 from typing import Optional
 
 from argon2 import low_level
+from fs.memoryfs import MemoryFS
 
 from .knowledge.fractal import Fractal
 from .knowledge.mnemonic.mnemonic import Mnemonic
 from .knowledge.shaper import Shaper
 
-
 class GreatWall:
+
+    EXTENSION_FRACTAL = '.fractal.bin'
+
     def __init__(self, tacit_knowledge_type: str = "Formosa"):
 
         self.tacit_knowledge_type = tacit_knowledge_type.lower()
@@ -48,6 +51,9 @@ class GreatWall:
         self.state: bytes = self.sa0
         self.shuffled_bytes: bytes = self.sa0  # dummy initialization
         self.current_level: int = 0
+
+        # file system based in volatile memory (RAM)
+        self.memory_file_system = MemoryFS()
 
     def cancel_execution(self):
         self.is_canceled = True
@@ -234,3 +240,23 @@ class GreatWall:
             self.is_finished = False
         self.current_level -= 1
         self.state = self.protocol_states[self.current_level]
+
+    def memory_file_system_data_load(self, name):
+
+        try:
+            virtual_file = self.memory_file_system.openbin(name, 'r')
+            data = virtual_file.read()
+            return data
+        except Exception:
+            return None
+
+    def memory_file_system_data_name(self, key, extension):
+
+        name = f'{ key }{ extension }'
+        return name
+
+    def memory_file_system_data_save(self, name, data):
+
+        virtual_file = self.memory_file_system.openbin(name, 'w')
+        virtual_file.write(data)
+        virtual_file.close()
