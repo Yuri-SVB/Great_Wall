@@ -19,6 +19,7 @@ class GreatWall:
 
         self._derivation_path: list = []
         self._saved_states: dict = {}
+        self._saved_fractals = {}
 
         # Palettes
         self.mnemo: Optional[Mnemonic] = None
@@ -109,6 +110,7 @@ class GreatWall:
 
         self._derivation_path = []
         self._saved_states = {}
+        self._saved_fractals = {}
 
         # Actual work
         self.time_intensive_derivation()
@@ -137,9 +139,16 @@ class GreatWall:
         self.update_with_quick_hash()
         self.sa3 = self.state
 
+        path = self._derivation_path_to_key(self._derivation_path)
+        self._saved_states[path] = self.state
+
     def _derivation_path_to_key(self, derivation_path):
-        key = " -> ".join(str(node) for node in derivation_path)
-        return key
+        if len(derivation_path) > 1:
+            return " -> ".join(str(node) for node in derivation_path)
+        elif len(derivation_path) == 1:
+            return "".join(str(node) for node in derivation_path)
+        else:
+            return ""
 
     def update_with_long_hash(self):
         """ Update the state with the its hash taking presumably a long time."""
@@ -205,23 +214,28 @@ class GreatWall:
         return next_state_candidate[0 : self.NUM_BYTES_FORM]
 
     def get_fractal_query(self) -> list:
-        self._shuffle_arity_indxes()
-        shuffled_fractals = [
-            self.fractal.update(
-                func_type=self.fractal.func_type,
-                real_p=self.fractal.get_valid_real_p_from(
-                    self._get_tacit_knowledge_param_from(arity_idx, "real_p")
-                ),
-                imag_p=self.fractal.get_valid_imag_p_from(
-                    self._get_tacit_knowledge_param_from(arity_idx, "imag_p")
-                ),
-            )
-            for arity_idx in self.shuffled_arity_indxes
-        ]
-        listr = f"Choose 1, ..., {self.tree_arity} for level {self.current_level}"
-        listr += f"{'' if not self.current_level else ', choose 0 to go back'}\n"
-        shuffled_fractals = [listr] + shuffled_fractals
-        return shuffled_fractals
+        path = self._derivation_path_to_key(self._derivation_path)
+        if path in self._saved_fractals:
+            return self._saved_fractals[path]
+        else:
+            self._shuffle_arity_indxes()
+            shuffled_fractals = [
+                self.fractal.update(
+                    func_type=self.fractal.func_type,
+                    real_p=self.fractal.get_valid_real_p_from(
+                        self._get_tacit_knowledge_param_from(arity_idx, "real_p")
+                    ),
+                    imag_p=self.fractal.get_valid_imag_p_from(
+                        self._get_tacit_knowledge_param_from(arity_idx, "imag_p")
+                    ),
+                )
+                for arity_idx in self.shuffled_arity_indxes
+            ]
+            listr = f"Choose 1, ..., {self.tree_arity} for level {self.current_level}"
+            listr += f"{'' if not self.current_level else ', choose 0 to go back'}\n"
+            shuffled_fractals = [listr] + shuffled_fractals
+            self._saved_fractals[path] = shuffled_fractals
+            return shuffled_fractals
 
     def get_li_str_query(self) -> str:
         self._shuffle_arity_indxes()
@@ -267,7 +281,7 @@ class GreatWall:
             self._derivation_path.append(chosen_input)
 
             path = self._derivation_path_to_key(self._derivation_path)
-            if path in self._saved_states.keys():
+            if path in self._saved_states:
                 self.state = self._saved_states[path]
             else:
                 self.state += bytes(self.shuffled_arity_indxes[chosen_input - 1])
@@ -284,6 +298,7 @@ class GreatWall:
 
         self.current_level -= 1
         self._derivation_path.pop()
+
         path = self._derivation_path_to_key(self._derivation_path)
         self.state = self._saved_states[path]
 
