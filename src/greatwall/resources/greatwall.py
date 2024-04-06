@@ -12,9 +12,9 @@ class DerivationPath(list):
     """A representation of the tree-like derivation key."""
 
     def copy(self):
-        newone = type(self)()
-        newone.extend(self)
-        return newone
+        """Create a shallow copy of the path"""
+        new_instance = DerivationPath(self)
+        return new_instance
 
     def __contains__(self, item):
         return item in " -> ".join(str(node) for node in self)
