@@ -11,6 +11,11 @@ from .knowledge.shaper import Shaper
 class DerivationPath(list):
     """A representation of the tree-like derivation key."""
 
+    def copy(self):
+        newone = type(self)()
+        newone.extend(self)
+        return newone
+
     def __contains__(self, item):
         return item in " -> ".join(str(node) for node in self)
 
@@ -160,7 +165,7 @@ class GreatWall:
         self.update_with_quick_hash()
         self.sa3 = self.state
 
-        self._saved_states[self._derivation_path] = self.state
+        self._saved_states[self._derivation_path.copy()] = self.state
 
     def update_with_long_hash(self):
         """ Update the state with the its hash taking presumably a long time."""
@@ -245,7 +250,7 @@ class GreatWall:
             listr = f"Choose 1, ..., {self.tree_arity} for level {self.current_level}"
             listr += f"{'' if not self.current_level else ', choose 0 to go back'}\n"
             shuffled_fractals = [listr] + shuffled_fractals
-            self._saved_fractals[self._derivation_path] = shuffled_fractals
+            self._saved_fractals[self._derivation_path.copy()] = shuffled_fractals
             return shuffled_fractals
 
     def get_li_str_query(self) -> str:
@@ -290,17 +295,15 @@ class GreatWall:
         if chosen_input > 0:
             self.current_level += 1
             self._derivation_path.append(chosen_input)
-            print(list(self._saved_states.keys()), self._derivation_path)
 
             if self._derivation_path in self._saved_states.keys():
                 self.state = self._saved_states[self._derivation_path]
             else:
                 self.state += bytes(self.shuffled_arity_indxes[chosen_input - 1])
                 self.update_with_quick_hash()
-                self._saved_states[self._derivation_path] = self.state
+                self._saved_states[self._derivation_path.copy()] = self.state
         else:
             self.return_level()
-            print(self._derivation_path)
 
     def return_level(self):
         if not self.current_level:
