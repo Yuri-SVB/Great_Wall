@@ -2,13 +2,15 @@ import random
 from typing import Optional
 
 from argon2 import low_level
+from fs.memoryfs import MemoryFS
+from cryptography.fernet import Fernet
 
 from .knowledge.fractal import Fractal
 from .knowledge.mnemonic.mnemonic import Mnemonic
 from .knowledge.shaper import Shaper
 
-
 class GreatWall:
+
     def __init__(self, tacit_knowledge_type: str = "Formosa"):
         self.tacit_knowledge_type = tacit_knowledge_type.lower()
 
@@ -47,6 +49,13 @@ class GreatWall:
         self.nbytesform: int = 4
         self.current_level: int = 0
         self.shuffled_arity_indxes: list[int] = []
+
+        # file system based in volatile memory (RAM)
+        self.memory_file_system = MemoryFS()
+
+        # cryptography for preventing leaks
+        session_key = Fernet.generate_key()
+        self.session_cipher = Fernet(session_key)
 
     def cancel_execution(self):
         self.is_canceled = True
@@ -271,3 +280,26 @@ class GreatWall:
             self.is_finished = False
         self.current_level -= 1
         self.state = self.protocol_states[self.current_level]
+
+    def memory_file_system_data_load(self, name):
+
+        try:
+            virtual_file = self.memory_file_system.openbin(name, 'r')
+            data = virtual_file.read()
+            data = self.session_cipher.decrypt(data)
+            return data
+        except Exception:
+            return None
+
+    def memory_file_system_data_name(self, key, extension):
+
+        name = f'{ key }{ extension }'
+        return name
+
+    def memory_file_system_data_save(self, name, data):
+
+        data = self.session_cipher.encrypt(data)
+
+        virtual_file = self.memory_file_system.openbin(name, 'w')
+        virtual_file.write(data)
+        virtual_file.close()
