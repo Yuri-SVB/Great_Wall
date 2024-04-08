@@ -64,3 +64,10 @@ MANDELBROT = "mandelbrot"
 BURNING_SHIP = "burningship"
 
 FRACTAL_FUNCTIONS = [MANDELBROT, BURNING_SHIP]
+
+###############################################################################
+# File Extensions
+###############################################################################
+
+EXTENSION_FRACTAL = '.fractal.bin'
+

@@ -10,8 +10,6 @@ from .knowledge.shaper import Shaper
 
 class GreatWall:
 
-    EXTENSION_FRACTAL = '.fractal.bin'
-
     def __init__(self, tacit_knowledge_type: str = "Formosa"):
 
         self.tacit_knowledge_type = tacit_knowledge_type.lower()
