@@ -3,6 +3,7 @@ from typing import Optional
 
 from argon2 import low_level
 from fs.memoryfs import MemoryFS
+from cryptography.fernet import Fernet
 
 from .knowledge.fractal import Fractal
 from .knowledge.mnemonic.mnemonic import Mnemonic
@@ -52,6 +53,10 @@ class GreatWall:
 
         # file system based in volatile memory (RAM)
         self.memory_file_system = MemoryFS()
+
+        # cryptography for preventing leaks
+        session_key = Fernet.generate_key()
+        self.session_cipher = Fernet(session_key)
 
     def cancel_execution(self):
         self.is_canceled = True
@@ -244,6 +249,7 @@ class GreatWall:
         try:
             virtual_file = self.memory_file_system.openbin(name, 'r')
             data = virtual_file.read()
+            data = self.session_cipher.decrypt(data)
             return data
         except Exception:
             return None
@@ -254,6 +260,8 @@ class GreatWall:
         return name
 
     def memory_file_system_data_save(self, name, data):
+
+        data = self.session_cipher.encrypt(data)
 
         virtual_file = self.memory_file_system.openbin(name, 'w')
         virtual_file.write(data)
