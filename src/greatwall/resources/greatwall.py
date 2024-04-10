@@ -8,48 +8,68 @@ from .knowledge.mnemonic.mnemonic import Mnemonic
 from .knowledge.shaper import Shaper
 
 
+class DerivationPath(list):
+    """A representation of the tree-like derivation key."""
+
+    def copy(self):
+        """Create a shallow copy of the path"""
+        new_instance = DerivationPath(self)
+        return new_instance
+
+    def __contains__(self, item):
+        return item in " -> ".join(str(node) for node in self)
+
+    def __eq__(self, other):
+        return " -> ".join(str(node) for node in self) == other
+
+    def __hash__(self):
+        return hash(" -> ".join(str(node) for node in self))
+
+    def __str__(self):
+        if len(self) > 1:
+            return " -> ".join(str(node) for node in self)
+        elif len(self) == 1:
+            return "".join(str(node) for node in self)
+        else:
+            return ""
+
+
 class GreatWall:
-    def __init__(self, tacit_knowledge_type: str = "Formosa"):
-        self.tacit_knowledge_type = tacit_knowledge_type.lower()
+    ARGON2_SALT: bytes = bytes("00000000000000000000000000000000", "utf-8")
+    NUM_BYTES_FORM: int = 4
 
-        self.is_finished = False
-        self.is_canceled = False
-        self.is_initialized = False
+    def __init__(self):
+        self.is_finished: bool = False
+        self.is_canceled: bool = False
+        self.is_initialized: bool = False
 
-        # Formosa
+        self._derivation_path: DerivationPath = DerivationPath()
+        self._saved_states: dict = {}
+        self._saved_fractals = {}
+
+        # Palettes
         self.mnemo: Optional[Mnemonic] = None
+        self.fractal: Optional[Fractal] = Fractal()
+        self.shaper: Optional[Shaper] = Shaper()
 
-        # Fractal
-        self.fractal = Fractal()
-
-        # Shaper
-        self.shaper = Shaper()
-
-        # constants
-        self.argon2salt = bytes("00000000000000000000000000000000", "utf-8")
-
-        # topology of TLP derivation
-        self.TLP_param: int = 0
-
-        # topology of iterative derivation
+        # Initial derivation values
         self.tree_depth: int = 0
         self.tree_arity: int = 0
+        self.tlp_param: int = 0
 
-        # diagram dummy init values
+        # Dummy initialization of protocol values
+        self.init_protocol_values()
+
+    def init_protocol_values(self):
         self.sa0: bytes = bytes(00)
         self.sa1: bytes = self.sa0
         self.sa2: bytes = self.sa0
         self.sa3: bytes = self.sa0
-        self.protocol_states: list[bytes] = [bytes(00)] * self.tree_depth
 
-        # Initial state
         self.state: bytes = self.sa0
-        self.nbytesform: int = 4
+
         self.current_level: int = 0
         self.shuffled_arity_indxes: list[int] = []
-
-    def cancel_execution(self):
-        self.is_canceled = True
 
     def set_themed_mnemo(self, theme: str) -> bool:
         try:
@@ -60,19 +80,23 @@ class GreatWall:
             return False
 
     def set_fractal_function_type(self, func_type: str) -> None:
+        """Set the type of chosen fractal set."""
         self.fractal.func_type = func_type
 
-    def set_tlp(self, tlp: int):
-        """Topology of TLP derivation.
+    def set_tlp_param(self, iter_num: int):
+        """Set the Time-Lock Puzzle param for derivation.
 
         Args:
-            tlp (int): parameter is the number of iterations of memory-hard hash,
+            iter_num (int): The number of iterations of memory-hard hash,
                 from 1 to 24*7*4*3.
         """
-        self.TLP_param = tlp
+        self.tlp_param = iter_num
 
     def set_depth(self, tree_depth: int):
-        """Topology of iterative derivation.
+        """Set the number of needed choices of iteration of procedural memory.
+
+        This method represents the depth of the tree that represents the
+        topology of derivation.
 
         Args:
             tree_depth (int): is the number of iterative procedural memory
@@ -81,7 +105,10 @@ class GreatWall:
         self.tree_depth = tree_depth
 
     def set_arity(self, tree_arity: int):
-        """Topology of iterative derivation.
+        """Set the number of options at each iteration of derivation.
+
+        This method represents the arity of the tree that represents the
+        topology of derivation.
 
         Args:
             tree_arity (int): is the number of options at each iteration,
@@ -92,24 +119,24 @@ class GreatWall:
     def set_sa0(self, mnemonic: str) -> bool:
         self.is_canceled = False
         try:
-            sa0 = mnemonic.split("\n", 1)[0]
-            self.sa0 = bytes(self.mnemo.to_entropy(self.mnemo.expand_password(sa0)))
             self.init_protocol_values()
+            self.sa0 = bytes(
+                self.mnemo.to_entropy(
+                    self.mnemo.expand_password(mnemonic.split("\n", 1)[0])
+                )
+            )
             return True
         except ValueError:
             # TODO treat error
             return False
 
-    def init_protocol_values(self):
-        # Diagram values
-        self.sa1 = self.sa0
-        self.sa2 = self.sa0
-        self.sa3 = self.sa0
-        self.protocol_states = [bytes.fromhex("00")] * self.tree_depth
-
     def init_state_hashes(self):
         self.state = self.sa0
         self.current_level = 0
+
+        self._derivation_path = DerivationPath()
+        self._saved_states = {}
+        self._saved_fractals = {}
 
         # Actual work
         self.time_intensive_derivation()
@@ -138,16 +165,15 @@ class GreatWall:
         self.update_with_quick_hash()
         self.sa3 = self.state
 
+        self._saved_states[self._derivation_path.copy()] = self.state
+
     def update_with_long_hash(self):
-        """
-        Update self.level_hash with the hash of the previous self.level_hash
-            taking presumably a long time.
-        """
-        for i in range(self.TLP_param):
+        """ Update the state with the its hash taking presumably a long time."""
+        for i in range(self.tlp_param):
             print("iteration #", i + 1, " of TLP:")
             self.state = low_level.hash_secret_raw(
                 secret=self.state,
-                salt=self.argon2salt,
+                salt=self.ARGON2_SALT,
                 time_cost=8,
                 memory_cost=1048576,
                 parallelism=1,
@@ -156,13 +182,10 @@ class GreatWall:
             )
 
     def update_with_quick_hash(self):
-        """
-        Update self.level_hash with the hash of the previous self.level_hash
-            taking presumably a quick time.
-        """
+        """ Update the state with the its hash taking presumably a quick time."""
         self.state = low_level.hash_secret_raw(
             secret=self.state,
-            salt=self.argon2salt,
+            salt=self.ARGON2_SALT,
             time_cost=32,
             memory_cost=1024,
             parallelism=1,
@@ -175,16 +198,17 @@ class GreatWall:
         self.shuffled_arity_indxes = [arity_idx for arity_idx in range(self.tree_arity)]
         random.shuffle(self.shuffled_arity_indxes)
 
-    def get_tacit_knowledge_param_from(
+    def _get_tacit_knowledge_param_from(
         self, branch_idx: int, tacit_knowledge_param: Optional[str] = None
     ):
+        """Get a valid tacit knowledge param from provided arguments."""
         branch_idx_bytes = branch_idx.to_bytes(length=4, byteorder="big")
 
         # jth candidate L_(i+1), the state resulting from appending bytes of j
         # (here, branch_idx_bytes to current state L_i and hashing it)
         next_state_candidate = low_level.hash_secret_raw(
             secret=self.state + branch_idx_bytes,
-            salt=self.argon2salt,
+            salt=self.ARGON2_SALT,
             time_cost=32,
             memory_cost=1024,
             parallelism=1,
@@ -196,7 +220,7 @@ class GreatWall:
             tacit_knowledge_param_bytes = tacit_knowledge_param.encode(encoding="utf-8")
             next_state_candidate = low_level.hash_secret_raw(
                 secret=next_state_candidate + tacit_knowledge_param_bytes,
-                salt=self.argon2salt,
+                salt=self.ARGON2_SALT,
                 time_cost=32,
                 memory_cost=1024,
                 parallelism=1,
@@ -204,31 +228,35 @@ class GreatWall:
                 type=low_level.Type.I,
             )
 
-        return next_state_candidate[0 : self.nbytesform]
+        return next_state_candidate[0 : self.NUM_BYTES_FORM]
 
     def get_fractal_query(self) -> list:
-        self._shuffle_arity_indxes()
-        shuffled_fractals = [
-            self.fractal.update(
-                func_type=self.fractal.func_type,
-                real_p=self.fractal.get_valid_real_p_from(
-                    self.get_tacit_knowledge_param_from(arity_idx, "real_p")
-                ),
-                imag_p=self.fractal.get_valid_imag_p_from(
-                    self.get_tacit_knowledge_param_from(arity_idx, "imag_p")
-                ),
-            )
-            for arity_idx in self.shuffled_arity_indxes
-        ]
-        listr = f"Choose 1, ..., {self.tree_arity} for level {self.current_level}"
-        listr += f"{'' if not self.current_level else ', choose 0 to go back'}\n"
-        shuffled_fractals = [listr] + shuffled_fractals
-        return shuffled_fractals
+        if self._derivation_path in self._saved_fractals:
+            return self._saved_fractals[self._derivation_path]
+        else:
+            self._shuffle_arity_indxes()
+            shuffled_fractals = [
+                self.fractal.update(
+                    func_type=self.fractal.func_type,
+                    real_p=self.fractal.get_valid_real_p_from(
+                        self._get_tacit_knowledge_param_from(arity_idx, "real_p")
+                    ),
+                    imag_p=self.fractal.get_valid_imag_p_from(
+                        self._get_tacit_knowledge_param_from(arity_idx, "imag_p")
+                    ),
+                )
+                for arity_idx in self.shuffled_arity_indxes
+            ]
+            listr = f"Choose 1, ..., {self.tree_arity} for level {self.current_level}"
+            listr += f"{'' if not self.current_level else ', choose 0 to go back'}\n"
+            shuffled_fractals = [listr] + shuffled_fractals
+            self._saved_fractals[self._derivation_path.copy()] = shuffled_fractals
+            return shuffled_fractals
 
     def get_li_str_query(self) -> str:
         self._shuffle_arity_indxes()
         shuffled_sentences = [
-            self.mnemo.to_mnemonic(self.get_tacit_knowledge_param_from(arity_idx))
+            self.mnemo.to_mnemonic(self._get_tacit_knowledge_param_from(arity_idx))
             for arity_idx in self.shuffled_arity_indxes
         ]
         listr = f"Choose 1, ..., {self.tree_arity} for level {self.current_level}"
@@ -241,7 +269,7 @@ class GreatWall:
         self._shuffle_arity_indxes()
         shuffled_shapes = [
             self.shaper.draw_regular_shape(
-                self.get_tacit_knowledge_param_from(arity_idx)
+                self._get_tacit_knowledge_param_from(arity_idx)
             )
             for arity_idx in self.shuffled_arity_indxes
         ]
@@ -256,11 +284,24 @@ class GreatWall:
         return self.state
 
     def derive_from_user_choice(self, chosen_input: int):
-        if chosen_input:
-            self.protocol_states[self.current_level] = self.state
-            self.state += bytes(self.shuffled_arity_indxes[chosen_input - 1])
-            self.update_with_quick_hash()
+        """Drive the protocol state depending on the user choice.
+
+        Args:
+            chosen_input (int): The index of the user choice; If this argument
+                is 0, this method will go back one level. If this argument is
+                greater than 0, this method will update the state depending on
+                this choice.
+        """
+        if chosen_input > 0:
             self.current_level += 1
+            self._derivation_path.append(chosen_input)
+
+            if self._derivation_path in self._saved_states.keys():
+                self.state = self._saved_states[self._derivation_path]
+            else:
+                self.state += bytes(self.shuffled_arity_indxes[chosen_input - 1])
+                self.update_with_quick_hash()
+                self._saved_states[self._derivation_path.copy()] = self.state
         else:
             self.return_level()
 
@@ -269,5 +310,11 @@ class GreatWall:
             return
         if self.is_finished:
             self.is_finished = False
+
         self.current_level -= 1
-        self.state = self.protocol_states[self.current_level]
+        self._derivation_path.pop()
+
+        self.state = self._saved_states[self._derivation_path]
+
+    def cancel_execution(self):
+        self.is_canceled = True

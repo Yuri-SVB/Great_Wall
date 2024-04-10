@@ -44,8 +44,8 @@ class TestGreatWallGui(unittest.TestCase):
 
         self.assertEqual("Choose Theme", self.greatWallGui.theme_label.text())
         self.assertEqual("BIP39", self.greatWallGui.theme_combobox.currentText())
-        self.assertEqual("Choose TLP parameter from 1 to 2016", self.greatWallGui.tlp_label.text())
-        self.assertEqual("1", self.greatWallGui.tlp_spinbox.text())
+        self.assertEqual("Choose TLP parameter from 1 to 2016", self.greatWallGui.tlp_param_label.text())
+        self.assertEqual("1", self.greatWallGui.tlp_param_spinbox.text())
         self.assertEqual("Choose tree depth from 1 to 256", self.greatWallGui.depth_label.text())
         self.assertEqual("1", self.greatWallGui.depth_spinbox.text(), )
         self.assertEqual("Choose tree arity from 2 to 256", self.greatWallGui.arity_label.text())
@@ -68,9 +68,9 @@ class TestGreatWallGui(unittest.TestCase):
         index = self.greatWallGui.theme_combobox.findText(input_theme)
         self.greatWallGui.theme_combobox.setCurrentIndex(index)
 
-        QTest.mouseClick(self.greatWallGui.tlp_spinbox, Qt.LeftButton)
-        QTest.keyClick(self.greatWallGui.tlp_spinbox, Qt.Key_Delete)
-        QTest.keyClicks(self.greatWallGui.tlp_spinbox, input_tpl)
+        QTest.mouseClick(self.greatWallGui.tlp_param_spinbox, Qt.LeftButton)
+        QTest.keyClick(self.greatWallGui.tlp_param_spinbox, Qt.Key_Delete)
+        QTest.keyClicks(self.greatWallGui.tlp_param_spinbox, input_tpl)
 
         QTest.mouseClick(self.greatWallGui.depth_spinbox, Qt.LeftButton)
         QTest.keyClick(self.greatWallGui.depth_spinbox, Qt.Key_Delete)
@@ -85,7 +85,7 @@ class TestGreatWallGui(unittest.TestCase):
 
         self.assertEqual("Formosa", self.greatWallGui.tacit_knowledge_combobox.currentText())
         self.assertEqual("BIP39", self.greatWallGui.theme_combobox.currentText())
-        self.assertEqual("1", self.greatWallGui.tlp_spinbox.text())
+        self.assertEqual("1", self.greatWallGui.tlp_param_spinbox.text())
         self.assertEqual("2", self.greatWallGui.depth_spinbox.text(), )
         self.assertEqual("4", self.greatWallGui.arity_spinbox.text())
         self.assertEqual("bunker casino bulk hawk defy egg ignore plate view problem attract bridge truth fluid hub",
@@ -100,7 +100,7 @@ class TestGreatWallGui(unittest.TestCase):
 
         self.assertEqual("Confirm your values", self.greatWallGui.input_confirmation_label.text())
         self.assertEqual("Theme\nBIP39", self.greatWallGui.input_confirmation_theme_label.text())
-        self.assertEqual("Choose TLP parameter from 1 to 2016", self.greatWallGui.tlp_label.text())
+        self.assertEqual("Choose TLP parameter from 1 to 2016", self.greatWallGui.tlp_param_label.text())
         self.assertEqual("Choose tree depth from 1 to 256", self.greatWallGui.depth_label.text())
         self.assertEqual("Choose tree arity from 2 to 256", self.greatWallGui.arity_label.text())
         self.assertEqual(
