@@ -83,16 +83,16 @@ class FractalTacitKnowledgeParam(TacitKnowledgeParam):
         real_p = "2." + str(int.from_bytes(value, "big"))[::-1]
         return float(real_p)
 
-    def _compute_imag_p_value(self, value: bytes, bytearray]):
+    def _compute_imag_p_value(self, value: bytes):
         # NOTE: We inverting the order of digits by operation [::-1] on string,
         # to minimize Benford's law bias.
         imag_p = "0." + str(int.from_bytes(value, "big"))[::-1]
         return float(imag_p)
 
     def _compute_value(self):
-        if "real_p" in self.adjustment_params:
+        if "real_p" in self.adjustment_params.keys():
             return self._compute_real_p_value(super()._compute_value())
-        elif "imag_p" in self.adjustment_params:
+        elif "imag_p" in self.adjustment_params.keys():
             return self._compute_real_p_value(super()._compute_value())
         else:
             return super()._compute_value()
@@ -101,14 +101,14 @@ class FractalTacitKnowledgeParam(TacitKnowledgeParam):
 class FormosaTacitKnowledgeParam(TacitKnowledgeParam):
     """A representation of the formosa tacit knowledge param."""
 
-    def _compute_value(self) -> bytes:
+    def _compute_value(self):
         return super()._compute_value()
 
 
 class ShapeTacitKnowledgeParam(TacitKnowledgeParam):
     """A representation of the shape tacit knowledge param."""
 
-    def _compute_value(self) -> bytes:
+    def _compute_value(self):
         return super()._compute_value()
 
 
@@ -287,13 +287,13 @@ class GreatWall:
                     real_p=FractalTacitKnowledgeParam(
                         self.state,
                         branch_idx=arity_idx.to_bytes(length=4, byteorder="big"),
-                        param1="real_p".encode(encoding="utf-8"),
-                    ),
+                        real_p="real_p".encode(encoding="utf-8"),
+                    ).get_value(),
                     imag_p=FractalTacitKnowledgeParam(
                         self.state,
                         branch_idx=arity_idx.to_bytes(length=4, byteorder="big"),
-                        param2="imag_p".encode(encoding="utf-8"),
-                    ),
+                        imag_p="imag_p".encode(encoding="utf-8"),
+                    ).get_value(),
                 )
                 for arity_idx in self.shuffled_arity_indxes
             ]
@@ -306,7 +306,12 @@ class GreatWall:
     def get_li_str_query(self) -> str:
         self._shuffle_arity_indxes()
         shuffled_sentences = [
-            self.mnemo.to_mnemonic(self._get_tacit_knowledge_param_from(arity_idx))
+            self.mnemo.to_mnemonic(
+                FormosaTacitKnowledgeParam(
+                    self.state,
+                    branch_idx=arity_idx.to_bytes(length=4, byteorder="big"),
+                ).get_value()
+            )
             for arity_idx in self.shuffled_arity_indxes
         ]
         listr = f"Choose 1, ..., {self.tree_arity} for level {self.current_level}"
@@ -319,7 +324,10 @@ class GreatWall:
         self._shuffle_arity_indxes()
         shuffled_shapes = [
             self.shaper.draw_regular_shape(
-                self._get_tacit_knowledge_param_from(arity_idx)
+                ShapeTacitKnowledgeParam(
+                    self.state,
+                    branch_idx=arity_idx.to_bytes(length=4, byteorder="big"),
+                ).get_value()
             )
             for arity_idx in self.shuffled_arity_indxes
         ]
