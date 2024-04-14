@@ -93,7 +93,7 @@ class FractalTacitKnowledgeParam(TacitKnowledgeParam):
         if "real_p" in self.adjustment_params.keys():
             return self._compute_real_p_value(super()._compute_value())
         elif "imag_p" in self.adjustment_params.keys():
-            return self._compute_real_p_value(super()._compute_value())
+            return self._compute_imag_p_value(super()._compute_value())
         else:
             return super()._compute_value()
 

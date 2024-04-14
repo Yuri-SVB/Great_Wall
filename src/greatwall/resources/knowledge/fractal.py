@@ -109,8 +109,8 @@ class Fractal:
         y_max=0.8,
         real_p=2.0,
         imag_p=0.0,
-        width=1024,
-        height=1024,
+        width=100,
+        height=100,
         escape_radius=4,
         max_iters=30,
     ):

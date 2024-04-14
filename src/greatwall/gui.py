@@ -37,12 +37,7 @@ from PyQt5.QtWidgets import (
     QWidget,
     QWidgetItem,
 )
-from resources.greatwall import (
-    FormosaTacitKnowledgeParam,
-    FractalTacitKnowledgeParam,
-    GreatWall,
-    ShapeTacitKnowledgeParam,
-)
+from resources.greatwall import FractalTacitKnowledgeParam, GreatWall
 from resources.helpers import constants
 from resources.helpers.colormaps import color_palettes
 
