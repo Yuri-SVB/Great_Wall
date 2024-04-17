@@ -408,7 +408,7 @@ class ThemeDict(dict):
 
         Parameters
         ----------
-        sentence : str  list]
+        sentence : str | list
             The words to be searched, must be a complete sentence
 
         Returns
