@@ -42,7 +42,7 @@ class Fractal:
         self.max_iters: Optional[int] = max_iters
 
         self._image_pixels: Optional[np.array] = None
-        
+
     @property
     def image_pixels(self):
         return self._image_pixels
