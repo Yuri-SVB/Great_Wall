@@ -478,7 +478,7 @@ class ThemeDict(dict):
 
         Parameters
         ----------
-        mnemonic : str, list[str]
+        mnemonic : str | list[str]
             The words to be searched, must have complete sentences
 
         Returns
