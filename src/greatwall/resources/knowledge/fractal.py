@@ -43,18 +43,6 @@ class Fractal:
 
         self._image_pixels: Optional[np.array] = None
 
-    def get_valid_real_p_from(self, value: Union[bytes, bytearray]):
-        # NOTE: We inverting the order of digits by operation [::-1] on string,
-        # to minimize Benford's law bias.
-        real_p = "2." + str(int.from_bytes(value, "big"))[::-1]
-        return float(real_p)
-
-    def get_valid_imag_p_from(self, value: Union[bytes, bytearray]):
-        # NOTE: We inverting the order of digits by operation [::-1] on string,
-        # to minimize Benford's law bias.
-        imag_p = "0." + str(int.from_bytes(value, "big"))[::-1]
-        return float(imag_p)
-
     @property
     def image_pixels(self):
         return self._image_pixels

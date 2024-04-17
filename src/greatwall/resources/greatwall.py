@@ -3,35 +3,15 @@ from typing import Optional
 
 from argon2 import low_level
 
+from .helpers.utils import (
+    DerivationPath,
+    FormosaTacitKnowledgeParam,
+    FractalTacitKnowledgeParam,
+    ShapeTacitKnowledgeParam,
+)
 from .knowledge.fractal import Fractal
 from .knowledge.mnemonic.mnemonic import Mnemonic
 from .knowledge.shaper import Shaper
-
-
-class DerivationPath(list):
-    """A representation of the tree-like derivation key."""
-
-    def copy(self):
-        """Create a shallow copy of the path"""
-        new_instance = DerivationPath(self)
-        return new_instance
-
-    def __contains__(self, item):
-        return item in " -> ".join(str(node) for node in self)
-
-    def __eq__(self, other):
-        return " -> ".join(str(node) for node in self) == other
-
-    def __hash__(self):
-        return hash(" -> ".join(str(node) for node in self))
-
-    def __str__(self):
-        if len(self) > 1:
-            return " -> ".join(str(node) for node in self)
-        elif len(self) == 1:
-            return "".join(str(node) for node in self)
-        else:
-            return ""
 
 
 class GreatWall:
@@ -168,7 +148,7 @@ class GreatWall:
         self._saved_states[self._derivation_path.copy()] = self.state
 
     def update_with_long_hash(self):
-        """ Update the state with the its hash taking presumably a long time."""
+        """Update the state with the its hash taking presumably a long time."""
         for i in range(self.tlp_param):
             print("iteration #", i + 1, " of TLP:")
             self.state = low_level.hash_secret_raw(
@@ -182,7 +162,7 @@ class GreatWall:
             )
 
     def update_with_quick_hash(self):
-        """ Update the state with the its hash taking presumably a quick time."""
+        """Update the state with the its hash taking presumably a quick time."""
         self.state = low_level.hash_secret_raw(
             secret=self.state,
             salt=self.ARGON2_SALT,
@@ -198,38 +178,6 @@ class GreatWall:
         self.shuffled_arity_indxes = [arity_idx for arity_idx in range(self.tree_arity)]
         random.shuffle(self.shuffled_arity_indxes)
 
-    def _get_tacit_knowledge_param_from(
-        self, branch_idx: int, tacit_knowledge_param: Optional[str] = None
-    ):
-        """Get a valid tacit knowledge param from provided arguments."""
-        branch_idx_bytes = branch_idx.to_bytes(length=4, byteorder="big")
-
-        # jth candidate L_(i+1), the state resulting from appending bytes of j
-        # (here, branch_idx_bytes to current state L_i and hashing it)
-        next_state_candidate = low_level.hash_secret_raw(
-            secret=self.state + branch_idx_bytes,
-            salt=self.ARGON2_SALT,
-            time_cost=32,
-            memory_cost=1024,
-            parallelism=1,
-            hash_len=128,
-            type=low_level.Type.I,
-        )
-
-        if tacit_knowledge_param is not None:
-            tacit_knowledge_param_bytes = tacit_knowledge_param.encode(encoding="utf-8")
-            next_state_candidate = low_level.hash_secret_raw(
-                secret=next_state_candidate + tacit_knowledge_param_bytes,
-                salt=self.ARGON2_SALT,
-                time_cost=32,
-                memory_cost=1024,
-                parallelism=1,
-                hash_len=128,
-                type=low_level.Type.I,
-            )
-
-        return next_state_candidate[0 : self.NUM_BYTES_FORM]
-
     def get_fractal_query(self) -> list:
         if self._derivation_path in self._saved_fractals:
             return self._saved_fractals[self._derivation_path]
@@ -238,12 +186,16 @@ class GreatWall:
             shuffled_fractals = [
                 self.fractal.update(
                     func_type=self.fractal.func_type,
-                    real_p=self.fractal.get_valid_real_p_from(
-                        self._get_tacit_knowledge_param_from(arity_idx, "real_p")
-                    ),
-                    imag_p=self.fractal.get_valid_imag_p_from(
-                        self._get_tacit_knowledge_param_from(arity_idx, "imag_p")
-                    ),
+                    real_p=FractalTacitKnowledgeParam(
+                        self.state,
+                        branch_idx=arity_idx.to_bytes(length=4, byteorder="big"),
+                        real_p="real_p".encode(encoding="utf-8"),
+                    ).get_value(),
+                    imag_p=FractalTacitKnowledgeParam(
+                        self.state,
+                        branch_idx=arity_idx.to_bytes(length=4, byteorder="big"),
+                        imag_p="imag_p".encode(encoding="utf-8"),
+                    ).get_value(),
                 )
                 for arity_idx in self.shuffled_arity_indxes
             ]
@@ -256,7 +208,12 @@ class GreatWall:
     def get_li_str_query(self) -> str:
         self._shuffle_arity_indxes()
         shuffled_sentences = [
-            self.mnemo.to_mnemonic(self._get_tacit_knowledge_param_from(arity_idx))
+            self.mnemo.to_mnemonic(
+                FormosaTacitKnowledgeParam(
+                    self.state,
+                    branch_idx=arity_idx.to_bytes(length=4, byteorder="big"),
+                ).get_value()
+            )
             for arity_idx in self.shuffled_arity_indxes
         ]
         listr = f"Choose 1, ..., {self.tree_arity} for level {self.current_level}"
@@ -269,7 +226,10 @@ class GreatWall:
         self._shuffle_arity_indxes()
         shuffled_shapes = [
             self.shaper.draw_regular_shape(
-                self._get_tacit_knowledge_param_from(arity_idx)
+                ShapeTacitKnowledgeParam(
+                    self.state,
+                    branch_idx=arity_idx.to_bytes(length=4, byteorder="big"),
+                ).get_value()
             )
             for arity_idx in self.shuffled_arity_indxes
         ]

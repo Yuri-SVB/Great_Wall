@@ -40,6 +40,7 @@ from PyQt5.QtWidgets import (
 from resources.greatwall import GreatWall
 from resources.helpers import constants
 from resources.helpers.colormaps import color_palettes
+from resources.helpers.utils import FractalTacitKnowledgeParam
 
 
 class GreatWallThread(QThread):
@@ -1294,12 +1295,14 @@ class GreatWallGui(QMainWindow):
             if self.tacit_knowledge_combobox.currentText() == constants.FRACTAL:
                 formated_fractal = self.greatwall.fractal.update(
                     func_type=self.greatwall.fractal.func_type,
-                    real_p=self.greatwall.fractal.get_valid_real_p_from(
-                        self.greatwall_finish_result
-                    ),
-                    imag_p=self.greatwall.fractal.get_valid_imag_p_from(
-                        self.greatwall_finish_result
-                    ),
+                    real_p=FractalTacitKnowledgeParam(
+                        self.greatwall_finish_result,
+                        real_p="real_p".encode(encoding="utf-8"),
+                    ).get_value(),
+                    imag_p=FractalTacitKnowledgeParam(
+                        self.greatwall_finish_result,
+                        imag_p="imag_p".encode(encoding="utf-8"),
+                    ).get_value(),
                 )
 
                 image = ImageViewer(self)
