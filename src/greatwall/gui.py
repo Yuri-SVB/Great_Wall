@@ -1029,7 +1029,38 @@ class GreatWallGui(QMainWindow):
         )
 
         if self.tacit_knowledge_combobox.currentText() == constants.FRACTAL:
-            user_options = self.greatwall.get_fractal_query()
+            user_options = self.greatwall.get_fractals_query()
+            colormap = color_palettes[self.fractal_colormap_combobox.currentText()]
+            for idx, widgets in enumerate(
+                self.selecting_derivation_options_widgets_list
+            ):
+                if idx == 0:
+                    selection_button = widgets
+                    selection_button.setEnabled(
+                        False if self.greatwall.current_level == 0 else True
+                    )
+                else:
+                    (
+                        view,
+                        show_hide_button,
+                        selection_button,
+                    ) = widgets
+
+                    image = QPixmap.fromImage(
+                        view.numpy_2darray_to_Qimage(user_options[idx], colormap)
+                    )
+                    view.setFixedSize(QSize(205, 205))
+                    view.setPhoto(image)
+                    view.setVisible(True)
+
+                    selection_button.setText(str(idx))
+                    selection_button.setFixedSize(QSize(100, 25))
+
+                    show_hide_button.setText("Hide Image")
+                    show_hide_button.setFixedSize(QSize(100, 25))
+
+        elif self.tacit_knowledge_combobox.currentText() == constants.IDENTICON:
+            user_options = self.greatwall.get_identicons_query()
             colormap = color_palettes[self.fractal_colormap_combobox.currentText()]
             for idx, widgets in enumerate(
                 self.selecting_derivation_options_widgets_list
@@ -1060,7 +1091,7 @@ class GreatWallGui(QMainWindow):
                     show_hide_button.setFixedSize(QSize(100, 25))
 
         elif self.tacit_knowledge_combobox.currentText() == constants.SHAPE:
-            user_options = self.greatwall.get_shape_query()
+            user_options = self.greatwall.get_shapes_query()
             for idx, selection_widget in enumerate(
                 self.selecting_derivation_options_widgets_list
             ):
@@ -1076,7 +1107,7 @@ class GreatWallGui(QMainWindow):
                     selection_widget.setText(str(idx))
 
         else:
-            user_options = self.greatwall.get_li_str_query().split("\n")
+            user_options = self.greatwall.get_strings_query().split("\n")
             for idx, selection_widget in enumerate(
                 self.selecting_derivation_options_widgets_list
             ):

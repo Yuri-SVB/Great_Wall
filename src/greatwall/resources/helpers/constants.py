@@ -4,9 +4,10 @@
 
 FRACTAL = "Fractal"
 FORMOSA = "Formosa"
+IDENTICON = "Identicon"
 SHAPE = "Shape"
 
-AVAILABLE_TACIT_KNOWLEDGE_TYPES = [FRACTAL, FORMOSA, SHAPE]
+AVAILABLE_TACIT_KNOWLEDGE_TYPES = [FRACTAL, FORMOSA, IDENTICON, SHAPE]
 
 ###############################################################################
 # Available Color Palettes

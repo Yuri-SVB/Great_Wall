@@ -10,6 +10,7 @@ from .helpers.utils import (
     ShapeTacitKnowledgeParam,
 )
 from .knowledge.fractal import Fractal
+from .knowledge.identicon import Identicon
 from .knowledge.mnemonic.mnemonic import Mnemonic
 from .knowledge.shaper import Shaper
 
@@ -26,6 +27,7 @@ class GreatWall:
         self._derivation_path: DerivationPath = DerivationPath()
         self._saved_states: dict = {}
         self._saved_fractals = {}
+        self._saved_identicons = {}
 
         # Palettes
         self.mnemo: Optional[Mnemonic] = None
@@ -178,7 +180,7 @@ class GreatWall:
         self.shuffled_arity_indxes = [arity_idx for arity_idx in range(self.tree_arity)]
         random.shuffle(self.shuffled_arity_indxes)
 
-    def get_fractal_query(self) -> list:
+    def get_fractals_query(self) -> list:
         if self._derivation_path in self._saved_fractals:
             return self._saved_fractals[self._derivation_path]
         else:
@@ -205,7 +207,21 @@ class GreatWall:
             self._saved_fractals[self._derivation_path.copy()] = shuffled_fractals
             return shuffled_fractals
 
-    def get_li_str_query(self) -> str:
+    def get_identicons_query(self) -> list:
+        if self._derivation_path in self._saved_identicons:
+            return self._saved_identicons[self._derivation_path]
+        else:
+            self._shuffle_arity_indxes()
+            shuffled_identicons = [
+                arity_idx for arity_idx in self.shuffled_arity_indxes
+            ]
+            listr = f"Choose 1, ..., {self.tree_arity} for level {self.current_level}"
+            listr += f"{'' if not self.current_level else ', choose 0 to go back'}\n"
+            shuffled_identicons = [listr] + shuffled_identicons
+            self._saved_identicons[self._derivation_path.copy()] = shuffled_identicons
+            return shuffled_identicons
+
+    def get_strings_query(self) -> str:
         self._shuffle_arity_indxes()
         shuffled_sentences = [
             self.mnemo.to_mnemonic(
@@ -222,7 +238,7 @@ class GreatWall:
             listr += f"{shuffled_sentences[i]}\n"
         return listr
 
-    def get_shape_query(self) -> list:
+    def get_shapes_query(self) -> list:
         self._shuffle_arity_indxes()
         shuffled_shapes = [
             self.shaper.draw_regular_shape(
