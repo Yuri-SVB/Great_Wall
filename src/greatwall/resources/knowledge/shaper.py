@@ -1,7 +1,5 @@
 import math
 from pathlib import Path
-from typing import Union
-
 from PIL import Image, ImageDraw
 
 
@@ -18,9 +16,9 @@ class Shaper:
         integer_1st_digit = str(bytes_1st_digit)[0]
         return int(integer_1st_digit)
 
-    def draw_regular_shape(self, sides: Union[int, bytes, bytearray] = 3):
+    def draw_regular_shape(self, sides: (int | bytes | bytearray) = 3):
         if isinstance(sides, bytes) or isinstance(sides, bytearray):
-            # If sides is given as bytes it will get the int of the first digit with an offset of 2
+            # If the sides are given as bytes, they will get the int of the first digit with an offset of 2.
             sides = self.get_first_digit(sides) + 2
         size = self.size
 

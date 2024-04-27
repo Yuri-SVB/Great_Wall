@@ -25,7 +25,7 @@ import os
 import sys
 import unicodedata
 from pathlib import Path
-from typing import TypeVar, Union
+from typing import TypeVar
 
 # This prevents IDE from creating a cache file
 sys.dont_write_bytecode = True
@@ -271,13 +271,13 @@ class ThemeDict(dict):
         return prime_syntactic_leads
 
     @staticmethod
-    def normalize_mnemonic(mnemonic: Union[str, list[str]]) -> list[str]:
+    def normalize_mnemonic(mnemonic: str | list[str]) -> list[str]:
         """
             Normalize a mnemonic variable to a list of strings
 
         Parameters
         ----------
-        mnemonic : Union[str, list[str]]
+        mnemonic : str | list[str]
             The mnemonic to be normalized
 
         Returns
@@ -362,7 +362,7 @@ class ThemeDict(dict):
             word_index = words_list.index(mnemo_led)
         return mnemo_index, word_index
 
-    def get_natural_indexes(self, sentence: Union[str, list]) -> list[int]:
+    def get_natural_indexes(self, sentence: str | list) -> list[int]:
         """
             Return the indexes of a sentence from the lists ordered as natural speech of this theme
             The sentence can be given as a list or a string and must be complete
@@ -370,7 +370,7 @@ class ThemeDict(dict):
 
         Parameters
         ----------
-        sentence: Union[str, list]
+        sentence: str | list
             The words to be searched, must have complete sentences
 
         Returns
@@ -400,7 +400,7 @@ class ThemeDict(dict):
             word_indexes[mnemo_index] = word_index
         return word_indexes
 
-    def get_filling_indexes(self, sentence: Union[str, list]) -> list[int]:
+    def get_filling_indexes(self, sentence: str | list) -> list[int]:
         """
             Return the indexes of a sentence from the lists ordered as the filling order of this theme
             The sentence can be given as a list or a string and must be a complete sentence
@@ -408,7 +408,7 @@ class ThemeDict(dict):
 
         Parameters
         ----------
-        sentence : Union[str, list]
+        sentence : str | list
             The words to be searched, must be a complete sentence
 
         Returns
@@ -427,13 +427,13 @@ class ThemeDict(dict):
         ]
         return word_fill_indexes
 
-    def get_phrase_amount(self, mnemonic: Union[str, list[str]]) -> int:
+    def get_phrase_amount(self, mnemonic: str | list[str]) -> int:
         """
             Get how many phrases are in the given mnemonic
 
         Parameters
         ----------
-        mnemonic : Union[str, list[str]]
+        mnemonic : str | list[str]
             The mnemonic to get the amount of phrases, it can be a string or a list of words
 
         Returns
@@ -447,13 +447,13 @@ class ThemeDict(dict):
         phrase_amount = mnemonic_size // phrase_size
         return phrase_amount
 
-    def get_sentences(self, mnemonic: Union[str, list[str]]) -> list[list[str]]:
+    def get_sentences(self, mnemonic: str | list[str]) -> list[list[str]]:
         """
             Split to list the sentences from a given mnemonic
 
         Parameters
         ----------
-        mnemonic : Union[str, list[str]]
+        mnemonic : str | list[str]
             The mnemonic to get the sentences from, it can be a str or a list of words
 
         Returns
@@ -470,7 +470,7 @@ class ThemeDict(dict):
         ]
         return sentences
 
-    def get_phrase_indexes(self, mnemonic: Union[str, list[str]]) -> list[int]:
+    def get_phrase_indexes(self, mnemonic: str | list[str]) -> list[int]:
         """
             Get the indexes of a given mnemonic from each sentence in it
             The mnemonic can be given as a list or a string and must have complete sentences
@@ -478,7 +478,7 @@ class ThemeDict(dict):
 
         Parameters
         ----------
-        mnemonic : Union[str, list[str]]
+        mnemonic : str | list[str]
             The words to be searched, must have complete sentences
 
         Returns
@@ -649,13 +649,13 @@ class Mnemonic(object):
         return theme_files
 
     @staticmethod
-    def normalize_string(txt: Union[str, bytes]) -> str:
+    def normalize_string(txt: str | bytes) -> str:
         """
             Normalize any given string to the normal from NFKD of Unicode
 
         Parameters
         ----------
-        txt : Union[str, bytes]
+        txt : str | bytes
             The string to be normalized
 
         Returns
@@ -673,19 +673,19 @@ class Mnemonic(object):
         return unicodedata.normalize("NFKD", utxt)
 
     @classmethod
-    def detect_theme(cls, code: Union[str, list[str]]) -> str:
+    def detect_theme(cls, code: str | list[str]) -> str:
         """
             Find which theme of a given mnemonic,
             Raise error when multiple themes are found, can be caused when there is many shared words between themes
 
         Parameters
         ----------
-        code : Union[str, list[str]]
+        code : str | list[str]
             The list of mnemonic words
 
         Returns
         -------
-        Union[str, list[str]]
+        str | list[str]
             Unambiguous theme found
         """
         if isinstance(code, list):
@@ -730,14 +730,14 @@ class Mnemonic(object):
             )
         return self.to_mnemonic(os.urandom(strength // 8))
 
-    def format_mnemonic(self, mnemonic: Union[str, list[str]]) -> str:
+    def format_mnemonic(self, mnemonic: str | list[str]) -> str:
         """
             Format the first line with the password using the first unique letters of each word
              followed by each phrase in new line
 
         Parameters
         ----------
-        mnemonic: Union[str, list[str]]
+        mnemonic: str | list[str]
             The mnemonic to be format
 
         Returns
@@ -764,7 +764,7 @@ class Mnemonic(object):
         return password
 
     # Adapted from <http://tinyurl.com/oxmn476>
-    def to_entropy(self, words: Union[str, list[str]]) -> bytearray:
+    def to_entropy(self, words: str | list[str]) -> bytearray:
         """
             Extract an entropy and checksum values from mnemonic in Formosa standard
 
@@ -881,7 +881,7 @@ class Mnemonic(object):
 
     @staticmethod
     def convert_theme(
-        mnemonic: Union[str, list[str]], new_theme: str, current_theme: str = None
+        mnemonic: str | list[str], new_theme: str, current_theme: str = None
     ) -> str:
         """
             Convert a mnemonic in a theme to another theme, preserving the original entropy
@@ -914,7 +914,7 @@ class Mnemonic(object):
         new_mnemonic = Mnemonic(new_theme).to_mnemonic(entropy)
         return new_mnemonic
 
-    def check(self, mnemonic: Union[str, list[str]]) -> bool:
+    def check(self, mnemonic: str | list[str]) -> bool:
         if isinstance(mnemonic, list):
             mnemonic = " ".join(mnemonic)
         mnemonic_list = self.normalize_string(mnemonic).split(" ")
@@ -957,7 +957,7 @@ class Mnemonic(object):
                 # this is not a validation routine, just return the input
                 return prefix
 
-    def expand(self, mnemonic: Union[str, list[str]]) -> str:
+    def expand(self, mnemonic: str | list[str]) -> str:
         if isinstance(mnemonic, list):
             mnemonic = " ".join(mnemonic)
         mnemonic = self.normalize_string(mnemonic).split(" ")

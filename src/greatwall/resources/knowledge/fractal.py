@@ -1,5 +1,5 @@
 import math
-from typing import Optional, Union
+from typing import Optional
 
 import numpy as np
 
@@ -8,7 +8,7 @@ from ..helpers import constants
 
 class Fractal:
     """
-    The class that implement different type of fractal functions.
+    The class that implements different type of fractal functions.
 
     Ref:
         This implementation took inspiration from the following link:
@@ -85,19 +85,19 @@ class Fractal:
             else:
                 raise AttributeError(f"{func_type} has no implementation yet.")
         else:
-            raise ValueError(f"{func_type} does not supported.")
+            raise ValueError(f"{func_type} is not supported.")
 
     def _smooth_stability(self, z: complex, escape_count: int, max_iters: int):
         """
-        Return a smoothed ratio of the escape count to maximum number iterations,
-            using a smoothing logarithms formula.
+        Returns a smoothed ratio of the escape count to maximum number of iterations,
+        using a smoothing logarithm formula.
 
         Args:
-            z (complex): The complex number that produced the excape count.
-            escape_count (int): The escapt count that needs to be smoothed.
+            z (complex): The complex number that produced the escape count.
+            escape_count (int): The escape count that needs to be smoothed.
             max_iters (int): The maximum number of iterations.
         """
-        smooth_value = escape_count + 1 - math.log(math.log(abs(z))) / math.log(2)
+        smooth_value = escape_count + 1 - (math.log(math.log(abs(z))) / math.log(2))
         stability = smooth_value / max_iters
         return max(0.0, min(stability, 1.0))
 
