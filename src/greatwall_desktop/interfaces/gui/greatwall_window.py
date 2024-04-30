@@ -301,7 +301,7 @@ class ImageViewer(QGraphicsView):
                 self._zoom = 0
 
 
-class GreatWallGui(QMainWindow):
+class GreatWallWindow(QMainWindow):
     gui_error_signal = pyqtSignal()
     level_up_signal = pyqtSignal()
     level_down_signal = pyqtSignal()
@@ -1360,7 +1360,7 @@ class GreatWallGui(QMainWindow):
 
 def main():
     app = QApplication([])
-    window = GreatWallGui()
+    window = GreatWallWindow()
     window.show()
     app.exec_()
 

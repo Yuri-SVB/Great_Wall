@@ -1,54 +1,58 @@
 import sys
 
-from cli import UserInterface
-from greatwall import GreatWall
-from gui import main as gui_main
+from .greatwall import GreatWall
+from .interfaces.cli import CommandLineInterface
+from .interfaces.gui.greatwall_window import GreatWallWindow
+from .interfaces.gui.memorization_window import MemorizationAssistantWindow
 
 
 def run_greatwall_cli():
     greatwall = GreatWall("Formosa")
-    cli = UserInterface()
-    greatwall.set_themed_mnemo(cli.mnemo.base_theme)
+    commandline_interface = CommandLineInterface()
+    greatwall.set_themed_mnemo(commandline_interface.mnemo.base_theme)
     # Topology of TLP derivation
-    cli.prompt_integer(
+    commandline_interface.prompt_integer(
         "Choose TLP parameter --- # of iterations of memory-hard hash",
         1,
         24 * 7 * 4 * 3,
     )
-    greatwall.set_tlp_param(cli.index_input_int)
+    greatwall.set_tlp_param(commandline_interface.index_input_int)
     # Topology of iterative derivation
-    cli.prompt_integer(
+    commandline_interface.prompt_integer(
         "Choose tree depth --- # of iterative procedural memory choices needed", 1, 256
     )
-    greatwall.set_depth(cli.index_input_int)
-    cli.prompt_integer("Choose tree arity --- # of options at each iteration", 2, 256)
-    greatwall.set_arity(cli.index_input_int)
+    greatwall.set_depth(commandline_interface.index_input_int)
+    commandline_interface.prompt_integer("Choose tree arity --- # of options at each iteration", 2, 256)
+    greatwall.set_arity(commandline_interface.index_input_int)
     # Diagram values
-    cli.get_sa0()
-    greatwall.set_sa0(cli.user_chosen_input)
+    commandline_interface.get_sa0()
+    greatwall.set_sa0(commandline_interface.user_chosen_input)
 
     while not greatwall.is_finished:
         if not greatwall.current_level and not greatwall.is_initialized:
             greatwall.initialize_state_hashes()
         if greatwall.current_level < greatwall.tree_depth:
             listr = greatwall.get_li_str_query()
-            cli.prompt_integer(
+            commandline_interface.prompt_integer(
                 listr, 0 if greatwall.current_level != 0 else 1, greatwall.tree_arity
             )
-            greatwall.derive_from_user_choice(cli.index_input_int)
+            greatwall.derive_from_user_choice(commandline_interface.index_input_int)
         else:
             greatwall.finish_output()
-            cli.prompt_integer(
+            commandline_interface.prompt_integer(
                 "Enter 1 to terminate derivation and 0 to go back:", 0, 1
             )
-            if not cli.index_input_int:
-                greatwall.derive_from_user_choice(cli.index_input_int)
+            if not commandline_interface.index_input_int:
+                greatwall.derive_from_user_choice(commandline_interface.index_input_int)
 
 
 def main():
     if len(sys.argv) == 2:
         if sys.argv[1].upper() == "GUI":
-            gui_main()
+            app = QApplication([])
+            window = GreatWallWindow()
+            window.show()
+            app.exec_()
         elif sys.argv[1].upper() == "CLI":
             run_greatwall_cli()
     else:

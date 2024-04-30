@@ -4,7 +4,7 @@ import sys
 from mnemonic.mnemonic import Mnemonic
 
 
-class UserInterface:
+class CommandLineInterface:
     def __init__(self):
         self.index_input_str = ""
         self.index_input_int = 0

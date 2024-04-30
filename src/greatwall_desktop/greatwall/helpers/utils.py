@@ -105,6 +105,3 @@ class ShapeTacitKnowledgeParam(TacitKnowledgeParam):
 
     def _compute_value(self):
         return super()._compute_value()
-
-
-
