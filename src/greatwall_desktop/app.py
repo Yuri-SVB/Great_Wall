@@ -22,7 +22,9 @@ def run_greatwall_cli():
         "Choose tree depth --- # of iterative procedural memory choices needed", 1, 256
     )
     greatwall.set_depth(commandline_interface.index_input_int)
-    commandline_interface.prompt_integer("Choose tree arity --- # of options at each iteration", 2, 256)
+    commandline_interface.prompt_integer(
+        "Choose tree arity --- # of options at each iteration", 2, 256
+    )
     greatwall.set_arity(commandline_interface.index_input_int)
     # Diagram values
     commandline_interface.get_sa0()
