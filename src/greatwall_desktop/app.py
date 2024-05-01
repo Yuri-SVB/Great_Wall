@@ -1,6 +1,6 @@
 import sys
 
-from .greatwall import GreatWall
+from .greatwall.protocol import GreatWall
 from .interfaces.cli import CommandLineInterface
 from .interfaces.gui.greatwall_window import GreatWallWindow
 from .interfaces.gui.memorization_window import MemorizationAssistantWindow
@@ -30,11 +30,11 @@ def run_greatwall_cli():
 
     while not greatwall.is_finished:
         if not greatwall.current_level and not greatwall.is_initialized:
-            greatwall.initialize_state_hashes()
+            greatwall.init_protocol_values()
         if greatwall.current_level < greatwall.tree_depth:
-            listr = greatwall.get_li_str_query()
+            list_str = greatwall.get_li_str_query()
             commandline_interface.prompt_integer(
-                listr, 0 if greatwall.current_level != 0 else 1, greatwall.tree_arity
+                list_str, 0 if greatwall.current_level != 0 else 1, greatwall.tree_arity
             )
             greatwall.derive_from_user_choice(commandline_interface.index_input_int)
         else:
