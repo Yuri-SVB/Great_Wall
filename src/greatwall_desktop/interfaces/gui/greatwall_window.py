@@ -37,10 +37,10 @@ from PyQt5.QtWidgets import (
     QWidget,
     QWidgetItem,
 )
-from resources.greatwall import GreatWall
-from resources.helpers import constants
-from resources.helpers.colormaps import color_palettes
-from resources.helpers.utils import FractalTacitKnowledgeParam
+from ...greatwall.helpers import constants
+from ...greatwall.helpers.colormaps import color_palettes
+from ...greatwall.helpers.utils import FractalTacitKnowledgeParam
+from ...greatwall.protocol import GreatWall
 
 
 class GreatWallThread(QThread):
@@ -1358,12 +1358,8 @@ class GreatWallWindow(QMainWindow):
         self.close()
 
 
-def main():
+def main_gui():
     app = QApplication([])
     window = GreatWallWindow()
     window.show()
     app.exec_()
-
-
-if __name__ == "__main__":
-    main()
