@@ -1,7 +1,7 @@
 import sys
 
 from .interfaces.cli import main_cli
-from .interfaces.gui.greatwall_window import main_gui
+from .interfaces.gui.main import main_gui
 
 
 def main():
@@ -12,8 +12,8 @@ def main():
             main_cli()
     else:
         print(
-            f'  (use "main.py GUI" to run the GreatWall application with graphic user interface)\n'
-            f'  (or "main.py CLI" to run with command-line interface)'
+            "Use 'main.py GUI' to run the app with graphic user interface and\n"
+            + "use 'main.py GUI' to run the app with command-line interface."
         )
 
 

@@ -3,7 +3,6 @@ import sys
 
 from ..greatwall.knowledge.mnemonic.mnemonic import Mnemonic
 from ..greatwall.protocol import GreatWall
-from ..interfaces.cli import CommandLineInterface
 
 
 class CommandLineInterface:
