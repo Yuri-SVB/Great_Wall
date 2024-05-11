@@ -45,8 +45,10 @@ class MainWindow(QMainWindow):
         intro_label = QLabel("Welcome to GreatWall!", self)
 
         intro_widgets_layout = QVBoxLayout()
+        intro_widgets_layout.addStretch(1)
         intro_widgets_layout.addWidget(intro_image, alignment=Qt.AlignCenter)
         intro_widgets_layout.addWidget(intro_label, alignment=Qt.AlignCenter)
+        intro_widgets_layout.addStretch(1)
         intro_widgets_group = QGroupBox()
         intro_widgets_group.setLayout(intro_widgets_layout)
 
@@ -60,11 +62,9 @@ class MainWindow(QMainWindow):
         practice_button.clicked.connect(self.on_practice_button_click)
 
         practice_widgets_layout = QVBoxLayout()
-        practice_widgets_layout.addStretch(1)
         practice_widgets_layout.addWidget(practice_image, alignment=Qt.AlignCenter)
         practice_widgets_layout.addWidget(practice_label, alignment=Qt.AlignCenter)
         practice_widgets_layout.addWidget(practice_button)
-        practice_widgets_layout.addStretch(1)
         practice_widgets_group = QGroupBox()
         practice_widgets_group.setLayout(practice_widgets_layout)
         practice_widgets_group.setMinimumWidth(200)
@@ -79,11 +79,9 @@ class MainWindow(QMainWindow):
         deriving_button.clicked.connect(self.on_deriving_button_click)
 
         deriving_widgets_layout = QVBoxLayout()
-        deriving_widgets_layout.addStretch(1)
         deriving_widgets_layout.addWidget(deriving_image, alignment=Qt.AlignCenter)
         deriving_widgets_layout.addWidget(deriving_label, alignment=Qt.AlignCenter)
         deriving_widgets_layout.addWidget(deriving_button)
-        deriving_widgets_layout.addStretch(1)
         deriving_widgets_group = QGroupBox()
         deriving_widgets_group.setLayout(deriving_widgets_layout)
         deriving_widgets_group.setMinimumWidth(200)
