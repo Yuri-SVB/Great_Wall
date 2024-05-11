@@ -25,7 +25,6 @@ from PyQt5.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLayout,
-    QMainWindow,
     QMessageBox,
     QPushButton,
     QScrollArea,

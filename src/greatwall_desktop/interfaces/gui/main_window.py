@@ -1,42 +1,21 @@
 from PyQt5.QtCore import (
-    QEvent,
-    QMargins,
-    QPoint,
-    QRect,
-    QRectF,
-    QSignalTransition,
     QSize,
-    QState,
-    QStateMachine,
     Qt,
-    QThread,
     pyqtSignal,
 )
-from PyQt5.QtGui import QBrush, QColor, QIcon, QImage, QPixmap
+from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import (
     QApplication,
-    QComboBox,
-    QFrame,
-    QGraphicsPixmapItem,
-    QGraphicsScene,
-    QGraphicsView,
     QGroupBox,
     QHBoxLayout,
     QLabel,
-    QLayout,
     QMainWindow,
-    QMessageBox,
     QPushButton,
-    QScrollArea,
-    QSizePolicy,
-    QSpinBox,
     QStackedWidget,
-    QTextEdit,
     QVBoxLayout,
     QWidget,
-    QWidgetItem,
 )
-from greatwall_desktop.interfaces.gui.greatwall_window import GreatWallWindow
+from .greatwall_window import GreatWallWindow
 
 
 class MainWindow(QMainWindow):
