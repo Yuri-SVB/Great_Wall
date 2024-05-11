@@ -40,7 +40,7 @@ class MainWindow(QMainWindow):
         self.stacked.setCurrentWidget(self.welcome_view)
 
     def init_welcome_view(self):
-        practice_image_path = "/usr/home/MuhammadMouradFbsd/Projects/T3InfoSecurity/Great_Wall/src/greatwall_desktop/interfaces/gui/icons/practice.png"
+        practice_image_path = "greatwall_desktop/interfaces/gui/icons/practice.png"
         image = QPixmap(practice_image_path)
         self.practice_image = QLabel(self)
         self.practice_image.setPixmap(image.scaled(QSize(100, 100)))
@@ -59,7 +59,7 @@ class MainWindow(QMainWindow):
         practice_widgets_group.setLayout(practice_widgets_layout)
         practice_widgets_group.setMinimumWidth(200)
 
-        practice_image_path = "/usr/home/MuhammadMouradFbsd/Projects/T3InfoSecurity/Great_Wall/src/greatwall_desktop/interfaces/gui/icons/derivative.png"
+        practice_image_path = "greatwall_desktop/interfaces/gui/icons/derivative.png"
         image = QPixmap(practice_image_path)
         self.deriving_image = QLabel(self)
         self.deriving_image.setPixmap(image.scaled(QSize(100, 100)))
