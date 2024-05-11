@@ -1,7 +1,7 @@
 import sys
 
 from .interfaces.cli import main_cli
-from .interfaces.gui.main import main_gui
+from .interfaces.gui.main_window import main_gui
 
 
 def main():

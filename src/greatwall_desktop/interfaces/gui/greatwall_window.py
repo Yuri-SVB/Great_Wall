@@ -221,7 +221,7 @@ class ImageViewer(QGraphicsView):
 
         # The main purpose of the following attributes are to keep
         # the underline data preserved and not noisy and distorted
-        # when manipulating the underline data.
+        # by python garbage collection when manipulating the underline data.
         self._normalized_array = None
         self._rgb_img = None
         self._qimage = None
@@ -301,50 +301,49 @@ class ImageViewer(QGraphicsView):
                 self._zoom = 0
 
 
-class GreatWallWindow(QMainWindow):
+class GreatWallWindow(QStackedWidget):
     gui_error_signal = pyqtSignal()
     level_up_signal = pyqtSignal()
     level_down_signal = pyqtSignal()
 
-    def __init__(self):
+    def __init__(self, main_window):
         super().__init__()
+        self.main_window = main_window
+
         self.greatwall_finish_result: bytes = bytes(0000)
         self.error_occurred = Exception
         self.transitions_list: list[QSignalTransition] = []
 
         self.greatwall = GreatWall()
 
-        self.stacked = QStackedWidget()
-        self.setCentralWidget(self.stacked)
-
         self.input_view = self.init_input_view()
-        self.stacked.addWidget(self.input_view)
+        self.addWidget(self.input_view)
 
         self.input_confirmation_view = self.init_input_confirmation_view()
-        self.stacked.addWidget(self.input_confirmation_view)
+        self.addWidget(self.input_confirmation_view)
 
         self.waiting_derivation_view = self.init_waiting_derivation_view()
-        self.stacked.addWidget(self.waiting_derivation_view)
+        self.addWidget(self.waiting_derivation_view)
 
         self.selecting_derivation_view = self.init_selecting_derivation_view()
-        self.stacked.addWidget(self.selecting_derivation_view)
+        self.addWidget(self.selecting_derivation_view)
 
         self.result_confirmation_view = self.init_result_confirmation_view()
-        self.stacked.addWidget(self.result_confirmation_view)
+        self.addWidget(self.result_confirmation_view)
 
         self.result_view = self.init_result_view()
-        self.stacked.addWidget(self.result_view)
+        self.addWidget(self.result_view)
 
         self.error_view = self.init_error_view()
-        self.stacked.addWidget(self.error_view)
+        self.addWidget(self.error_view)
 
         # Launch UI
-        self.main_states_list: list[QState] = []
+        self.derivation_states_list: list[QState] = []
         self.error_states_list: list[QState] = []
         self.main_gui_state = QStateMachine()
         self.main_derivation_state = QStateMachine()
         self.selecting_derivation_states_list: list[QState] = []
-        self.init_main_app_state()
+        self.init_derivation_window_state()
 
     def eventFilter(self, obj, event):
         if event.type() == QEvent.Wheel:
@@ -426,12 +425,12 @@ class GreatWallWindow(QMainWindow):
             self.password_text,
         ]
 
-        self.input_exit_navigation_button = QPushButton("Exit", self)
+        self.input_leave_navigation_button = QPushButton("Leave", self)
         self.input_next_navigation_button = QPushButton("Next", self)
 
         # Lists of input navigation widgets
         self.input_navigation_widgets_list = [
-            self.input_exit_navigation_button,
+            self.input_leave_navigation_button,
             self.input_next_navigation_button,
         ]
 
@@ -774,9 +773,9 @@ class GreatWallWindow(QMainWindow):
         spinbox.setValue(default_value)
         spinbox.setWrapping(set_wrapping)
 
-    def init_main_app_state(self):
-        exit_app_state = QState()
-        exit_app_state.setObjectName("Exit Application")
+    def init_derivation_window_state(self):
+        leave_derivation_state = QState()
+        leave_derivation_state.setObjectName("Leave Derivation Window")
 
         input_state = QState()
         input_state.setObjectName("User Inputs")
@@ -800,8 +799,8 @@ class GreatWallWindow(QMainWindow):
         self.error_states_list = [
             error_state,
         ]
-        self.main_states_list = [
-            exit_app_state,
+        self.derivation_states_list = [
+            leave_derivation_state,
             input_state,
             input_confirmation_state,
             derivation_state,
@@ -815,7 +814,7 @@ class GreatWallWindow(QMainWindow):
             self.input_next_navigation_button.clicked, input_confirmation_state
         )
         input_state.addTransition(
-            self.input_exit_navigation_button.clicked, exit_app_state
+            self.input_leave_navigation_button.clicked, leave_derivation_state
         )
         input_confirmation_state.addTransition(
             self.input_confirmation_next_navigation_button.clicked, derivation_state
@@ -848,11 +847,11 @@ class GreatWallWindow(QMainWindow):
         )
 
         # Error transitions, add to all states except the error states
-        for state in set(self.main_states_list) - set(self.error_states_list):
+        for state in set(self.derivation_states_list) - set(self.error_states_list):
             state.addTransition(self.gui_error_signal, error_state)
 
         # Add states to the state machine
-        for state in self.main_states_list:
+        for state in self.derivation_states_list:
             self.main_gui_state.addState(state)
 
         # Set initial state and start the state machine
@@ -861,7 +860,7 @@ class GreatWallWindow(QMainWindow):
         self.main_gui_state.start()
 
         # Connect states to methods
-        exit_app_state.entered.connect(self.on_exit_app)
+        leave_derivation_state.entered.connect(self.on_derivation_leave)
         input_state.entered.connect(self.input_state1_entered)
         input_confirmation_state.entered.connect(self.confirmation_state2_entered)
         derivation_state.entered.connect(self.derivation_state3_entered)
@@ -1110,11 +1109,11 @@ class GreatWallWindow(QMainWindow):
         exception_message = f"Exception:\n{str(self.error_occurred)}"
         self.error_message_text.setText(exception_message)
 
-        self.stacked.setCurrentWidget(self.error_view)
+        self.setCurrentWidget(self.error_view)
 
     def input_state1_entered(self):
         print("SM1: Entering State 1")
-        self.stacked.setCurrentWidget(self.input_view)
+        self.setCurrentWidget(self.input_view)
         # self.result_confirmation_result_hash_label.clear()
         # self.result_confirmation_result_hash_label.setText("")
         self.reinit_running_greatwall()
@@ -1125,7 +1124,7 @@ class GreatWallWindow(QMainWindow):
         # Config input confirmation widgets
         self.config_input_confirmation_widgets()
 
-        self.stacked.setCurrentWidget(self.input_confirmation_view)
+        self.setCurrentWidget(self.input_confirmation_view)
 
     def derivation_state3_entered(self):
         print("SM1: Entering State 3")
@@ -1161,7 +1160,7 @@ class GreatWallWindow(QMainWindow):
             self.greatwall_thread.error_occurred.connect(self.on_thread_error)
             self.init_selection_derivation_loop()
 
-            self.stacked.setCurrentWidget(self.waiting_derivation_view)
+            self.setCurrentWidget(self.waiting_derivation_view)
         except Exception as e:
             self.error_occurred = e
             self.gui_error_signal.emit()
@@ -1172,7 +1171,7 @@ class GreatWallWindow(QMainWindow):
         # Config result widgets
         self.config_result_widgets()
 
-        self.stacked.setCurrentWidget(self.result_view)
+        self.setCurrentWidget(self.result_view)
 
     def init_selection_derivation_loop(self):
         if self.main_derivation_state.isRunning():
@@ -1334,12 +1333,12 @@ class GreatWallWindow(QMainWindow):
             # Config result confirmation widgets
             self.config_result_confirmation_widgets()
 
-            self.stacked.setCurrentWidget(self.result_confirmation_view)
+            self.setCurrentWidget(self.result_confirmation_view)
         else:
             # Config selecting derivation widgets
             self.config_selecting_derivation_widgets()
 
-            self.stacked.setCurrentWidget(self.selecting_derivation_view)
+            self.setCurrentWidget(self.selecting_derivation_view)
 
     def on_thread_cancel(self):
         print("Task canceled")
@@ -1352,14 +1351,7 @@ class GreatWallWindow(QMainWindow):
         error_dialog.setWindowTitle("Thread Error")
         error_dialog.exec_()
 
-    def on_exit_app(self):
-        """Close the parent which exit the application. Bye, come again!"""
-        print("Closed")
+    def on_derivation_leave(self):
+        """Leave the derivation view."""
         self.close()
-
-
-def main_gui():
-    app = QApplication([])
-    window = GreatWallWindow()
-    window.show()
-    app.exec_()
+        self.main_window.stacked.setCurrentWidget(self.main_window.welcome_view)
