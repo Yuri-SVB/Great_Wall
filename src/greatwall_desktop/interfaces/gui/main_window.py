@@ -1,8 +1,4 @@
-from PyQt5.QtCore import (
-    QSize,
-    Qt,
-    pyqtSignal,
-)
+from PyQt5.QtCore import QSize, Qt, pyqtSignal
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import (
     QApplication,
@@ -15,6 +11,7 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
 from .greatwall_window import GreatWallWindow
 
 
@@ -40,48 +37,68 @@ class MainWindow(QMainWindow):
         self.stacked.setCurrentWidget(self.welcome_view)
 
     def init_welcome_view(self):
-        practice_image_path = "greatwall_desktop/interfaces/gui/icons/practice.png"
-        image = QPixmap(practice_image_path)
-        self.practice_image = QLabel(self)
-        self.practice_image.setPixmap(image.scaled(QSize(100, 100)))
-        self.practice_label = QLabel("Practice on your derivation!", self)
-        self.practice_button = QPushButton("Practice", self)
-        self.practice_button.clicked.connect(self.on_practice_button_click)
+        # Set intro widgets layout
+        intro_image_path = "greatwall_desktop/interfaces/gui/resources/gesture.png"
+        intro_pixmap_image = QPixmap(intro_image_path)
+        intro_image = QLabel(self)
+        intro_image.setPixmap(intro_pixmap_image.scaled(QSize(100, 100)))
+        intro_label = QLabel("Welcome to GreatWall!", self)
+
+        intro_widgets_layout = QVBoxLayout()
+        intro_widgets_layout.addWidget(intro_image, alignment=Qt.AlignCenter)
+        intro_widgets_layout.addWidget(intro_label, alignment=Qt.AlignCenter)
+        intro_widgets_group = QGroupBox()
+        intro_widgets_group.setLayout(intro_widgets_layout)
+
+        # Set practice widgets layout
+        practice_image_path = "greatwall_desktop/interfaces/gui/resources/practice.png"
+        practice_pixmap_image = QPixmap(practice_image_path)
+        practice_image = QLabel(self)
+        practice_image.setPixmap(practice_pixmap_image.scaled(QSize(100, 100)))
+        practice_label = QLabel("Practice on your derivation!", self)
+        practice_button = QPushButton("Practice", self)
+        practice_button.clicked.connect(self.on_practice_button_click)
 
         practice_widgets_layout = QVBoxLayout()
         practice_widgets_layout.addStretch(1)
-        practice_widgets_layout.addWidget(self.practice_image, alignment=Qt.AlignCenter)
-        practice_widgets_layout.addWidget(self.practice_label, alignment=Qt.AlignCenter)
-        practice_widgets_layout.addWidget(self.practice_button)
+        practice_widgets_layout.addWidget(practice_image, alignment=Qt.AlignCenter)
+        practice_widgets_layout.addWidget(practice_label, alignment=Qt.AlignCenter)
+        practice_widgets_layout.addWidget(practice_button)
         practice_widgets_layout.addStretch(1)
-
         practice_widgets_group = QGroupBox()
         practice_widgets_group.setLayout(practice_widgets_layout)
         practice_widgets_group.setMinimumWidth(200)
 
-        practice_image_path = "greatwall_desktop/interfaces/gui/icons/derivative.png"
-        image = QPixmap(practice_image_path)
-        self.deriving_image = QLabel(self)
-        self.deriving_image.setPixmap(image.scaled(QSize(100, 100)))
-        self.deriving_label = QLabel("Deriving your hash!", self)
-        self.deriving_button = QPushButton("Derive", self)
-        self.deriving_button.clicked.connect(self.on_deriving_button_click)
+        # Set deriving widgets layout
+        deriving_image_path = "greatwall_desktop/interfaces/gui/resources/derivative.png"
+        deriving_pixmap_image = QPixmap(deriving_image_path)
+        deriving_image = QLabel(self)
+        deriving_image.setPixmap(deriving_pixmap_image.scaled(QSize(100, 100)))
+        deriving_label = QLabel("Deriving your hash!", self)
+        deriving_button = QPushButton("Derive", self)
+        deriving_button.clicked.connect(self.on_deriving_button_click)
 
         deriving_widgets_layout = QVBoxLayout()
         deriving_widgets_layout.addStretch(1)
-        deriving_widgets_layout.addWidget(self.deriving_image, alignment=Qt.AlignCenter)
-        deriving_widgets_layout.addWidget(self.deriving_label, alignment=Qt.AlignCenter)
-        deriving_widgets_layout.addWidget(self.deriving_button)
+        deriving_widgets_layout.addWidget(deriving_image, alignment=Qt.AlignCenter)
+        deriving_widgets_layout.addWidget(deriving_label, alignment=Qt.AlignCenter)
+        deriving_widgets_layout.addWidget(deriving_button)
         deriving_widgets_layout.addStretch(1)
-
         deriving_widgets_group = QGroupBox()
         deriving_widgets_group.setLayout(deriving_widgets_layout)
         deriving_widgets_group.setMinimumWidth(200)
 
+        # Set navigation widgets layout
+        navigation_widgets_layout = QHBoxLayout()
+        navigation_widgets_layout.addWidget(practice_widgets_group)
+        navigation_widgets_layout.addWidget(deriving_widgets_group)
+        navigation_widgets_group = QGroupBox()
+        navigation_widgets_group.setLayout(navigation_widgets_layout)
+
         # Set welcome view layout
-        welcome_layout = QHBoxLayout()
-        welcome_layout.addWidget(practice_widgets_group)
-        welcome_layout.addWidget(deriving_widgets_group)
+        welcome_layout = QVBoxLayout()
+        welcome_layout.addWidget(intro_widgets_group)
+        welcome_layout.addWidget(navigation_widgets_group)
         welcome_view = QWidget()
         welcome_view.setLayout(welcome_layout)
 
