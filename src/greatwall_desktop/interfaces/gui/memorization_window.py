@@ -1,22 +1,7 @@
 import numpy as np
-from PyQt5.QtCore import (
-    QEvent,
-    QMargins,
-    QPoint,
-    QRect,
-    QRectF,
-    QSignalTransition,
-    QSize,
-    QState,
-    QStateMachine,
-    Qt,
-    QThread,
-    pyqtSignal,
-)
-from PyQt5.QtGui import QBrush, QColor, QIcon, QImage, QPixmap
+from PyQt5.QtCore import QRectF, Qt, pyqtSignal
+from PyQt5.QtGui import QBrush, QColor, QImage, QPixmap
 from PyQt5.QtWidgets import (
-    QApplication,
-    QComboBox,
     QFrame,
     QGraphicsPixmapItem,
     QGraphicsScene,
@@ -24,19 +9,11 @@ from PyQt5.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
     QLabel,
-    QLayout,
-    QMainWindow,
-    QMessageBox,
     QPushButton,
-    QScrollArea,
-    QSizePolicy,
-    QSpinBox,
-    QStackedWidget,
-    QTextEdit,
     QVBoxLayout,
     QWidget,
-    QWidgetItem,
 )
+
 from ...greatwall.helpers import constants
 from ...greatwall.helpers.colormaps import color_palettes
 from ...greatwall.helpers.utils import FractalTacitKnowledgeParam
@@ -138,45 +115,70 @@ class ImageViewer(QGraphicsView):
                 self._zoom = 0
 
 
-class MemorizationAssistantWindow(QMainWindow):
+class MemorizationAssistantWindow(QWidget):
     gui_error_signal = pyqtSignal()
 
-    def __init__(self):
+    def __init__(self, main_window):
         super().__init__()
-        self.greatwall_finish_result: bytes = bytes(0000)
-        self.error_occurred = Exception
-        self.transitions_list: list[QSignalTransition] = []
+        self.main_window = main_window
 
-        self.greatwall = GreatWall()
+        # Set header widgets group
+        memorization_label = QLabel(
+            "Please, choose at which level you remember the following Card:", self
+        )
+        header_layout = QVBoxLayout()
+        header_layout.addWidget(memorization_label)
 
-        self.stacked = QStackedWidget()
-        self.setCentralWidget(self.stacked)
+        header_group = QGroupBox()
+        header_group.setLayout(header_layout)
 
-        self.input_view = self.init_input_view()
-        self.stacked.addWidget(self.input_view)
+        # Set assistant widgets group
+        memorization_pallette = QLabel(self)
+        again_button = QPushButton("Again", self)
+        hard_button = QPushButton("Hard", self)
+        good_button = QPushButton("Good", self)
+        easy_button = QPushButton("easy", self)
 
-        self.input_confirmation_view = self.init_input_confirmation_view()
-        self.stacked.addWidget(self.input_confirmation_view)
+        grade_layout = QHBoxLayout()
+        grade_layout.addWidget(again_button)
+        grade_layout.addWidget(hard_button)
+        grade_layout.addWidget(good_button)
+        grade_layout.addWidget(easy_button)
 
-        self.waiting_derivation_view = self.init_waiting_derivation_view()
-        self.stacked.addWidget(self.waiting_derivation_view)
+        pallette_layout = QVBoxLayout()
+        pallette_layout.addStretch(1)
+        pallette_layout.addWidget(memorization_pallette)
+        pallette_layout.addStretch(1)
+        pallette_layout.addLayout(grade_layout)
 
-        self.selecting_derivation_view = self.init_selecting_derivation_view()
-        self.stacked.addWidget(self.selecting_derivation_view)
+        pallette_group = QGroupBox()
+        pallette_group.setLayout(pallette_layout)
 
-        self.result_confirmation_view = self.init_result_confirmation_view()
-        self.stacked.addWidget(self.result_confirmation_view)
+        # Set navigation widgets group
+        leave_button = QPushButton("Leave", self)
+        leave_button.clicked.connect(self._on_leave_button_click)
+        navigation_layout = QHBoxLayout()
+        navigation_layout.addWidget(leave_button)
 
-        self.result_view = self.init_result_view()
-        self.stacked.addWidget(self.result_view)
+        # Set memorization group
+        memorization_layout = QVBoxLayout()
+        memorization_layout.addWidget(header_group)
+        memorization_layout.addWidget(pallette_group)
+        memorization_layout.addLayout(navigation_layout)
+        self.setLayout(memorization_layout)
 
-        self.error_view = self.init_error_view()
-        self.stacked.addWidget(self.error_view)
+    def _on_again_button_click(self):
+        pass
 
-        # Launch UI
-        self.main_states_list: list[QState] = []
-        self.error_states_list: list[QState] = []
-        self.main_gui_state = QStateMachine()
-        self.main_derivation_state = QStateMachine()
-        self.selecting_derivation_states_list: list[QState] = []
-        self.init_main_app_state()
+    def _on_hard_button_click(self):
+        pass
+
+    def _on_good_button_click(self):
+        pass
+
+    def _on_easy_button_click(self):
+        pass
+
+    def _on_leave_button_click(self):
+        self.close()
+        self.main_window.stacked.setCurrentWidget(self.main_window.welcome_view)

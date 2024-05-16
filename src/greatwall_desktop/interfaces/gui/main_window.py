@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QSize, Qt, pyqtSignal
+from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import (
     QApplication,
@@ -13,11 +13,10 @@ from PyQt5.QtWidgets import (
 )
 
 from .greatwall_window import GreatWallWindow
+from .memorization_window import MemorizationAssistantWindow
 
 
 class MainWindow(QMainWindow):
-    gui_error_signal = pyqtSignal()
-
     def __init__(self):
         super().__init__()
         self.error_occurred = Exception
@@ -31,8 +30,8 @@ class MainWindow(QMainWindow):
         self.deriving_view = self.init_derive_view()
         self.stacked.addWidget(self.deriving_view)
 
-        # self.memorization_view = self.init_memorization_view()
-        # self.stacked.addWidget(self.memorization_view)
+        self.memorization_view = self.init_memorization_view()
+        self.stacked.addWidget(self.memorization_view)
 
         self.stacked.setCurrentWidget(self.welcome_view)
 
@@ -70,7 +69,7 @@ class MainWindow(QMainWindow):
         practice_widgets_group.setMinimumWidth(200)
 
         # Set deriving widgets layout
-        deriving_image_path = "greatwall_desktop/interfaces/gui/resources/derivative.png"
+        deriving_image_path = "greatwall_desktop/interfaces/gui/resources/deriving.png"
         deriving_pixmap_image = QPixmap(deriving_image_path)
         deriving_image = QLabel(self)
         deriving_image.setPixmap(deriving_pixmap_image.scaled(QSize(100, 100)))
@@ -90,13 +89,11 @@ class MainWindow(QMainWindow):
         navigation_widgets_layout = QHBoxLayout()
         navigation_widgets_layout.addWidget(practice_widgets_group)
         navigation_widgets_layout.addWidget(deriving_widgets_group)
-        navigation_widgets_group = QGroupBox()
-        navigation_widgets_group.setLayout(navigation_widgets_layout)
 
         # Set welcome view layout
         welcome_layout = QVBoxLayout()
         welcome_layout.addWidget(intro_widgets_group)
-        welcome_layout.addWidget(navigation_widgets_group)
+        welcome_layout.addLayout(navigation_widgets_layout)
         welcome_view = QWidget()
         welcome_view.setLayout(welcome_layout)
 
@@ -107,10 +104,13 @@ class MainWindow(QMainWindow):
         return deriving_view
 
     def init_memorization_view(self):
-        pass
+        memorization_view = MemorizationAssistantWindow(self)
+        return memorization_view
 
     def on_practice_button_click(self):
-        pass
+        self.memorization_view = self.init_memorization_view()
+        self.stacked.addWidget(self.memorization_view)
+        self.stacked.setCurrentWidget(self.memorization_view)
 
     def on_deriving_button_click(self):
         self.deriving_view = self.init_derive_view()
