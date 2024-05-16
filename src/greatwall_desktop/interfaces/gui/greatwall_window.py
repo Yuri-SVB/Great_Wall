@@ -1135,9 +1135,7 @@ class GreatWallWindow(QStackedWidget):
             self.greatwall.set_fractal_function_type(
                 self.fractal_function_combobox.currentText()
             )
-            self.greatwall.set_tlp_param(
-                self.tlp_param_spinbox.value()
-            )
+            self.greatwall.set_tlp_param(self.tlp_param_spinbox.value())
             self.greatwall.set_depth(self.depth_spinbox.value())
             self.greatwall.set_arity(self.arity_spinbox.value())
             password_success = self.greatwall.set_sa0(self.password_text.toPlainText())
@@ -1193,9 +1191,7 @@ class GreatWallWindow(QStackedWidget):
         for idx in range(num_states):
             state = QState()
             state.entered.connect(
-                lambda state_n=idx: self.selection_derive_state_n_entered(
-                    state_n
-                )
+                lambda state_n=idx: self.selection_derive_state_n_entered(state_n)
             )
             self.main_derivation_state.addState(state)
             self.selecting_derivation_states_list.append(state)
