@@ -2,6 +2,7 @@ import numpy as np
 from PyQt5.QtCore import QRectF, Qt, pyqtSignal
 from PyQt5.QtGui import QBrush, QColor, QImage, QPixmap
 from PyQt5.QtWidgets import (
+    QComboBox,
     QFrame,
     QGraphicsPixmapItem,
     QGraphicsScene,
@@ -16,8 +17,7 @@ from PyQt5.QtWidgets import (
 
 from ...greatwall.helpers import constants
 from ...greatwall.helpers.colormaps import color_palettes
-from ...greatwall.helpers.utils import FractalTacitKnowledgeParam
-from ...greatwall.protocol import GreatWall
+from ...memo_assistant import MemoCard
 
 
 class ImageViewer(QGraphicsView):
@@ -123,11 +123,22 @@ class MemorizationAssistantWindow(QWidget):
         self.main_window = main_window
 
         # Set header widgets group
-        memorization_label = QLabel(
+        pallette_types_label = QLabel("Tacit Knowledge Types:", self)
+        pallette_types_combobox = QComboBox(self)
+        pallette_types_combobox.addItems(constants.AVAILABLE_TACIT_KNOWLEDGE_TYPES)
+        pallette_types_combobox.setCurrentText(
+            constants.AVAILABLE_TACIT_KNOWLEDGE_TYPES[0]
+        )
+        pallette_types_combobox.currentTextChanged.connect(
+            self._on_pallette_type_change
+        )
+        guide_message_label = QLabel(
             "Please, choose at which level you remember the following Card:", self
         )
         header_layout = QVBoxLayout()
-        header_layout.addWidget(memorization_label)
+        header_layout.addWidget(pallette_types_label)
+        header_layout.addWidget(pallette_types_combobox)
+        header_layout.addWidget(guide_message_label)
 
         header_group = QGroupBox()
         header_group.setLayout(header_layout)
@@ -166,6 +177,9 @@ class MemorizationAssistantWindow(QWidget):
         memorization_layout.addWidget(pallette_group)
         memorization_layout.addLayout(navigation_layout)
         self.setLayout(memorization_layout)
+
+    def _on_pallette_type_change(self):
+        pass
 
     def _on_again_button_click(self):
         pass
