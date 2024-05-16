@@ -54,19 +54,21 @@ This section will provide you by a quick guide to start.
 
 ### Dependencies
 This project depends on the following packages:
-1. argon2-cffi = 23.1.0
-2. argon2-cffi-bindings = 21.2.0
-3. cffi = 1.16.0
-4. fsrs = 1.2.0
-5. numpy = 1.25.0
-6. Pillow = 10.1.0
-7. pycparser = 2.21
-8. PyQt5 = 5.15.10
-9. PyQt5-Qt5 = 5.15.2
-10. PyQt5-sip = 12.13.0
+1. argon2-cffi
+2. argon2-cffi-bindings
+3. cffi
+4. fsrs
+5. numpy
+6. Pillow
+7. pycparser
+8. PyQt5
+9. PyQt5-Qt5
+10. PyQt5-sip
 
 ### Installation
-Follow the following to get your environment ready:
+> **Note:** The following steps have been tested on Ubuntu24.04 LTS.
+
+Follow the following to get your development environment ready:
 1. Install system package requirements:
 ```sh
 sudo apt install python3-setuptools python3-virtualenv qtbase5-dev qt5-qmake cmake

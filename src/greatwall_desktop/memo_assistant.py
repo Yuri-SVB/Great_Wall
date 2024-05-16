@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Any, Optional
 
-from fsrs import FSRS, Card, Rating, State
+# from fsrs import FSRS, Card, Rating, State
 
 
 class MemoCard:
