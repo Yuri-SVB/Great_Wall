@@ -256,27 +256,27 @@ class MemorizationAssistantWindow(QWidget):
         self.main_window = main_window
 
         # Set header widgets group
-        pallette_types_label = QLabel("Tacit Knowledge Types:", self)
-        self.pallette_types_combobox = QComboBox(self)
-        self.pallette_types_combobox.addItems(
+        palette_types_label = QLabel("Tacit Knowledge Types:", self)
+        self.palette_types_combobox = QComboBox(self)
+        self.palette_types_combobox.addItems(
             ["Choose type of knowledge..."] + constants.AVAILABLE_TACIT_KNOWLEDGE_TYPES
         )
-        self.pallette_types_combobox.currentTextChanged.connect(
-            self._on_pallette_type_change
+        self.palette_types_combobox.currentTextChanged.connect(
+            self._on_palette_type_change
         )
         guide_message_label = QLabel(
             "Please, choose at which level you remember the following Cards:", self
         )
         header_layout = QVBoxLayout()
-        header_layout.addWidget(pallette_types_label)
-        header_layout.addWidget(self.pallette_types_combobox)
+        header_layout.addWidget(palette_types_label)
+        header_layout.addWidget(self.palette_types_combobox)
         header_layout.addWidget(guide_message_label)
 
         header_group = QGroupBox()
         header_group.setLayout(header_layout)
 
         # Set assistant widgets group
-        self.memorization_pallette = QStackedWidget(self)
+        self.memorization_palette = QStackedWidget(self)
         again_button = QPushButton("Again", self)
         again_button.setStyleSheet("background-color: gray")
         hard_button = QPushButton("Hard", self)
@@ -292,12 +292,12 @@ class MemorizationAssistantWindow(QWidget):
         grade_layout.addWidget(good_button)
         grade_layout.addWidget(easy_button)
 
-        pallette_layout = QVBoxLayout()
-        pallette_layout.addWidget(self.memorization_pallette)
-        pallette_layout.addLayout(grade_layout)
+        palette_layout = QVBoxLayout()
+        palette_layout.addWidget(self.memorization_palette)
+        palette_layout.addLayout(grade_layout)
 
-        pallette_group = QGroupBox()
-        pallette_group.setLayout(pallette_layout)
+        palette_group = QGroupBox()
+        palette_group.setLayout(palette_layout)
 
         # Set navigation widgets group
         leave_button = QPushButton("Leave", self)
@@ -308,15 +308,15 @@ class MemorizationAssistantWindow(QWidget):
         # Set memorization group
         memorization_layout = QVBoxLayout()
         memorization_layout.addWidget(header_group)
-        memorization_layout.addWidget(pallette_group)
+        memorization_layout.addWidget(palette_group)
         memorization_layout.addLayout(navigation_layout)
         self.setLayout(memorization_layout)
 
-    def _on_pallette_type_change(self):
+    def _on_palette_type_change(self):
         def memo_cards_sort_fun(e):
             return e.due
 
-        user_choice = self.pallette_types_combobox.currentText()
+        user_choice = self.palette_types_combobox.currentText()
         if user_choice == constants.FRACTAL:
             self.main_window.greatwall.get_memorization_cards.sort(
                 reverse=True, key=memo_cards_sort_fun
@@ -349,30 +349,30 @@ class MemorizationAssistantWindow(QWidget):
             scroll_area.viewport().installEventFilter(self)
             scroll_area.setWidget(flow_widget)
 
-            pallette_group = scroll_area
-            self.memorization_pallette.addWidget(pallette_group)
+            palette_group = scroll_area
+            self.memorization_palette.addWidget(palette_group)
         elif user_choice == constants.FORMOSA:
             user_sentences = []
 
             fractal_viewer = ImageViewer(self)
 
-            pallette_group = scroll_area
-            self.memorization_pallette.addWidget(pallette_group)
+            palette_group = scroll_area
+            self.memorization_palette.addWidget(palette_group)
             pass
         elif user_choice == constants.SHAPE:
             user_shapes = []
 
             fractal_viewer = ImageViewer(self)
 
-            pallette_group = scroll_area
-            self.memorization_pallette.addWidget(pallette_group)
+            palette_group = scroll_area
+            self.memorization_palette.addWidget(palette_group)
             pass
         else:
             ## TODO: Add error handling. <17-05-2024, MuhammadMuradG>
-            pallette_group = QWidget()
-            self.memorization_pallette.addWidget(pallette_group)
+            palette_group = QWidget()
+            self.memorization_palette.addWidget(palette_group)
 
-        self.memorization_pallette.setCurrentWidget(pallette_group)
+        self.memorization_palette.setCurrentWidget(palette_group)
 
     def _on_again_button_click(self):
         self.main_window.greatwall.get_memorization_cards[0].rate_card("again")
