@@ -267,8 +267,32 @@ class GreatWall:
                 MemoCard([knowledge for knowledge in knowledge_list], constants.FRACTAL)
             )
         elif self._derivation_knowledge_type == constants.FORMOSA:
-            pass
+            temp_path = DerivationPath()
+            knowledge_list = []
+            for path_idx in self._derivation_path:
+                chosen_knowledge = self._saved_path_knowledge[temp_path][1:][
+                    path_idx - 1
+                ]
+                knowledge_list.append(chosen_knowledge)
+                temp_path.append(path_idx)
+
+            self._memo_cards.append(
+                MemoCard([knowledge for knowledge in knowledge_list], constants.FORMOSA)
+            )
         elif self._derivation_knowledge_type == constants.SHAPE:
+            temp_path = DerivationPath()
+            knowledge_list = []
+            for path_idx in self._derivation_path:
+                chosen_knowledge = self._saved_path_knowledge[temp_path][1:][
+                    path_idx - 1
+                ]
+                knowledge_list.append(chosen_knowledge)
+                temp_path.append(path_idx)
+
+            self._memo_cards.append(
+                MemoCard([knowledge for knowledge in knowledge_list], constants.SHAPE)
+            )
+        else:
             pass
 
         print("KA = \n", self.state.hex())

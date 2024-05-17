@@ -399,9 +399,9 @@ class GreatWallWindow(QStackedWidget):
         self.password_text = QTextEdit(self)
 
         # Hardcode to fast tests
-        # self.password_text.setText(
-        #     "viboniboasmofiasbrchsprorirerugugucavehistmiinciwibowifltuor"
-        # )
+        self.password_text.setText(
+            "viboniboasmofiasbrchsprorirerugugucavehistmiinciwibowifltuor"
+        )
 
         # Lists of input widgets
         self.input_state_widgets_list = [
