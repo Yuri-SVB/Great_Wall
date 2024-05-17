@@ -1,14 +1,15 @@
 from datetime import datetime, timezone
 from typing import Any, Optional
 
-# from fsrs import FSRS, Card, Rating, State
+from fsrs import FSRS, Card, Rating, State
 
 
 class MemoCard:
     """A card that contains knowledge and implements spaced repetition algorithm."""
 
-    def __init__(self, knowledge) -> None:
+    def __init__(self, knowledge, knowledge_type) -> None:
         self._knowledge = knowledge
+        self._knowledge_type = knowledge_type
         self._algorithm = FSRS()
         self._card = Card()
         self._log = None
@@ -35,6 +36,10 @@ class MemoCard:
     @property
     def knowledge(self) -> Any:
         return self._knowledge
+
+    @property
+    def knowledge_type(self) -> Any:
+        return self._knowledge_type
 
     @property
     def due(self) -> Optional[datetime]:

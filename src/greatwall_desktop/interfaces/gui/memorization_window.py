@@ -1,5 +1,12 @@
 import numpy as np
-from PyQt5.QtCore import QRectF, QSize, Qt
+from PyQt5.QtCore import (
+    QMargins,
+    QPoint,
+    QRect,
+    QRectF,
+    QSize,
+    Qt,
+)
 from PyQt5.QtGui import QBrush, QColor, QImage, QPixmap
 from PyQt5.QtWidgets import (
     QComboBox,
@@ -10,15 +17,142 @@ from PyQt5.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
     QLabel,
+    QLayout,
     QPushButton,
+    QScrollArea,
+    QSizePolicy,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
+    QWidgetItem,
 )
 
 from ...greatwall.helpers import constants
 from ...greatwall.helpers.colormaps import color_palettes
-from ...memo_assistant import MemoCard
+
+
+class FlowLayout(QLayout):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        if parent is not None:
+            self.setContentsMargins(QMargins(0, 0, 0, 0))
+
+        self._item_list = []
+
+    def __del__(self):
+        item = self.takeAt(0)
+        while item:
+            item = self.takeAt(0)
+
+    def addItem(self, item):
+        self._item_list.append(item)
+
+    def count(self):
+        return len(self._item_list)
+
+    def itemAt(self, index):
+        if 0 <= index < len(self._item_list):
+            return self._item_list[index]
+
+        return None
+
+    def insertWidget(self, idx, widget):
+        """Insert widget `widget` at specific index `idx` in the widgets list.
+
+        If the index `idx` equals to -1 this method will add the widget at the
+        end of widgets list.
+
+        If the widget is already exist this method will remove the widget from
+        current position and insert it at the index `idx`.
+        """
+        self._item_list = [i for i in self._item_list if i.widget() != widget]
+        if idx == -1:
+            self._item_list.insert(len(self._item_list), QWidgetItem(widget))
+        else:
+            self._item_list.insert(idx, QWidgetItem(widget))
+
+    def takeAt(self, index):
+        if 0 <= index < len(self._item_list):
+            return self._item_list.pop(index)
+
+        return None
+
+    def expandingDirections(self):
+        return Qt.Orientation(0)
+
+    def hasHeightForWidth(self):
+        return True
+
+    def heightForWidth(self, width):
+        height = self._do_layout(QRect(0, 0, width, 0), True)
+        return height
+
+    def setGeometry(self, rect):
+        super(FlowLayout, self).setGeometry(rect)
+        self._do_layout(rect, False)
+
+    def sizeHint(self):
+        return self.minimumSize()
+
+    def minimumSize(self):
+        size = QSize()
+
+        for item in self._item_list:
+            size = size.expandedTo(item.minimumSize())
+
+        size += QSize(
+            2 * self.contentsMargins().top(), 2 * self.contentsMargins().top()
+        )
+        return size
+
+    def _do_layout(self, rect, test_only):
+        # Center the item group vertically, taking into
+        # account the width in the row.
+        row_widths = [0]
+        row = 0
+        for item in self._item_list:
+            wid = item.widget()
+            space_x = self.spacing() + wid.style().layoutSpacing(
+                QSizePolicy.PushButton, QSizePolicy.PushButton, Qt.Horizontal
+            )
+            item_width = item.sizeHint().width() + space_x
+            if row_widths[row] + item_width < rect.right():
+                row_widths[row] += item_width
+            else:
+                row += 1
+                row_widths.append(item_width)
+
+        x = int((rect.width() - row_widths[0]) / 2)
+        y = rect.y()
+        line_height = 0
+        spacing = self.spacing()
+        row = 0
+        for item in self._item_list:
+            style = item.widget().style()
+            layout_spacing_x = style.layoutSpacing(
+                QSizePolicy.PushButton, QSizePolicy.PushButton, Qt.Horizontal
+            )
+            layout_spacing_y = style.layoutSpacing(
+                QSizePolicy.PushButton, QSizePolicy.PushButton, Qt.Vertical
+            )
+            space_x = spacing + layout_spacing_x
+            space_y = spacing + layout_spacing_y
+            next_x = x + item.sizeHint().width() + space_x
+            if next_x - space_x > rect.right() and line_height > 0:
+                row += 1
+                x = int((rect.width() - row_widths[row]) / 2)
+                y = y + line_height + space_y
+                next_x = x + item.sizeHint().width() + space_x
+                line_height = 0
+
+            if not test_only:
+                item.setGeometry(QRect(QPoint(x, y), item.sizeHint()))
+
+            x = next_x
+            line_height = max(line_height, item.sizeHint().height())
+
+        return y + line_height - rect.y()
 
 
 class ImageViewer(QGraphicsView):
@@ -179,58 +313,78 @@ class MemorizationAssistantWindow(QWidget):
         self.setLayout(memorization_layout)
 
     def _on_pallette_type_change(self):
-        pallette_layout = QVBoxLayout()
-        pallette_group = QGroupBox()
-        pallette_group.setLayout(pallette_layout)
+        def memo_cards_sort_fun(e):
+            return e.due
 
         user_choice = self.pallette_types_combobox.currentText()
         if user_choice == constants.FRACTAL:
-            user_image_raws = []
+            self.main_window.greatwall.get_memorization_cards.sort(
+                reverse=True, key=memo_cards_sort_fun
+            )
 
-            fractal_viewer = ImageViewer(self)
-            fractal_viewer.setFixedSize(QSize(205, 205))
-            # fractal_viewer.setPhoto()
-            fractal_viewer.setVisible(True)
+            scroll_area = QScrollArea()
+            flow_widget = QWidget()
+            flow_layout = FlowLayout()
+            for palette in self.main_window.greatwall.get_memorization_cards[
+                0
+            ].knowledge:
+                fractal_viewer = ImageViewer(self)
+                colormap = color_palettes["Viridis Colormap"]
 
-            pallette_layout.addStretch(1)
-            pallette_layout.addWidget(fractal_viewer, alignment=Qt.AlignCenter)
-            pallette_layout.addStretch(1)
+                fractal_raw = QPixmap.fromImage(
+                    fractal_viewer.numpy_2darray_to_Qimage(palette, colormap)
+                )
+                fractal_viewer.setFixedSize(QSize(205, 205))
+                fractal_viewer.setPhoto(fractal_raw)
+                fractal_viewer.setVisible(True)
+
+                flow_layout.addWidget(fractal_viewer)
+
+            # WARNING: We are adding the `FlowLayout` to `QWidget`
+            # to be able to remove it later.
+            flow_widget.setLayout(flow_layout)
+
+            scroll_area.setWidgetResizable(True)
+            scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+            scroll_area.viewport().installEventFilter(self)
+            scroll_area.setWidget(flow_widget)
+
+            pallette_group = scroll_area
+            self.memorization_pallette.addWidget(pallette_group)
         elif user_choice == constants.FORMOSA:
             user_sentences = []
 
             fractal_viewer = ImageViewer(self)
 
-            pallette_layout.addStretch(1)
-            pallette_layout.addWidget(fractal_viewer, alignment=Qt.AlignCenter)
-            pallette_layout.addStretch(1)
+            pallette_group = scroll_area
+            self.memorization_pallette.addWidget(pallette_group)
             pass
         elif user_choice == constants.SHAPE:
             user_shapes = []
 
             fractal_viewer = ImageViewer(self)
 
-            pallette_layout.addStretch(1)
-            pallette_layout.addWidget(fractal_viewer, alignment=Qt.AlignCenter)
-            pallette_layout.addStretch(1)
+            pallette_group = scroll_area
+            self.memorization_pallette.addWidget(pallette_group)
             pass
         else:
             ## TODO: Add error handling. <17-05-2024, MuhammadMuradG>
-            pass
+            pallette_group = QWidget()
+            self.memorization_pallette.addWidget(pallette_group)
 
-        self.memorization_pallette.addWidget(pallette_group)
         self.memorization_pallette.setCurrentWidget(pallette_group)
 
     def _on_again_button_click(self):
-        pass
+        self.main_window.greatwall.get_memorization_cards[0].rate_card("again")
 
     def _on_hard_button_click(self):
-        pass
+        self.main_window.greatwall.get_memorization_cards[0].rate_card("hard")
 
     def _on_good_button_click(self):
-        pass
+        self.main_window.greatwall.get_memorization_cards[0].rate_card("good")
 
     def _on_easy_button_click(self):
-        pass
+        self.main_window.greatwall.get_memorization_cards[0].rate_card("easy")
 
     def _on_leave_button_click(self):
         self.close()

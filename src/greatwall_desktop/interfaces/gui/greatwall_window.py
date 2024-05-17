@@ -65,7 +65,7 @@ class GreatWallThread(QThread):
                     )
                 )
             elif self._is_initializing and self.greatwall.current_level == 0:
-                self.greatwall.init_state_hashes()
+                self.greatwall.init_derivation_hashing()
                 self._is_initializing = False
             else:
                 self.greatwall.derive_from_user_choice(self.user_choice)
@@ -312,7 +312,7 @@ class GreatWallWindow(QStackedWidget):
         self.error_occurred = Exception
         self.transitions_list: list[QSignalTransition] = []
 
-        self.greatwall = GreatWall()
+        self.main_window.greatwall = self.greatwall = GreatWall()
 
         self.input_view = self.init_input_view()
         self.addWidget(self.input_view)
@@ -808,6 +808,7 @@ class GreatWallWindow(QStackedWidget):
         ]
 
         # Define transitions
+        leave_derivation_state.addTransition(input_state)
         input_state.addTransition(
             self.input_next_navigation_button.clicked, input_confirmation_state
         )

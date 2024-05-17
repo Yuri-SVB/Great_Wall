@@ -3,6 +3,7 @@ from typing import Optional
 
 from argon2 import low_level
 
+from .helpers import constants
 from .helpers.utils import (
     DerivationPath,
     FormosaTacitKnowledgeParam,
@@ -12,6 +13,7 @@ from .helpers.utils import (
 from .knowledge.fractal import Fractal
 from .knowledge.mnemonic.mnemonic import Mnemonic
 from .knowledge.shaper import Shaper
+from .memo_assistant import MemoCard
 
 
 class GreatWall:
@@ -23,9 +25,12 @@ class GreatWall:
         self.is_canceled: bool = False
         self.is_initialized: bool = False
 
+        self._derivation_knowledge_type: Optional[str] = None
         self._derivation_path: DerivationPath = DerivationPath()
-        self._saved_states: dict = {}
-        self._saved_fractals = {}
+        self._saved_derivation_states: dict[DerivationPath, bytes] = {}
+        self._saved_path_knowledge: dict[DerivationPath, list] = {}
+
+        self._memo_cards: list[MemoCard] = []
 
         # Palettes
         self.mnemo: Optional[Mnemonic] = None
@@ -40,16 +45,19 @@ class GreatWall:
         # Dummy initialization of protocol values
         self.init_protocol_values()
 
+    @property
+    def get_memorization_cards(self):
+        return self._memo_cards
+
     def init_protocol_values(self):
         self.sa0: bytes = bytes(00)
         self.sa1: bytes = self.sa0
         self.sa2: bytes = self.sa0
         self.sa3: bytes = self.sa0
-
         self.state: bytes = self.sa0
-
         self.current_level: int = 0
-        self.shuffled_arity_indxes: list[int] = []
+
+        self._shuffled_arity_indxes: list[int] = []
 
     def set_themed_mnemo(self, theme: str) -> bool:
         try:
@@ -110,13 +118,14 @@ class GreatWall:
             # TODO treat error
             return False
 
-    def init_state_hashes(self):
+    def init_derivation_hashing(self):
         self.state = self.sa0
         self.current_level = 0
 
+        self._derivation_knowledge_type = None
         self._derivation_path = DerivationPath()
-        self._saved_states = {}
-        self._saved_fractals = {}
+        self._saved_derivation_states = {}
+        self._saved_path_knowledge = {}
 
         # Actual work
         self.time_intensive_derivation()
@@ -145,7 +154,7 @@ class GreatWall:
         self.update_with_quick_hash()
         self.sa3 = self.state
 
-        self._saved_states[self._derivation_path.copy()] = self.state
+        self._saved_derivation_states[self._derivation_path.copy()] = self.state
 
     def update_with_long_hash(self):
         """Update the state with the its hash taking presumably a long time."""
@@ -175,12 +184,15 @@ class GreatWall:
 
     def _shuffle_arity_indxes(self):
         """Shuffles the indexes in range `tree_arity` attribute."""
-        self.shuffled_arity_indxes = [arity_idx for arity_idx in range(self.tree_arity)]
-        random.shuffle(self.shuffled_arity_indxes)
+        self._shuffled_arity_indxes = [
+            arity_idx for arity_idx in range(self.tree_arity)
+        ]
+        random.shuffle(self._shuffled_arity_indxes)
 
     def get_fractal_query(self) -> list:
-        if self._derivation_path in self._saved_fractals:
-            return self._saved_fractals[self._derivation_path]
+        self._derivation_knowledge_type = constants.FRACTAL
+        if self._derivation_path in self._saved_path_knowledge:
+            return self._saved_path_knowledge[self._derivation_path]
         else:
             self._shuffle_arity_indxes()
             shuffled_fractals = [
@@ -197,15 +209,16 @@ class GreatWall:
                         imag_p="imag_p".encode(encoding="utf-8"),
                     ).get_value(),
                 )
-                for arity_idx in self.shuffled_arity_indxes
+                for arity_idx in self._shuffled_arity_indxes
             ]
             listr = f"Choose 1, ..., {self.tree_arity} for level {self.current_level}"
             listr += f"{'' if not self.current_level else ', choose 0 to go back'}\n"
             shuffled_fractals = [listr] + shuffled_fractals
-            self._saved_fractals[self._derivation_path.copy()] = shuffled_fractals
+            self._saved_path_knowledge[self._derivation_path.copy()] = shuffled_fractals
             return shuffled_fractals
 
     def get_li_str_query(self) -> str:
+        self._derivation_knowledge_type = constants.FORMOSA
         self._shuffle_arity_indxes()
         shuffled_sentences = [
             self.mnemo.to_mnemonic(
@@ -214,7 +227,7 @@ class GreatWall:
                     branch_idx=arity_idx.to_bytes(length=4, byteorder="big"),
                 ).get_value()
             )
-            for arity_idx in self.shuffled_arity_indxes
+            for arity_idx in self._shuffled_arity_indxes
         ]
         listr = f"Choose 1, ..., {self.tree_arity} for level {self.current_level}"
         listr += f"{'' if not self.current_level else ', choose 0 to go back'}\n"
@@ -223,6 +236,7 @@ class GreatWall:
         return listr
 
     def get_shape_query(self) -> list:
+        self._derivation_knowledge_type = constants.SHAPE
         self._shuffle_arity_indxes()
         shuffled_shapes = [
             self.shaper.draw_regular_shape(
@@ -231,7 +245,7 @@ class GreatWall:
                     branch_idx=arity_idx.to_bytes(length=4, byteorder="big"),
                 ).get_value()
             )
-            for arity_idx in self.shuffled_arity_indxes
+            for arity_idx in self._shuffled_arity_indxes
         ]
         listr = f"Choose 1, ..., {self.tree_arity} for level {self.current_level}"
         listr += f"{'' if not self.current_level else ', choose 0 to go back'}\n"
@@ -239,6 +253,24 @@ class GreatWall:
         return shuffled_shapes
 
     def finish_output(self):
+        if self._derivation_knowledge_type == constants.FRACTAL:
+            temp_path = DerivationPath()
+            knowledge_list = []
+            for path_idx in self._derivation_path:
+                chosen_knowledge = self._saved_path_knowledge[temp_path][1:][
+                    path_idx - 1
+                ]
+                knowledge_list.append(chosen_knowledge)
+                temp_path.append(path_idx)
+
+            self._memo_cards.append(
+                MemoCard([knowledge for knowledge in knowledge_list], constants.FRACTAL)
+            )
+        elif self._derivation_knowledge_type == constants.FORMOSA:
+            pass
+        elif self._derivation_knowledge_type == constants.SHAPE:
+            pass
+
         print("KA = \n", self.state.hex())
         self.is_finished = True
         return self.state
@@ -256,12 +288,12 @@ class GreatWall:
             self.current_level += 1
             self._derivation_path.append(chosen_input)
 
-            if self._derivation_path in self._saved_states.keys():
-                self.state = self._saved_states[self._derivation_path]
+            if self._derivation_path in self._saved_derivation_states.keys():
+                self.state = self._saved_derivation_states[self._derivation_path]
             else:
-                self.state += bytes(self.shuffled_arity_indxes[chosen_input - 1])
+                self.state += bytes(self._shuffled_arity_indxes[chosen_input - 1])
                 self.update_with_quick_hash()
-                self._saved_states[self._derivation_path.copy()] = self.state
+                self._saved_derivation_states[self._derivation_path.copy()] = self.state
         else:
             self.return_level()
 
@@ -274,7 +306,7 @@ class GreatWall:
         self.current_level -= 1
         self._derivation_path.pop()
 
-        self.state = self._saved_states[self._derivation_path]
+        self.state = self._saved_derivation_states[self._derivation_path]
 
     def cancel_execution(self):
         self.is_canceled = True

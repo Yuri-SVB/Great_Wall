@@ -115,7 +115,6 @@ class MainWindow(QMainWindow):
         self.stacked.setCurrentWidget(self.memorization_view)
 
     def on_deriving_button_click(self):
-        self.deriving_view = self.init_derive_view()
         self.stacked.addWidget(self.deriving_view)
         self.stacked.setCurrentWidget(self.deriving_view)
 
