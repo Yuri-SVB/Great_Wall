@@ -1,5 +1,5 @@
 import numpy as np
-from PyQt5.QtCore import QRectF, Qt
+from PyQt5.QtCore import QRectF, QSize, Qt
 from PyQt5.QtGui import QBrush, QColor, QImage, QPixmap
 from PyQt5.QtWidgets import (
     QComboBox,
@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QStackedWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -122,12 +123,11 @@ class MemorizationAssistantWindow(QWidget):
 
         # Set header widgets group
         pallette_types_label = QLabel("Tacit Knowledge Types:", self)
-        pallette_types_combobox = QComboBox(self)
-        pallette_types_combobox.addItems(constants.AVAILABLE_TACIT_KNOWLEDGE_TYPES)
-        pallette_types_combobox.setCurrentText(
-            constants.AVAILABLE_TACIT_KNOWLEDGE_TYPES[0]
+        self.pallette_types_combobox = QComboBox(self)
+        self.pallette_types_combobox.addItems(
+            ["Choose type of knowledge..."] + constants.AVAILABLE_TACIT_KNOWLEDGE_TYPES
         )
-        pallette_types_combobox.currentTextChanged.connect(
+        self.pallette_types_combobox.currentTextChanged.connect(
             self._on_pallette_type_change
         )
         guide_message_label = QLabel(
@@ -135,14 +135,14 @@ class MemorizationAssistantWindow(QWidget):
         )
         header_layout = QVBoxLayout()
         header_layout.addWidget(pallette_types_label)
-        header_layout.addWidget(pallette_types_combobox)
+        header_layout.addWidget(self.pallette_types_combobox)
         header_layout.addWidget(guide_message_label)
 
         header_group = QGroupBox()
         header_group.setLayout(header_layout)
 
         # Set assistant widgets group
-        memorization_pallette = QLabel(self)
+        self.memorization_pallette = QStackedWidget(self)
         again_button = QPushButton("Again", self)
         again_button.setStyleSheet("background-color: gray")
         hard_button = QPushButton("Hard", self)
@@ -159,9 +159,7 @@ class MemorizationAssistantWindow(QWidget):
         grade_layout.addWidget(easy_button)
 
         pallette_layout = QVBoxLayout()
-        pallette_layout.addStretch(1)
-        pallette_layout.addWidget(memorization_pallette)
-        pallette_layout.addStretch(1)
+        pallette_layout.addWidget(self.memorization_pallette)
         pallette_layout.addLayout(grade_layout)
 
         pallette_group = QGroupBox()
@@ -181,7 +179,46 @@ class MemorizationAssistantWindow(QWidget):
         self.setLayout(memorization_layout)
 
     def _on_pallette_type_change(self):
-        pass
+        pallette_layout = QVBoxLayout()
+        pallette_group = QGroupBox()
+        pallette_group.setLayout(pallette_layout)
+
+        user_choice = self.pallette_types_combobox.currentText()
+        if user_choice == constants.FRACTAL:
+            user_image_raws = []
+
+            fractal_viewer = ImageViewer(self)
+            fractal_viewer.setFixedSize(QSize(205, 205))
+            # fractal_viewer.setPhoto()
+            fractal_viewer.setVisible(True)
+
+            pallette_layout.addStretch(1)
+            pallette_layout.addWidget(fractal_viewer, alignment=Qt.AlignCenter)
+            pallette_layout.addStretch(1)
+        elif user_choice == constants.FORMOSA:
+            user_sentences = []
+
+            fractal_viewer = ImageViewer(self)
+
+            pallette_layout.addStretch(1)
+            pallette_layout.addWidget(fractal_viewer, alignment=Qt.AlignCenter)
+            pallette_layout.addStretch(1)
+            pass
+        elif user_choice == constants.SHAPE:
+            user_shapes = []
+
+            fractal_viewer = ImageViewer(self)
+
+            pallette_layout.addStretch(1)
+            pallette_layout.addWidget(fractal_viewer, alignment=Qt.AlignCenter)
+            pallette_layout.addStretch(1)
+            pass
+        else:
+            ## TODO: Add error handling. <17-05-2024, MuhammadMuradG>
+            pass
+
+        self.memorization_pallette.addWidget(pallette_group)
+        self.memorization_pallette.setCurrentWidget(pallette_group)
 
     def _on_again_button_click(self):
         pass
