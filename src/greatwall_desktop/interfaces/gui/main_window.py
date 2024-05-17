@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtCore import QSize, Qt, pyqtSignal
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import (
     QApplication,
@@ -17,6 +17,8 @@ from .memorization_window import MemorizationAssistantWindow
 
 
 class MainWindow(QMainWindow):
+    gui_error_signal = pyqtSignal()
+
     def __init__(self):
         super().__init__()
         self.error_occurred = Exception

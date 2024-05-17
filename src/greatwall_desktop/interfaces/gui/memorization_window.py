@@ -1,5 +1,5 @@
 import numpy as np
-from PyQt5.QtCore import QRectF, Qt, pyqtSignal
+from PyQt5.QtCore import QRectF, Qt
 from PyQt5.QtGui import QBrush, QColor, QImage, QPixmap
 from PyQt5.QtWidgets import (
     QComboBox,
@@ -116,8 +116,6 @@ class ImageViewer(QGraphicsView):
 
 
 class MemorizationAssistantWindow(QWidget):
-    gui_error_signal = pyqtSignal()
-
     def __init__(self, main_window):
         super().__init__()
         self.main_window = main_window
