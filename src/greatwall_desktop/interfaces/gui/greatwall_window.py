@@ -47,7 +47,7 @@ class GreatWallThread(QThread):
 
     finished = pyqtSignal()
     canceled = pyqtSignal()
-    error_occurred = pyqtSignal(str)  # Signal for passing error messages
+    greatwall_thread_error = pyqtSignal(str)  # Signal for passing error messages
 
     def __init__(self, greatwall: GreatWall):
         super().__init__()
@@ -74,7 +74,7 @@ class GreatWallThread(QThread):
                 self.finished.emit()
 
         except Exception as e:
-            self.error_occurred.emit(str(e))
+            self.greatwall_thread_error.emit(str(e))
 
     def cancel(self):
         self._is_canceled = True
@@ -1153,7 +1153,7 @@ class GreatWallWindow(QStackedWidget):
             self.greatwall_thread = GreatWallThread(self.greatwall)
             self.greatwall_thread.finished.connect(self.on_thread_finish)
             self.greatwall_thread.canceled.connect(self.on_thread_cancel)
-            self.greatwall_thread.error_occurred.connect(self.on_thread_error)
+            self.greatwall_thread.greatwall_thread_error.connect(self.on_thread_error)
             self.init_selection_derivation_loop()
 
             self.setCurrentWidget(self.waiting_derivation_view)
