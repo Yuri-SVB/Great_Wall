@@ -144,9 +144,13 @@ class MemorizationAssistantWindow(QWidget):
         # Set assistant widgets group
         memorization_pallette = QLabel(self)
         again_button = QPushButton("Again", self)
+        again_button.setStyleSheet("background-color: gray")
         hard_button = QPushButton("Hard", self)
+        hard_button.setStyleSheet("background-color: red")
         good_button = QPushButton("Good", self)
+        good_button.setStyleSheet("background-color: green")
         easy_button = QPushButton("easy", self)
+        easy_button.setStyleSheet("background-color: lime")
 
         grade_layout = QHBoxLayout()
         grade_layout.addWidget(again_button)
