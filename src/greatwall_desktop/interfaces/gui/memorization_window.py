@@ -7,7 +7,7 @@ from PyQt5.QtCore import (
     QSize,
     Qt,
 )
-from PyQt5.QtGui import QBrush, QColor, QImage, QPixmap
+from PyQt5.QtGui import QBrush, QColor, QIcon, QImage, QPixmap
 from PyQt5.QtWidgets import (
     QComboBox,
     QFrame,
@@ -365,8 +365,6 @@ class MemorizationAssistantWindow(QWidget):
 
                         flow_layout.addWidget(fractal_viewer)
 
-                    # WARNING: We are adding the `FlowLayout` to `QWidget`
-                    # to be able to remove it later.
                     flow_widget.setLayout(flow_layout)
 
                     scroll_area.setWidgetResizable(True)
@@ -386,24 +384,71 @@ class MemorizationAssistantWindow(QWidget):
                 self.memorization_palette.setCurrentWidget(palette_group)
                 return
         elif user_choice == constants.FORMOSA:
-            user_sentences = []
+            for idx, card in enumerate(
+                self.main_window.greatwall.get_memorization_cards
+            ):
+                if card.knowledge_type == constants.FORMOSA:
+                    palette_layout = QVBoxLayout()
+                    palette_group = QGroupBox()
+                    palette_group.setLayout(palette_layout)
 
-            fractal_viewer = ImageViewer(self)
+                    for palette in self.main_window.greatwall.get_memorization_cards[
+                        idx
+                    ].knowledge:
+                        selection_button = QPushButton(self)
+                        selection_button.setText(palette)
+                        palette_layout.addWidget(selection_button)
 
-            palette_group = scroll_area
-            self.memorization_palette.addWidget(palette_group)
-            pass
+                    self.memorization_palette.addWidget(palette_group)
+                    break
+            else:
+                palette_group = QLabel(
+                    "Sorry! But you don't have cards to review in this knowledge type.",
+                    self,
+                )
+                self.memorization_palette.addWidget(palette_group)
+                self.memorization_palette.setCurrentWidget(palette_group)
+                return
         elif user_choice == constants.SHAPE:
-            user_shapes = []
+            for idx, card in enumerate(
+                self.main_window.greatwall.get_memorization_cards
+            ):
+                if card.knowledge_type == constants.SHAPE:
+                    scroll_area = QScrollArea()
+                    flow_widget = QWidget()
+                    flow_layout = FlowLayout()
 
-            fractal_viewer = ImageViewer(self)
+                    for palette in self.main_window.greatwall.get_memorization_cards[
+                        idx
+                    ].knowledge:
+                        image = QPixmap(str(palette))
+                        selection_button = QPushButton(self)
+                        selection_button.setIcon(QIcon(image))
+                        selection_button.setIconSize(image.size())
 
-            palette_group = scroll_area
-            self.memorization_palette.addWidget(palette_group)
-            pass
+                        flow_layout.addWidget(selection_button)
+
+                    flow_widget.setLayout(flow_layout)
+
+                    scroll_area.setWidgetResizable(True)
+                    scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+                    scroll_area.viewport().installEventFilter(self)
+                    scroll_area.setWidget(flow_widget)
+
+                    palette_group = scroll_area
+                    self.memorization_palette.addWidget(palette_group)
+                    break
+            else:
+                palette_group = QLabel(
+                    "Sorry! But you don't have cards to review in this knowledge type.",
+                    self,
+                )
+                self.memorization_palette.addWidget(palette_group)
+                self.memorization_palette.setCurrentWidget(palette_group)
+                return
         else:
-            ## TODO: Add error handling. <17-05-2024, MuhammadMuradG>
-            palette_group = QLabel("Sorry! But you don't have cards to review", self)
+            ## TODO: Implement error handling. <17-05-2024, MuhammadMuradG>
+            palette_group = QLabel("Sorry! But you don't have cards to review.", self)
             self.memorization_palette.addWidget(palette_group)
 
         self.memorization_palette.setCurrentWidget(palette_group)
