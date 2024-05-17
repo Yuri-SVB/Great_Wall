@@ -131,7 +131,7 @@ class MemorizationAssistantWindow(QWidget):
             self._on_pallette_type_change
         )
         guide_message_label = QLabel(
-            "Please, choose at which level you remember the following Card:", self
+            "Please, choose at which level you remember the following Cards:", self
         )
         header_layout = QVBoxLayout()
         header_layout.addWidget(pallette_types_label)
