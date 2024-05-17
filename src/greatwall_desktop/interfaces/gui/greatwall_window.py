@@ -301,7 +301,6 @@ class ImageViewer(QGraphicsView):
 
 
 class GreatWallWindow(QStackedWidget):
-    gui_error_signal = pyqtSignal()
     level_up_signal = pyqtSignal()
     level_down_signal = pyqtSignal()
 
@@ -847,7 +846,7 @@ class GreatWallWindow(QStackedWidget):
 
         # Error transitions, add to all states except the error states
         for state in set(self.derivation_states_list) - set(self.error_states_list):
-            state.addTransition(self.gui_error_signal, error_state)
+            state.addTransition(self.main_window.gui_error_signal, error_state)
 
         # Add states to the state machine
         for state in self.derivation_states_list:
@@ -1144,7 +1143,7 @@ class GreatWallWindow(QStackedWidget):
                 self.error_occurred = ValueError(
                     "Config error. Password and Theme don't match"
                 )
-                self.gui_error_signal.emit()
+                self.main_window.gui_error_signal.emit()
                 return
 
             # Config selecting derivation widgets layout
@@ -1160,7 +1159,7 @@ class GreatWallWindow(QStackedWidget):
             self.setCurrentWidget(self.waiting_derivation_view)
         except Exception as e:
             self.error_occurred = e
-            self.gui_error_signal.emit()
+            self.main_window.gui_error_signal.emit()
 
     def result_state4_entered(self):
         print("SM1: State 4 Entered")
@@ -1231,7 +1230,7 @@ class GreatWallWindow(QStackedWidget):
             self.run_greatwall_thread(self.selecting_derivation_user_choice)
         except Exception as e:
             self.error_occurred = e
-            self.gui_error_signal.emit()
+            self.main_window.gui_error_signal.emit()
 
     def run_greatwall_thread(self, user_choice):
         if user_choice >= 0:
