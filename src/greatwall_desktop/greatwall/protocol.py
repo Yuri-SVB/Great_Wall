@@ -217,40 +217,49 @@ class GreatWall:
             self._saved_path_knowledge[self._derivation_path.copy()] = shuffled_fractals
             return shuffled_fractals
 
-    def get_li_str_query(self) -> str:
+    def get_li_str_query(self) -> list:
         self._derivation_knowledge_type = constants.FORMOSA
-        self._shuffle_arity_indxes()
-        shuffled_sentences = [
-            self.mnemo.to_mnemonic(
-                FormosaTacitKnowledgeParam(
-                    self.state,
-                    branch_idx=arity_idx.to_bytes(length=4, byteorder="big"),
-                ).get_value()
-            )
-            for arity_idx in self._shuffled_arity_indxes
-        ]
-        listr = f"Choose 1, ..., {self.tree_arity} for level {self.current_level}"
-        listr += f"{'' if not self.current_level else ', choose 0 to go back'}\n"
-        for i in range(len(shuffled_sentences)):
-            listr += f"{shuffled_sentences[i]}\n"
-        return listr
+        if self._derivation_path in self._saved_path_knowledge:
+            return self._saved_path_knowledge[self._derivation_path]
+        else:
+            self._shuffle_arity_indxes()
+            shuffled_sentences = [
+                self.mnemo.to_mnemonic(
+                    FormosaTacitKnowledgeParam(
+                        self.state,
+                        branch_idx=arity_idx.to_bytes(length=4, byteorder="big"),
+                    ).get_value()
+                )
+                for arity_idx in self._shuffled_arity_indxes
+            ]
+            listr = f"Choose 1, ..., {self.tree_arity} for level {self.current_level}"
+            listr += f"{'' if not self.current_level else ', choose 0 to go back'}\n"
+            for i in range(len(shuffled_sentences)):
+                listr += f"{shuffled_sentences[i]}\n"
+            shuffled_sentences = listr.split("\n")
+            self._saved_path_knowledge[self._derivation_path.copy()] = shuffled_sentences
+            return shuffled_sentences
 
     def get_shape_query(self) -> list:
         self._derivation_knowledge_type = constants.SHAPE
-        self._shuffle_arity_indxes()
-        shuffled_shapes = [
-            self.shaper.draw_regular_shape(
-                ShapeTacitKnowledgeParam(
-                    self.state,
-                    branch_idx=arity_idx.to_bytes(length=4, byteorder="big"),
-                ).get_value()
-            )
-            for arity_idx in self._shuffled_arity_indxes
-        ]
-        listr = f"Choose 1, ..., {self.tree_arity} for level {self.current_level}"
-        listr += f"{'' if not self.current_level else ', choose 0 to go back'}\n"
-        shuffled_shapes = [listr] + shuffled_shapes
-        return shuffled_shapes
+        if self._derivation_path in self._saved_path_knowledge:
+            return self._saved_path_knowledge[self._derivation_path]
+        else:
+            self._shuffle_arity_indxes()
+            shuffled_shapes = [
+                self.shaper.draw_regular_shape(
+                    ShapeTacitKnowledgeParam(
+                        self.state,
+                        branch_idx=arity_idx.to_bytes(length=4, byteorder="big"),
+                    ).get_value()
+                )
+                for arity_idx in self._shuffled_arity_indxes
+            ]
+            listr = f"Choose 1, ..., {self.tree_arity} for level {self.current_level}"
+            listr += f"{'' if not self.current_level else ', choose 0 to go back'}\n"
+            shuffled_shapes = [listr] + shuffled_shapes
+            self._saved_path_knowledge[self._derivation_path.copy()] = shuffled_shapes
+            return shuffled_shapes
 
     def finish_output(self):
         if self._derivation_knowledge_type == constants.FRACTAL:

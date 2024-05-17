@@ -1074,7 +1074,7 @@ class GreatWallWindow(QStackedWidget):
                     selection_widget.setText(str(idx))
 
         else:
-            user_options = self.greatwall.get_li_str_query().split("\n")
+            user_options = self.greatwall.get_li_str_query()
             for idx, selection_widget in enumerate(
                 self.selecting_derivation_options_widgets_list
             ):

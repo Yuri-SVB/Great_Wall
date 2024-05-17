@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 import numpy as np
 from PyQt5.QtCore import (
     QMargins,
@@ -338,14 +340,15 @@ class MemorizationAssistantWindow(QWidget):
             return
 
         user_choice = self.palette_types_combobox.currentText()
-        self.main_window.greatwall.get_memorization_cards.sort(
-            reverse=True, key=memo_cards_sort_fun
-        )
+        self.main_window.greatwall.get_memorization_cards.sort(key=memo_cards_sort_fun)
         if user_choice == constants.FRACTAL:
             for idx, card in enumerate(
                 self.main_window.greatwall.get_memorization_cards
             ):
-                if card.knowledge_type == constants.FRACTAL:
+                if (
+                    card.knowledge_type == constants.FRACTAL
+                    and card.due <= datetime.now(timezone.utc)
+                ):
                     scroll_area = QScrollArea()
                     flow_widget = QWidget()
                     flow_layout = FlowLayout()
@@ -387,7 +390,10 @@ class MemorizationAssistantWindow(QWidget):
             for idx, card in enumerate(
                 self.main_window.greatwall.get_memorization_cards
             ):
-                if card.knowledge_type == constants.FORMOSA:
+                if (
+                    card.knowledge_type == constants.FORMOSA
+                    and card.due <= datetime.now(timezone.utc)
+                ):
                     palette_layout = QVBoxLayout()
                     palette_group = QGroupBox()
                     palette_group.setLayout(palette_layout)
@@ -413,7 +419,10 @@ class MemorizationAssistantWindow(QWidget):
             for idx, card in enumerate(
                 self.main_window.greatwall.get_memorization_cards
             ):
-                if card.knowledge_type == constants.SHAPE:
+                if (
+                    card.knowledge_type == constants.SHAPE
+                    and card.due <= datetime.now(timezone.utc)
+                ):
                     scroll_area = QScrollArea()
                     flow_widget = QWidget()
                     flow_layout = FlowLayout()
