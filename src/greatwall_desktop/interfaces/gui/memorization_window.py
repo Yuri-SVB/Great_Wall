@@ -258,14 +258,13 @@ class MemorizationAssistantWindow(QWidget):
         # Set header widgets group
         palette_types_label = QLabel("Tacit Knowledge Types:", self)
         self.palette_types_combobox = QComboBox(self)
-        self.palette_types_combobox.addItems(
-            ["Choose type of knowledge..."] + constants.AVAILABLE_TACIT_KNOWLEDGE_TYPES
-        )
         self.palette_types_combobox.currentTextChanged.connect(
             self._on_palette_type_change
         )
         guide_message_label = QLabel(
-            "Please, choose at which level you remember the following Cards:", self
+            f"The following is a palettes used to derive your hash.\n"
+            f"Please, choose at which level you remember these palettes:",
+            self,
         )
         header_layout = QVBoxLayout()
         header_layout.addWidget(palette_types_label)
@@ -278,12 +277,20 @@ class MemorizationAssistantWindow(QWidget):
         # Set assistant widgets group
         self.memorization_palette = QStackedWidget(self)
         again_button = QPushButton("Again", self)
+        again_button.clicked.connect(self._on_again_button_click)
+        again_button.clicked.connect(self._on_palette_type_change)
         again_button.setStyleSheet("background-color: gray")
         hard_button = QPushButton("Hard", self)
+        hard_button.clicked.connect(self._on_hard_button_click)
+        hard_button.clicked.connect(self._on_palette_type_change)
         hard_button.setStyleSheet("background-color: red")
         good_button = QPushButton("Good", self)
+        good_button.clicked.connect(self._on_good_button_click)
+        good_button.clicked.connect(self._on_palette_type_change)
         good_button.setStyleSheet("background-color: green")
         easy_button = QPushButton("easy", self)
+        easy_button.clicked.connect(self._on_easy_button_click)
+        easy_button.clicked.connect(self._on_palette_type_change)
         easy_button.setStyleSheet("background-color: lime")
 
         grade_layout = QHBoxLayout()
@@ -295,6 +302,8 @@ class MemorizationAssistantWindow(QWidget):
         palette_layout = QVBoxLayout()
         palette_layout.addWidget(self.memorization_palette)
         palette_layout.addLayout(grade_layout)
+
+        self.palette_types_combobox.addItems(constants.AVAILABLE_TACIT_KNOWLEDGE_TYPES)
 
         palette_group = QGroupBox()
         palette_group.setLayout(palette_layout)
@@ -316,41 +325,66 @@ class MemorizationAssistantWindow(QWidget):
         def memo_cards_sort_fun(e):
             return e.due
 
-        user_choice = self.palette_types_combobox.currentText()
-        if user_choice == constants.FRACTAL:
-            self.main_window.greatwall.get_memorization_cards.sort(
-                reverse=True, key=memo_cards_sort_fun
-            )
-
-            scroll_area = QScrollArea()
-            flow_widget = QWidget()
-            flow_layout = FlowLayout()
-            for palette in self.main_window.greatwall.get_memorization_cards[
-                0
-            ].knowledge:
-                fractal_viewer = ImageViewer(self)
-                colormap = color_palettes["Viridis Colormap"]
-
-                fractal_raw = QPixmap.fromImage(
-                    fractal_viewer.numpy_2darray_to_Qimage(palette, colormap)
-                )
-                fractal_viewer.setFixedSize(QSize(205, 205))
-                fractal_viewer.setPhoto(fractal_raw)
-                fractal_viewer.setVisible(True)
-
-                flow_layout.addWidget(fractal_viewer)
-
-            # WARNING: We are adding the `FlowLayout` to `QWidget`
-            # to be able to remove it later.
-            flow_widget.setLayout(flow_layout)
-
-            scroll_area.setWidgetResizable(True)
-            scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-            scroll_area.viewport().installEventFilter(self)
-            scroll_area.setWidget(flow_widget)
-
-            palette_group = scroll_area
+        if not hasattr(self.main_window, "greatwall"):
+            palette_group = QLabel("Sorry! But you don't have cards to review.", self)
             self.memorization_palette.addWidget(palette_group)
+            self.memorization_palette.setCurrentWidget(palette_group)
+            return
+
+        if not self.main_window.greatwall.get_memorization_cards:
+            palette_group = QLabel("Sorry! But you don't have cards to review.", self)
+            self.memorization_palette.addWidget(palette_group)
+            self.memorization_palette.setCurrentWidget(palette_group)
+            return
+
+        user_choice = self.palette_types_combobox.currentText()
+        self.main_window.greatwall.get_memorization_cards.sort(
+            reverse=True, key=memo_cards_sort_fun
+        )
+        if user_choice == constants.FRACTAL:
+            for idx, card in enumerate(
+                self.main_window.greatwall.get_memorization_cards
+            ):
+                if card.knowledge_type == constants.FRACTAL:
+                    scroll_area = QScrollArea()
+                    flow_widget = QWidget()
+                    flow_layout = FlowLayout()
+
+                    for palette in self.main_window.greatwall.get_memorization_cards[
+                        idx
+                    ].knowledge:
+                        fractal_viewer = ImageViewer(self)
+                        colormap = color_palettes["Viridis Colormap"]
+
+                        fractal_raw = QPixmap.fromImage(
+                            fractal_viewer.numpy_2darray_to_Qimage(palette, colormap)
+                        )
+                        fractal_viewer.setFixedSize(QSize(205, 205))
+                        fractal_viewer.setPhoto(fractal_raw)
+                        fractal_viewer.setVisible(True)
+
+                        flow_layout.addWidget(fractal_viewer)
+
+                    # WARNING: We are adding the `FlowLayout` to `QWidget`
+                    # to be able to remove it later.
+                    flow_widget.setLayout(flow_layout)
+
+                    scroll_area.setWidgetResizable(True)
+                    scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+                    scroll_area.viewport().installEventFilter(self)
+                    scroll_area.setWidget(flow_widget)
+
+                    palette_group = scroll_area
+                    self.memorization_palette.addWidget(palette_group)
+                    break
+            else:
+                palette_group = QLabel(
+                    "Sorry! But you don't have cards to review in this knowledge type.",
+                    self,
+                )
+                self.memorization_palette.addWidget(palette_group)
+                self.memorization_palette.setCurrentWidget(palette_group)
+                return
         elif user_choice == constants.FORMOSA:
             user_sentences = []
 
@@ -369,7 +403,7 @@ class MemorizationAssistantWindow(QWidget):
             pass
         else:
             ## TODO: Add error handling. <17-05-2024, MuhammadMuradG>
-            palette_group = QWidget()
+            palette_group = QLabel("Sorry! But you don't have cards to review", self)
             self.memorization_palette.addWidget(palette_group)
 
         self.memorization_palette.setCurrentWidget(palette_group)
