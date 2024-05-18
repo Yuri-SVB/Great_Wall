@@ -86,7 +86,7 @@ pip install -r requirements.txt
 
 ```sh
 cd Great_Wall/src/
-python3 -m greatwall_desktop/ GUI
+python3 -m greatwall_desktop GUI
 ```
 
 ### Using in Beta
