@@ -104,11 +104,11 @@ Coming soon...
 ## Contact Us
 Coming soon...
 
-We encourage and foster a welcoming and respectful community as we describe in our [code of conduct](./.github/CODE_OF_CONDUCT.md). This is our Pledge to anyone need to be one of our community.
+We encourage and foster a welcoming and respectful community as we describe in our [code of conduct](../.github/CODE_OF_CONDUCT.md). This is our Pledge to anyone need to be one of our community.
 
 
 <!-- Contributing -->
 ## Contributing
-If you'd like to contribute to GreatWall development, please read first our [contributing guide](./.github/CONTRIBUTING.md).
+If you'd like to contribute to GreatWall development, please read first our [contributing guide](../.github/CONTRIBUTING.md).
 
 If you experience problems with GreatWall, you can contribute by [log them on GitHub](https://github.com/Yuri-SVB/Great_Wall/issues). If you want to contribute in code, please fork the code and submit a [pull request](https://github.com/Yuri-SVB/Great_Wall/pulls) in new branch.
