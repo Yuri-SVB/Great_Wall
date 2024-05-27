@@ -54,25 +54,34 @@ This section will provide you by a quick guide to start.
 
 ### Dependencies
 This project depends on the following packages:
-1. argon2-cffi = 23.1.0
-2. argon2-cffi-bindings = 21.2.0
-3. cffi = 1.16.0
-4. numpy = 1.25.0
-5. Pillow = 10.1.0
-6. pycparser = 2.21
-7. PyQt5 = 5.15.10
-8. PyQt5-Qt5 = 5.15.2
-9. PyQt5-sip = 12.13.0
+
+```js
+argon2-cffi = 23.1.0
+argon2-cffi-bindings = 21.2.0
+cffi = 1.16.0
+numpy = 1.25.0
+Pillow = 10.1.0
+pycparser = 2.21
+PyQt5 = 5.15.10
+PyQt5-Qt5 = 5.15.2
+PyQt5-sip = 12.13.0
+```
 
 ### Installation
 Follow the following to get your environment ready:
-1. Install system package requirements:
+1. Install system package requirements (assumes you are using Ubuntu):
 ```sh
 sudo apt install python3-setuptools python3-virtualenv qtbase5-dev qt5-qmake cmake
 ```
-2. Set up a python virtual environment and activate it:
+2. Set up a Python virtual environment and activate it and make sure to NOT use Python3.12 as of now:
+> [!WARNING]  
+> Note that on the latest version of Python i.e., `python3.12`, so due to the removal of the long-deprecated `pkgutil.ImpImporter` class, the dependencies installation process will result in an error. So it is recommended to NOT use `python3.12`.
+
+> [!TIP]  
+> Using [Python3.10](https://www.python.org/downloads/release/python-3100) is recommended.
+
 ```sh
-python3 -m venv .venv
+python3.10 -m venv .venv
 source .venv/bin/activate
 ```
 3. Install the requirements:
