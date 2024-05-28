@@ -54,23 +54,23 @@ This section will provide you by a quick guide to start.
 
 ### Dependencies
 This project depends on the following packages:
-1. argon2-cffi = 23.1.0
-2. argon2-cffi-bindings = 21.2.0
-3. cffi = 1.16.0
-4. numpy = 1.25.0
-5. Pillow = 10.1.0
-6. pycparser = 2.21
-7. PyQt5 = 5.15.10
-8. PyQt5-Qt5 = 5.15.2
-9. PyQt5-sip = 12.13.0
+1. argon2-cffi
+2. argon2-cffi-bindings
+3. cffi
+4. numpy
+5. Pillow
+6. pycparser
+7. PyQt5
+8. PyQt5-Qt5
+9. PyQt5-sip
 
 ### Installation
 Follow the following to get your environment ready:
-1. Install system package requirements:
+1. Install system package requirements (here we assume you are using Ubuntu):
 ```sh
 sudo apt install python3-setuptools python3-virtualenv qtbase5-dev qt5-qmake cmake
 ```
-2. Set up a python virtual environment and activate it:
+2. Set up a Python virtual environment and activate it:
 ```sh
 python3 -m venv .venv
 source .venv/bin/activate
@@ -80,7 +80,6 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 4. Now, you can run the app using the following:
-
 ```sh
 cd Great_Wall/src/greatwall/
 python3 gui.py
