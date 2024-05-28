@@ -54,8 +54,7 @@ This section will provide you by a quick guide to start.
 
 ### Dependencies
 This project depends on the following packages:
-
-```js
+```bash
 argon2-cffi
 argon2-cffi-bindings
 cffi
@@ -76,7 +75,7 @@ sudo apt install python3-setuptools python3-virtualenv qtbase5-dev qt5-qmake cma
 2. Set up a Python virtual environment and activate it:
 
 ```sh
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 ```
 3. Install the requirements:
