@@ -56,32 +56,27 @@ This section will provide you by a quick guide to start.
 This project depends on the following packages:
 
 ```js
-argon2-cffi = 23.1.0
-argon2-cffi-bindings = 21.2.0
-cffi = 1.16.0
-numpy = 1.25.0
-Pillow = 10.1.0
-pycparser = 2.21
-PyQt5 = 5.15.10
-PyQt5-Qt5 = 5.15.2
-PyQt5-sip = 12.13.0
+argon2-cffi
+argon2-cffi-bindings
+cffi
+numpy
+Pillow
+pycparser
+PyQt5
+PyQt5-Qt5
+PyQt5-sip
 ```
 
 ### Installation
 Follow the following to get your environment ready:
-1. Install system package requirements (assumes you are using Ubuntu):
+1. Install system package requirements (here we assume you are using Ubuntu):
 ```sh
 sudo apt install python3-setuptools python3-virtualenv qtbase5-dev qt5-qmake cmake
 ```
-2. Set up a Python virtual environment and activate it and make sure to NOT use Python3.12 as of now:
-> [!WARNING]  
-> Note that on the latest version of Python i.e., `python3.12`, so due to the removal of the long-deprecated `pkgutil.ImpImporter` class, the dependencies installation process will result in an error. So it is recommended to NOT use `python3.12`. See https://docs.python.org/3/library/pkgutil.html for official notice.
-
-> [!TIP]  
-> Using [Python3.10](https://www.python.org/downloads/release/python-3100) is recommended.
+2. Set up a Python virtual environment and activate it:
 
 ```sh
-python3.10 -m venv .venv
+python -m venv .venv
 source .venv/bin/activate
 ```
 3. Install the requirements:
