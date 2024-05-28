@@ -73,7 +73,6 @@ Follow the following to get your environment ready:
 sudo apt install python3-setuptools python3-virtualenv qtbase5-dev qt5-qmake cmake
 ```
 2. Set up a Python virtual environment and activate it:
-
 ```sh
 python3 -m venv .venv
 source .venv/bin/activate
@@ -83,7 +82,6 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 4. Now, you can run the app using the following:
-
 ```sh
 cd Great_Wall/src/greatwall/
 python3 gui.py
