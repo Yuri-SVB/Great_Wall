@@ -54,17 +54,15 @@ This section will provide you by a quick guide to start.
 
 ### Dependencies
 This project depends on the following packages:
-```bash
-argon2-cffi
-argon2-cffi-bindings
-cffi
-numpy
-Pillow
-pycparser
-PyQt5
-PyQt5-Qt5
-PyQt5-sip
-```
+1. argon2-cffi
+2. argon2-cffi-bindings
+3. cffi
+4. numpy
+5. Pillow
+6. pycparser
+7. PyQt5
+8. PyQt5-Qt5
+9. PyQt5-sip
 
 ### Installation
 Follow the following to get your environment ready:
