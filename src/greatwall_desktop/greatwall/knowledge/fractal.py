@@ -1,9 +1,9 @@
 import math
-from typing import Optional, Union
+from typing import Optional
 
 import numpy as np
 
-from ..helpers import constants
+from ..helpers.constants import BURNING_SHIP, FRACTAL_FUNCTIONS
 
 
 class Fractal:
@@ -17,7 +17,7 @@ class Fractal:
 
     def __init__(
         self,
-        func_type=constants.BURNING_SHIP,
+        func_type=BURNING_SHIP,
         x_min=None,
         x_max=None,
         y_min=None,
@@ -77,7 +77,7 @@ class Fractal:
         self.max_iters = max_iters
         self.func_type = func_type
 
-        if func_type in constants.FRACTAL_FUNCTIONS:
+        if func_type in FRACTAL_FUNCTIONS:
             if hasattr(self, f"{func_type}_set"):
                 fractal_func = getattr(self, f"{func_type}_set")
                 self.image_pixels = fractal_func()
